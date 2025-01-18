@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "Boiler plate for MaterialUI Development",
   "main": "webpack.config.js",
-  "proxy": "https://itunes.apple.com",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^5.16.14",
-    "@mui/material": "^5.8.6"
+    "@mui/material": "^5.8.6",
+    "react-router-dom": "^7.1.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.18.6",

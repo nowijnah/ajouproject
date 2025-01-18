@@ -1,69 +1,55 @@
 import React from 'react';
-import music_list from './data';
-import Favorites from './Favorites';
-import SearchPage from './SearchPage';
-import {Box, Tabs, Tab, Typography, AppBar, CssBaseline} from '@mui/material';
+import { Typography, AppBar, Toolbar } from '@mui/material';
 
-export default function App () {
-    const [currentTab, setCurrentTab] = React.useState(0);
-    const [searchResult, setSearchResult] = React.useState([]);
-    const [favorites, setFavorites] = React.useState([]);
+const styles = {
+  logo: {
+    height: '40px'
+  },
+  text: {
+    fontFamily: 'Quicksand, sans-serif',
+    fontWeight: 300,
+    letterSpacing: 1.2,
+    marginLeft: '5px'  // 텍스트 사이 간격
+  },
+  toolbar: {
+    display: 'flex',
+    justifyContent: 'space-between'  // 로고와 오른쪽 그룹 사이 공간 분배
+  },
+  rightGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'  // 요소들 사이 간격
+  },
+  button: {
+    marginLeft: '10px',
+    padding: '8px 16px',
+    borderRadius: '4px',
+    border: 'none',
+    cursor: 'pointer'
+  }
+};
 
-    const handleTabChange = (event, newValue) => {
-       setCurrentTab(newValue);
-    }
-    const OnLike = (item) => {
-        let value = favorites.find(it => it.collectionId == item.collectionId);
-
-        if (value) {
-               let i = searchResult.find(it => it.collectionId == item.collectionId)
-                if (i) {
-                  item.like = false;
-                }
-                let remains = favorites.filter((it) => it.collectionId !== item.collectionId);
-                setFavorites(remains);
-          }
-          else {
-                let i = searchResult.find(it => it.collectionId == item.collectionId)
-                if (i) {
-                  item.like = true;
-                }
-                setFavorites([...favorites, item]);
-                }
-    }      
-
-
-    return (
-        <React.Fragment>
-            <AppBar position ="fixed">
-                <Typography align='center' variant='h3' color='inherit'>Favorite Music</Typography>
-            </AppBar>
-
-            <div style={{height: 60, width: '100%'}}></div>
-            <Box sx={{ borderBottom: 1, borderColor: 'diviser'}}>
-                <Tabs 
-                    value={currentTab}
-                    onChange={handleTabChange}
-                    aria-label="basic tabs"
-                    centered
-                >
-                    <Tab label="Search Music" value={0} />
-                    <Tab label="Favorites" value={1} />
-                    <Tab label="More Contents" value={2} />
-                </Tabs>
-            </Box>
-
-            {currentTab == 0 && <SearchPage list={searchResult} onSearch={setSearchResult} onLike={OnLike}/>}
-            {currentTab == 1 && 
-                <Favorites 
-                    list={favorites}
-                    onLike={OnLike}
-                />
-            }
-            {currentTab == 2 && 
-                <Typography align="center" variant="h2"> Item Three</Typography>}
-
-        </React.Fragment>
-    )
+function Component() {
+    return <img src="/logo.png" alt="로고" style={styles.logo} />;
 }
 
+export default function App() {
+    return (
+        <React.Fragment>
+            <AppBar position="fixed" color="inherit">
+                <Toolbar sx={styles.toolbar}>
+                    <Component />
+                    <div style={styles.rightGroup}>
+                        <Typography variant='body2' color="#000000" sx={styles.text}>Contact</Typography>
+                        <Typography variant='body2' color="#000000" sx={styles.text}>포트폴리오</Typography>
+                        <Typography variant='body2' color="#000000" sx={styles.text}>기업</Typography>
+                        <Typography variant='body2' color="#000000" sx={styles.text}>연구실</Typography>
+                        <Typography variant='body2' color="#000000" sx={styles.text}>MyPage</Typography>
+                        <button style={styles.button}>Sign in</button>
+                        <button style={styles.button}>Register</button>
+                    </div>
+                </Toolbar>
+            </AppBar>
+        </React.Fragment>
+    );
+}
