@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Boiler plate for MaterialUI Development",
   "main": "webpack.config.js",
+  "proxy": "https://itunes.apple.com",
   "dependencies": {
-    "@emotion/react": "^11.9.3",
-    "@emotion/styled": "^11.9.3",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^5.16.14",
     "@mui/material": "^5.8.6"
   },
   "devDependencies": {
@@ -31,6 +33,6 @@
     "UI",
     "ReactJS"
   ],
-  "author": "Jae Young Choi",
+  "author": "Se Been Kwon",
   "license": "MIT"
 }
