@@ -8,6 +8,7 @@ const Comments = () => {
     comments, 
     loading, 
     addComment, 
+    addReply,
     editComment, 
     deleteComment 
   } = commentsHook();
@@ -22,6 +23,7 @@ const Comments = () => {
         comments={comments}
         onEdit={editComment}
         onDelete={deleteComment}
+        onReply={addReply} 
         currentUser={{ id: 1, name: "테스트 사용자" } /* test용 -> 유저 정보 받아야 함*/}
       />
     </div>

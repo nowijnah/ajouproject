@@ -6,7 +6,8 @@ import {
   IconButton, 
   Box, 
   Avatar,
-  TextField
+  TextField,
+  Button
 } from '@mui/material';
 import { 
   Edit as EditIcon, 
@@ -15,9 +16,11 @@ import {
   Cancel as CancelIcon 
 } from '@mui/icons-material';
 
-const Comment = ({ author, content, timestamp, onEdit, onDelete, isEditable }) => {
+const Comment = ({ author, content, timestamp, onEdit, onDelete, onReply, isEditable, isReply }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
+  const [replyContent, setReplyContent] = useState('');
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -36,11 +39,28 @@ const Comment = ({ author, content, timestamp, onEdit, onDelete, isEditable }) =
     }
   };
 
+  const handleReplySubmit = () => {
+    if (replyContent.trim()) {
+      onReply(replyContent);
+      setReplyContent('');
+      setIsReplying(false);
+    }
+  };
+
   return (
-    <Card sx={{ mb: 2, boxShadow: 1 }}>
+    <Card sx={{ 
+      mb: 2, 
+      boxShadow: isReply ? 0 : 1,
+      bgcolor: isReply ? 'rgba(0, 0, 0, 0.02)' : 'white'  
+    }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32, mr: 2 }}>
+          <Avatar sx={{ 
+            bgcolor: isReply ? 'secondary.main' : 'primary.main', 
+            width: isReply ? 28 : 32, 
+            height: isReply ? 28 : 32,
+            mr: 2 
+          }}>
             {author?.name?.[0] || '?'}
           </Avatar>
           <Box sx={{ flexGrow: 1 }}>
@@ -87,6 +107,43 @@ const Comment = ({ author, content, timestamp, onEdit, onDelete, isEditable }) =
               variant="outlined"
               sx={{ mt: 1 }}
             />
+          </Box>
+        )}
+        {!isReply && (
+          <Button 
+            size="small" 
+            onClick={() => setIsReplying(true)}
+            sx={{ ml: 6, mt: 1 }}
+          >
+            답글 달기
+          </Button>
+        )}
+        {isReplying && (
+          <Box sx={{ ml: 6, mt: 2, pl: 2, borderLeft: '2px solid #e0e0e0' }}>
+            <TextField
+              fullWidth
+              size="small"
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              placeholder="답글을 입력하세요..."
+              sx={{ mb: 1 }}
+            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                variant="contained" 
+                size="small" 
+                onClick={handleReplySubmit}
+              >
+                답글 달기
+              </Button>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                onClick={() => setIsReplying(false)}
+              >
+                취소
+              </Button>
+            </Box>
           </Box>
         )}
       </CardContent>
