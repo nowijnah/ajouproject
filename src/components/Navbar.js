@@ -1,6 +1,7 @@
 // components/Navbar.js
 import React from 'react';
 import { Typography, AppBar, Toolbar } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 const styles = {
   logo: {
@@ -27,6 +28,11 @@ const styles = {
     borderRadius: '4px',
     border: 'none',
     cursor: 'pointer'
+  },
+  link: {
+    textDecoration: 'none',
+    color: 'inherit',
+    cursor: 'pointer'
   }
 };
 
@@ -41,7 +47,9 @@ export default function Navbar() {
         <LogoComponent />
         <div style={styles.rightGroup}>
           <Typography variant='body2' color="#000000" sx={styles.text}>Contact</Typography>
-          <Typography variant='body2' color="#000000" sx={styles.text}>포트폴리오</Typography>
+          <RouterLink to="/portfolio" style={styles.link}>
+            <Typography variant='body2' color="#000000" sx={styles.text}>포트폴리오</Typography>
+          </RouterLink>
           <Typography variant='body2' color="#000000" sx={styles.text}>기업</Typography>
           <Typography variant='body2' color="#000000" sx={styles.text}>연구실</Typography>
           <Typography variant='body2' color="#000000" sx={styles.text}>MyPage</Typography>
