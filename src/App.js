@@ -1,5 +1,7 @@
 import React from 'react';
 import { Typography, AppBar, Toolbar } from '@mui/material';
+// test용
+import Comments from './components/comments/Comments';
 
 const styles = {
   logo: {
@@ -34,22 +36,25 @@ function Component() {
 }
 
 export default function App() {
-    return (
-        <React.Fragment>
-            <AppBar position="fixed" color="inherit">
-                <Toolbar sx={styles.toolbar}>
-                    <Component />
-                    <div style={styles.rightGroup}>
-                        <Typography variant='body2' color="#000000" sx={styles.text}>Contact</Typography>
-                        <Typography variant='body2' color="#000000" sx={styles.text}>포트폴리오</Typography>
-                        <Typography variant='body2' color="#000000" sx={styles.text}>기업</Typography>
-                        <Typography variant='body2' color="#000000" sx={styles.text}>연구실</Typography>
-                        <Typography variant='body2' color="#000000" sx={styles.text}>MyPage</Typography>
-                        <button style={styles.button}>Sign in</button>
-                        <button style={styles.button}>Register</button>
-                    </div>
-                </Toolbar>
-            </AppBar>
-        </React.Fragment>
-    );
+  return (
+    <React.Fragment>
+      <AppBar position="fixed" color="inherit">
+        <Toolbar sx={styles.toolbar}>
+          <Component />
+          <div style={styles.rightGroup}>
+            <Typography variant='body2' color="#000000" sx={styles.text}>Contact</Typography>
+            <Typography variant='body2' color="#000000" sx={styles.text}>포트폴리오</Typography>
+            <Typography variant='body2' color="#000000" sx={styles.text}>기업</Typography>
+            <Typography variant='body2' color="#000000" sx={styles.text}>연구실</Typography>
+            <Typography variant='body2' color="#000000" sx={styles.text}>MyPage</Typography>
+            <button style={styles.button}>Sign in</button>
+            <button style={styles.button}>Register</button>
+          </div>
+        </Toolbar>
+      </AppBar>
+      {/* testing 용 */}
+      <Toolbar />
+      <Comments/>
+    </React.Fragment>
+  );
 }
