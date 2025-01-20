@@ -1,7 +1,5 @@
 import React from 'react';
 import { Typography, AppBar, Toolbar } from '@mui/material';
-// test용
-import Comments from './components/comments/Comments';
 
 const styles = {
   logo: {
@@ -52,9 +50,6 @@ export default function App() {
           </div>
         </Toolbar>
       </AppBar>
-      {/* testing 용 */}
-      <Toolbar />
-      <Comments/>
     </React.Fragment>
   );
 }
