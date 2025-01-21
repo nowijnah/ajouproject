@@ -114,7 +114,7 @@ export default function PortfolioList() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container maxWidth="lg" sx={{ ml:16, mt: 10, mb: 4, mr:8}}>
+      <Container maxWidth="lg" sx={{ ml:16, mt: 0, mb: 4, mr:8}}>
         <Box sx={{ display: 'flex', gap: 6, mb: 4}}>
           <FilterSection onFiltersChange={handleFiltersChange} />
           
