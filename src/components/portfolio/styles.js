@@ -1,6 +1,15 @@
 import { createTheme } from '@mui/material';
 
 export const theme = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 800,
+      md: 1280,
+      lg: 1281,
+      xl: 1536,
+    },
+  },
   palette: {
     primary: {
       main: 'rgb(0, 51, 161)',
@@ -24,12 +33,15 @@ export const theme = createTheme({
           borderRadius: '20px',
           '& fieldset': {
             borderColor: 'rgb(0, 51, 161)',
+            borderWidth: '2px'  
           },
           '&:hover fieldset': {
-            borderColor: 'rgb(0, 51, 161)',
+            borderColor: 'rgb(0, 51, 161) !important',  // 호버 상태에서 색상 고정
+            borderWidth: '1.5px' 
           },
           '&.Mui-focused fieldset': {
             borderColor: 'rgb(0, 51, 161)',
+            borderWidth: '2px'
           },
         },
       },
@@ -53,9 +65,8 @@ export const commonStyles = {
     flexShrink: 0,
   },
   searchField: {
-    width: 500,
     '& .MuiInputBase-root': {
-      height: '35px',
+      height: '45px',
     },
     '& .MuiInputBase-input': {
       paddingLeft: '25px',

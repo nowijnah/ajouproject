@@ -1,26 +1,24 @@
 import React, { useState } from 'react';
 import { 
-  Typography, 
   Grid,
-  TextField,
   Box,
   Container,
-  Button,
   ThemeProvider,
-  InputAdornment,
-  IconButton
+  useMediaQuery
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import { theme, commonStyles } from './styles';
+import { theme } from './styles';
 import FilterSection from './FilterSection';
 import PortfolioCard from './PortfolioCard';
+import SearchHeader from './SearchHeader';
 
-export default function PortfolioList() {
-  const [activeSort, setActiveSort] = useState('최신순');
-  const [searchText, setSearchText] = useState('');
-  const [activeFilters, setActiveFilters] = useState({});
+// 상수 정의
+const SORT_BUTTONS = [
+  { label: '최신순', value: '최신순' },
+  { label: '인기순', value: '인기순' },
+  { label: '업데이트순', value: '업데이트순' },
+];
 
-  const portfolios = [
+const SAMPLE_PORTFOLIOS = [
     {
       id: 1,
       title: "2024-1학기 소프트콘",
@@ -86,95 +84,91 @@ export default function PortfolioList() {
     }
   ];
 
+// 스타일 정의
+const styles = {
+  container: {
+    px: { xs: 2, sm: 4, md: 6 },
+    py: { xs: 2, md: 4 },
+    width: '100%',
+    padding: '32px 110px 48px 100px !important', // 마진 값 직접 지정
+  },
+  mainContent: {
+    display: 'flex',
+    flexDirection: { xs: 'column', lg: 'row' },
+    gap: { xs: 3, md: 10 }
+  },
+  filterSection: {
+    minWidth: '190px',
+    order: -1
+  }
+};
+
+export default function PortfolioList() {
+  // 상태 관리
+  const [activeSort, setActiveSort] = useState('최신순');
+  const [searchText, setSearchText] = useState('');
+  const [activeFilters, setActiveFilters] = useState({});
+  const isMobile = useMediaQuery('(max-width:900px)');
+
+  // 이벤트 핸들러
   const handleSortChange = (sortType) => {
     setActiveSort(sortType);
-    // todo: 정렬 로직 구현
   };
 
   const handleSearch = () => {
-    // todo: 검색 로직 구현
     console.log('Searching for:', searchText);
   };
 
   const handleFiltersChange = (filters) => {
     setActiveFilters(filters);
-    // todo: 필터링 로직 구현
     console.log('Active filters:', filters);
   };
 
   const getFilteredPortfolios = () => {
-    return portfolios;
+    return SAMPLE_PORTFOLIOS;
   };
 
-  const sortButtons = [
-    { label: '최신순', value: '최신순' },
-    { label: '인기순', value: '인기순' },
-    { label: '업데이트순', value: '업데이트순' },
-  ];
+  // 렌더링
+  const renderFilterSection = () => (
+    <FilterSection 
+      onFiltersChange={handleFiltersChange}
+      isMobile={isMobile}
+    />
+  );
+
+  const renderPortfolioGrid = () => (
+    <Box sx={{ flexGrow: 1 }}>
+      <Grid container spacing={{ xs: 2, md: 3 }}>
+        {getFilteredPortfolios().map((portfolio) => (
+          <Grid item xs={12} sm={6} md={4} key={portfolio.id}>
+            <PortfolioCard {...portfolio} />
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
 
   return (
     <ThemeProvider theme={theme}>
-      <Container maxWidth="lg" sx={{ ml:16, mt: 0, mb: 4, mr:8}}>
-        <Box sx={{ display: 'flex', gap: 6, mb: 4}}>
-          <FilterSection onFiltersChange={handleFiltersChange} />
-          
-          <Box sx={{ flexGrow: 1}}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, mt: 1, ml: -35}}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Box 
-                  component="img"
-                  src="/ui.png"
-                  alt="UI Logo"
-                  sx={{ 
-                    width: 200,
-                    height: 'auto',
-                  }}
-                />
-                <TextField 
-                  placeholder="Search"
-                  variant="outlined"
-                  size="small"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  sx={commonStyles.searchField}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton 
-                          onClick={handleSearch}
-                          edge="end"
-                          sx={{ color: 'rgb(0, 51, 161)' }}
-                        >
-                          <SearchIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Box>
+      <Container maxWidth="xl" sx={styles.container}>
+        <Box sx={{ width: '100%' }}>
+          <SearchHeader 
+            searchText={searchText}
+            setSearchText={setSearchText}
+            handleSearch={handleSearch}
+            activeSort={activeSort}
+            handleSortChange={handleSortChange}
+            sortButtons={SORT_BUTTONS}
+          />
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                {sortButtons.map((button) => (
-                  <Button 
-                    key={button.value}
-                    variant={activeSort === button.value ? 'contained' : 'outlined'}
-                    onClick={() => handleSortChange(button.value)}
-                    size="small"
-                    color="primary"
-                  >
-                    {button.label}
-                  </Button>
-                ))}
+          <Box sx={styles.mainContent}>
+            {isMobile && renderFilterSection()}
+            {renderPortfolioGrid()}
+            {!isMobile && (
+              <Box sx={styles.filterSection}>
+                {renderFilterSection()}
               </Box>
-            </Box>
-
-            <Grid container spacing={3}>
-              {getFilteredPortfolios().map((portfolio) => (
-                <Grid item xs={12} sm={6} md={4} key={portfolio.id}>
-                  <PortfolioCard {...portfolio} />
-                </Grid>
-              ))}
-            </Grid>
+            )}
           </Box>
         </Box>
       </Container>

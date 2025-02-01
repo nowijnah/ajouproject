@@ -4,7 +4,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { commonStyles } from './styles';
 
-const FilterItem = ({ year, descriptions = ['Description'], checked, onCheckChange }) => (
+const FilterItem = ({ year, checked, onCheckChange }) => (
   <Box sx={{ mb: 1 }}>
     <FormControlLabel 
       control={
@@ -21,22 +21,6 @@ const FilterItem = ({ year, descriptions = ['Description'], checked, onCheckChan
         }
       }}
     />
-    <Typography 
-      variant="body2" 
-      color="text.secondary" 
-      sx={{ 
-        pl: 4,
-        mt: -1,
-        ...commonStyles.quicksandFont,
-        fontWeight: 500,
-      }}
-    >
-      {descriptions.map((desc, index) => (
-        <React.Fragment key={index}>
-          {desc}<br/>
-        </React.Fragment>
-      ))}
-    </Typography>
   </Box>
 );
 
@@ -46,44 +30,16 @@ export default function FilterSection({ onFiltersChange }) {
 
   const filters = [
     {
-      year: '2024-2',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
+      year: '2024-2'
     },
     {
-      year: '2024-1',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
+      year: '2024-1'
     },
     {
-      year: '2023-2',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
+      year: '2024-2'
     },
     {
-      year: '2023-1',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
-    },
-    {
-      year: '2022-2',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
-    },
-    {
-      year: '2022-1',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
-    },
-    {
-      year: '2021-2',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
-    },
-    {
-      year: '2021-1',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
-    },
-    {
-      year: '2020-2',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
-    },
-    {
-      year: '2020-1',
-      descriptions: ['파란학기', 'SW캡스톤디자인', '자기주도프로젝트'],
+      year: '2024-1'
     }
   ];
 
@@ -101,20 +57,36 @@ export default function FilterSection({ onFiltersChange }) {
   };
 
   const boxStyles = {
-    ...commonStyles.filterBox,
-    height: expanded ? 'auto' : '400px',
-    transition: 'height 0.3s ease-in-out',
+    borderRadius: '5px',
+    border: '1px solid #e0e0e0',
+    width: { xs: '100%', sm: '100%', md: '110%' },
+    margin: { 
+      xs: '0',
+      sm: '0',
+      md: '0px 0px 0px 5px'
+    },
+    padding: { 
+      xs: '20px',
+      sm: '25px',
+      md: '30px 20px 0px 30px'
+    },
+    height: { 
+      xs: 'auto',
+      sm: 'auto',
+      md: expanded ? 'auto' : '300px'
+    },
+    backgroundColor: '#fff',
     display: 'flex',
     flexDirection: 'column'
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Box sx={{ width: '100%' }}>
       <Box sx={boxStyles}>
         <Typography 
           variant="h5" 
           sx={{ 
-            mb: 1,
+            mb: 2.5,
             ...commonStyles.quicksandFont,
           }}
         >
@@ -123,38 +95,47 @@ export default function FilterSection({ onFiltersChange }) {
         <Box 
           sx={{ 
             mb: 3,
-            flex: 1,
             overflow: 'hidden',
-            height: expanded ? 'auto' : '280px',
-            transition: 'height 0.3s ease-in-out',
+            height: {
+              xs: 'auto',
+              sm: 'auto',
+              md: expanded ? 'auto' : '280px'
+            },
           }}
         >
           {filters.map((filter, index) => (
             <FilterItem 
               key={index}
               year={filter.year}
-              descriptions={filter.descriptions}
               checked={checkedFilters[filter.year] || false}
               onCheckChange={handleCheckChange}
             />
           ))}
         </Box>
-        <Button
-          onClick={toggleExpand}
-          sx={{
-            width: '100%',
-            justifyContent: 'center',
-            color: 'primary.main',
-            marginTop: 'auto',
-            marginBottom: 1,
-            '&:hover': {
-              backgroundColor: 'transparent',
-            }
-          }}
-          endIcon={expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-        >
-          {expanded ? '접기' : '더보기'}
-        </Button>
+        <Box sx={{ 
+          display: { 
+            xs: 'none', 
+            sm: 'none', 
+            md: 'block' 
+          }
+        }}>
+          <Button
+            onClick={toggleExpand}
+            sx={{
+              width: '100%',
+              justifyContent: 'center',
+              color: 'primary.main',
+              marginTop: 'auto',
+              marginBottom: 3,
+              '&:hover': {
+                backgroundColor: 'transparent',
+              }
+            }}
+            endIcon={expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          >
+            {expanded ? '접기' : '더보기'}
+          </Button>
+        </Box>
       </Box>
     </Box>
   );
