@@ -1,6 +1,6 @@
-// src/App.js
+// App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline, Box } from '@mui/material';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -21,7 +21,7 @@ export default function App() {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          marginTop: '64px' // Navbar 높이만큼 여백
+          marginTop: '64px'
         }}>
           <Routes>
             <Route path="/" element={<Home />} />
