@@ -5,10 +5,13 @@ export default function PortfolioCard({ title, description, image }) {
   return (
     <Card sx={{ 
       border: '1px solid #e0e0e0',
-      boxShadow: 'none'
+      boxShadow: 'none',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       <Box sx={{ 
-        height: 200,
+        height: { xs: 150, sm: 200 },
         position: 'relative',
         margin: '16px 16px 0 16px',
         backgroundColor: '#f5f5f5',
@@ -32,12 +35,24 @@ export default function PortfolioCard({ title, description, image }) {
           }}
         />
       </Box>
-      <CardContent>
-        <Typography gutterBottom variant="h6" component="div">
+      <CardContent sx={{ flexGrow: 1 }}>
+        <Typography 
+            gutterBottom 
+            variant="h6" 
+            component="div"
+            sx={{
+              fontSize: { xs: '1rem', sm: '1.25rem' }
+            }}
+          >          
           {title}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {description}
+        <Typography 
+          variant="body2" 
+          color="text.secondary"
+          sx={{
+            fontSize: { xs: '0.875rem', sm: '1rem' }
+          }}
+        >          {description}
         </Typography>
       </CardContent>
     </Card>
