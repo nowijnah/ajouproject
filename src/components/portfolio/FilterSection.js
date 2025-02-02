@@ -4,16 +4,16 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { commonStyles } from './styles';
 
-const FilterItem = ({ year, checked, onCheckChange }) => (
+const FilterItem = ({ semester, checked, onCheckChange }) => (
   <Box sx={{ mb: 1 }}>
     <FormControlLabel 
       control={
         <Checkbox 
           checked={checked}
-          onChange={(e) => onCheckChange(year, e.target.checked)}
+          onChange={(e) => onCheckChange(semester, e.target.checked)}
         />
       } 
-      label={year}
+      label={semester}
       sx={{ 
         '.MuiFormControlLabel-label': {
           ...commonStyles.quicksandFont,
@@ -30,23 +30,23 @@ export default function FilterSection({ onFiltersChange }) {
 
   const filters = [
     {
-      year: '2024-2'
+      semester: '2024-2'
     },
     {
-      year: '2024-1'
+      semester: '2024-1'
     },
     {
-      year: '2024-2'
+      semester: '2024-2'
     },
     {
-      year: '2024-1'
+      semester: '2024-1'
     }
   ];
 
-  const handleCheckChange = (year, checked) => {
+  const handleCheckChange = (semester, checked) => {
     const newCheckedFilters = {
       ...checkedFilters,
-      [year]: checked
+      [semester]: checked
     };
     setCheckedFilters(newCheckedFilters);
     onFiltersChange(newCheckedFilters);
@@ -106,8 +106,8 @@ export default function FilterSection({ onFiltersChange }) {
           {filters.map((filter, index) => (
             <FilterItem 
               key={index}
-              year={filter.year}
-              checked={checkedFilters[filter.year] || false}
+              semester={filter.semester}
+              checked={checkedFilters[filter.semester] || false}
               onCheckChange={handleCheckChange}
             />
           ))}
