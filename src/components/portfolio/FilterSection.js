@@ -2,79 +2,82 @@ import React, { useState } from 'react';
 import { Box, Typography, FormControlLabel, Checkbox, Button } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { commonStyles } from './styles';
+import { commonStyles, filterSectionStyles } from '../common/styles';
 
-const FilterItem = ({ semester, checked, onCheckChange }) => (
+const FilterItem = ({ filter, checked, onCheckChange }) => (
   <Box sx={{ mb: 1 }}>
     <FormControlLabel 
       control={
         <Checkbox 
           checked={checked}
-          onChange={(e) => onCheckChange(semester, e.target.checked)}
+          onChange={(e) => onCheckChange(filter.techStack, e.target.checked)}
+          sx={{
+            color: 'rgb(0, 51, 161)',
+            '&.Mui-checked': {
+              color: 'rgb(0, 51, 161)',
+            },
+            '& .MuiSvgIcon-root': {
+              fontSize: 20,
+            }
+          }}
         />
       } 
-      label={semester}
+      label={filter.techStack}
       sx={{ 
         '.MuiFormControlLabel-label': {
           ...commonStyles.quicksandFont,
-          fontWeight: 400,
+          fontSize: '0.95rem',
+          fontWeight: 350,
+          color: '#333'
         }
       }}
     />
   </Box>
 );
 
-export default function FilterSection({ onFiltersChange }) {
+export default function FilterSection({ filters, onFiltersChange }) {
   const [expanded, setExpanded] = useState(false);
-  const [checkedFilters, setCheckedFilters] = useState({});
+  const [selectedFilters, setSelectedFilters] = useState(
+    filters.reduce((acc, filter) => ({
+      ...acc,
+      [filter.techStack]: false
+    }), {})
+  );
 
-  const filters = [
-    {
-      semester: '2024-2'
-    },
-    {
-      semester: '2024-1'
-    },
-    {
-      semester: '2024-2'
-    },
-    {
-      semester: '2024-1'
-    }
-  ];
-
-  const handleCheckChange = (semester, checked) => {
-    const newCheckedFilters = {
-      ...checkedFilters,
-      [semester]: checked
+  const handleFilterChange = (techStack, checked) => {
+    const newSelectedFilters = {
+      ...selectedFilters,
+      [techStack]: checked
     };
-    setCheckedFilters(newCheckedFilters);
-    onFiltersChange(newCheckedFilters);
+    setSelectedFilters(newSelectedFilters);
+    onFiltersChange(newSelectedFilters);
   };
 
   const toggleExpand = () => {
     setExpanded(!expanded);
   };
 
+  const boxHeightStyles = {
+    xs: expanded ? 'auto' : '300px',
+    sm: expanded ? 'auto' : '350px',
+    md: expanded ? 'auto' : '350px'
+  };
+
   const boxStyles = {
     borderRadius: '5px',
     border: '1px solid #e0e0e0',
-    width: { xs: '100%', sm: '100%', md: '110%' },
+    width: { xs: '100%', sm: '100%', md: '100%' },
     margin: { 
       xs: '0',
-      sm: '0',
-      md: '0px 0px 0px 5px'
+      sm: '0px 0px 0px 0px',
+      md: '0px 13px 0px 13px'
     },
     padding: { 
-      xs: '20px',
-      sm: '25px',
-      md: '30px 20px 0px 30px'
+      xs: '30px 30px 0px 30px',
+      sm: '30px 30px 0px 30px',
+      md: '30px 30px 0px 30px'
     },
-    height: { 
-      xs: 'auto',
-      sm: 'auto',
-      md: expanded ? 'auto' : '300px'
-    },
+    height: boxHeightStyles,
     backgroundColor: '#fff',
     display: 'flex',
     flexDirection: 'column'
@@ -82,41 +85,43 @@ export default function FilterSection({ onFiltersChange }) {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Box sx={boxStyles}>
+      <Box sx={filterSectionStyles.box}>
         <Typography 
           variant="h5" 
           sx={{ 
             mb: 2.5,
             ...commonStyles.quicksandFont,
+            fontWeight: 350
           }}
         >
-          Terms
+          Skill
         </Typography>
         <Box 
           sx={{ 
             mb: 3,
             overflow: 'hidden',
             height: {
-              xs: 'auto',
-              sm: 'auto',
-              md: expanded ? 'auto' : '280px'
+              ...boxHeightStyles,
+              xs: expanded ? 'auto' : '200px',
+              sm: expanded ? 'auto' : '200px',
+              md: expanded ? 'auto' : '200px'
             },
           }}
         >
-          {filters.map((filter, index) => (
+          {filters.map((filter) => (
             <FilterItem 
-              key={index}
-              semester={filter.semester}
-              checked={checkedFilters[filter.semester] || false}
-              onCheckChange={handleCheckChange}
+              key={filter.techStack}
+              filter={filter}
+              checked={selectedFilters[filter.techStack] || false}
+              onCheckChange={handleFilterChange}
             />
           ))}
         </Box>
         <Box sx={{ 
           display: { 
-            xs: 'none', 
-            sm: 'none', 
-            md: 'block' 
+            xs: 'block',
+            sm: 'block',
+            md: 'block'
           }
         }}>
           <Button
@@ -125,7 +130,7 @@ export default function FilterSection({ onFiltersChange }) {
               width: '100%',
               justifyContent: 'center',
               color: 'primary.main',
-              marginTop: 'auto',
+              marginTop: 1,
               marginBottom: 3,
               '&:hover': {
                 backgroundColor: 'transparent',
