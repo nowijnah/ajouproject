@@ -24,63 +24,63 @@ const SAMPLE_PORTFOLIOS = [
       title: "2024-1학기 소프트콘",
       description: "강수빈",
       image: "/logo.png",
-      year: "2024-1"
+      semester: "2024-1"
     },
     {
       id: 2,
       title: "토스",
       description: "2024-1 파란학기",
       image: "/dnag.png",
-      year: "2024-1"
+      semester: "2024-1"
     },
     {
       id: 3,
       title: "0000",
       description: "□□□□□□□",
       image: "/puppy.png",
-      year: "2023-2"
+      semester: "2023-2"
     },
     {
       id: 4,
       title: "2023-2 캡스톤디자인",
       description: "김민수",
       image: "/placeholder.png",
-      year: "2023-2"
+      semester: "2023-2"
     },
     {
       id: 5,
       title: "네이버 부스트캠프",
       description: "이지원",
       image: "/placeholder.png",
-      year: "2023-1"
+      semester: "2023-1"
     },
     {
       id: 6,
       title: "카카오 인턴십",
       description: "박준영",
       image: "/placeholder.png",
-      year: "2023-1"
+      semester: "2023-1"
     },
     {
       id: 7,
       title: "SW마에스트로",
       description: "정다연",
       image: "/placeholder.png",
-      year: "2022-2"
+      semester: "2022-2"
     },
     {
       id: 8,
       title: "구글 인턴십",
       description: "최유진",
       image: "/placeholder.png",
-      year: "2022-2"
+      semester: "2022-2"
     },
     {
       id: 9,
       title: "삼성 청년 SW 아카데미",
       description: "한상우",
       image: "/placeholder.png",
-      year: "2022-1"
+      semester: "2022-1"
     }
   ];
 
