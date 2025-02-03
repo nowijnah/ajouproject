@@ -14,7 +14,7 @@ import {
   ExternalLink as ExternalLinkIcon
 } from 'lucide-react';
 
-function ViewPost({ title, subtitle, content, files, links, onEdit }) {
+function ViewPost({ title, subtitle, content, thumbnail, files, links, onEdit }) {
   const theme = useTheme();
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -57,50 +57,71 @@ function ViewPost({ title, subtitle, content, files, links, onEdit }) {
           textAlign: 'center',
           position: 'relative',
         }}>
-          {/* Title */}
-          <Typography 
-            variant="h1" 
-            sx={{
-              color: '#0066CC',
-              fontSize: '2.5rem',
-              fontWeight: 700,
-              marginBottom: theme.spacing(1),
-              fontFamily: "'Noto Sans KR', sans-serif",
-            }}
-          >
-            {title}
-          </Typography>
 
-          {/* Subtitle */}
-          <Typography 
-            variant="subtitle1"
-            sx={{
-              color: '#0066CC',
-              fontSize: '1.1rem',
-              fontWeight: 400,
-              opacity: 0.9,
-              fontFamily: "'Noto Sans KR', sans-serif",
-            }}
-          >
-            {subtitle}
-          </Typography>
+        {/* Title */}
+        <Typography 
+          variant="h1" 
+          sx={{
+            color: '#0066CC',
+            fontSize: '2.5rem',
+            fontWeight: 700,
+            marginBottom: theme.spacing(1),
+            fontFamily: "'Noto Sans KR', sans-serif",
+          }}
+        >
+          {title}
+        </Typography>
 
-          {/* Edit Button */}
-          {onEdit && (
-            <Button
-              startIcon={<Edit size={20} />}
-              onClick={onEdit}
-              sx={{ 
-                position: 'absolute',
-                right: 24,
-                top: 24,
-                color: '#0066CC',
-              }}
-            >
-              Edit
-            </Button>
-          )}
+        {/* Subtitle */}
+        <Typography 
+          variant="subtitle1"
+          sx={{
+            color: '#0066CC',
+            fontSize: '1.1rem',
+            fontWeight: 400,
+            opacity: 0.9,
+            fontFamily: "'Noto Sans KR', sans-serif",
+          }}
+        >
+          {subtitle}
+        </Typography>
+
+        {thumbnail && (
+        <Box sx={{ 
+          width: '100%', 
+          height: '300px', 
+          position: 'relative',
+          mb: 4,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}>
+          <img
+            src={URL.createObjectURL(thumbnail)}
+            alt="Post thumbnail"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
         </Box>
+      )}
+
+        {/* Edit Button */}
+        {onEdit && (
+          <Button
+            startIcon={<Edit size={20} />}
+            onClick={onEdit}
+            sx={{ 
+              position: 'absolute',
+              right: 24,
+              top: 24,
+              color: '#0066CC',
+            }}
+          >
+            Edit
+          </Button>
+        )}
+      </Box>
 
         {/* Content Section */}
         <Box sx={{ padding: theme.spacing(4) }}>

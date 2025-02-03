@@ -23,12 +23,18 @@ import {
   Delete as DeleteIcon,
   Preview as PreviewIcon,
   Edit as EditIcon,
+  // Link as LinkIcon,
+  Add as AddIcon,
+  Visibility as Eye,
+  CloudUpload as UploadIcon,
+  Close as CloseIcon,
   Link as LinkIcon,
-  Add as AddIcon
+  Add as PlusIcon,
+  ImageOutlined as ImageIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import ViewPost from '../portfolio/ViewPost.js';
-import { Eye } from 'lucide-react';
+import ViewPost from '../posts/ViewPost.js';
+// import { Eye } from 'lucide-react';
 
 const StyledInput = styled('input')({
   display: 'none',
@@ -64,7 +70,8 @@ function UploadPost({ savedContent, onSave }) {
     const [links, setLinks] = useState(savedContent?.links || []);
     const [newLink, setNewLink] = useState('');
     const [isPreview, setIsPreview] = useState(false);
-    
+    const [thumbnail, setThumbnail] = useState(savedContent?.thumbnail || null);
+
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     setFiles(prev => [...prev, ...selectedFiles]);
@@ -91,6 +98,7 @@ function UploadPost({ savedContent, onSave }) {
     const content = {
       title,
       subtitle,
+      thumbnail,
       content: markdownContent,
       files,
       links,
@@ -102,12 +110,27 @@ function UploadPost({ savedContent, onSave }) {
     setIsPreview(true);
   };
 
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      setThumbnail(file);
+    } else {
+      // 에러 핸들링 추가하기
+      alert('이미지 파일을 선택하세요.');
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnail(null);
+  };
+
   if (isPreview) {
     return (
       <ViewPost
         title={title}
         subtitle={subtitle}
         content={markdownContent}
+        thumbnail={thumbnail}
         files={files}
         links={links}
         onEdit={() => setIsPreview(false)}
@@ -180,120 +203,186 @@ function UploadPost({ savedContent, onSave }) {
             </Grid>
           </Grid>
 
-            {/* Markdown Editor */}
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                내용 (Markdown)
-              </Typography>
-              <MarkdownEditor
-                fullWidth
-                multiline
-                variant="outlined"
-                value={markdownContent}
-                onChange={(e) => setMarkdownContent(e.target.value)}
-                placeholder="Write your content in Markdown..."
-              />
-            </Grid>
+          {/* 섬네일 추가 */}
+          <Grid item xs={12}>
+            <Typography variant="subtitle1" gutterBottom>
+              대표 이미지
+            </Typography>
+            <Box sx={{ 
+              border: '2px dashed',
+              borderColor: thumbnail ? 'primary.main' : 'grey.300',
+              borderRadius: 1,
+              p: 2,
+              position: 'relative',
+              '&:hover': {
+                borderColor: 'primary.main',
+              },
+            }}>
+              {thumbnail ? (
+                <Box sx={{ position: 'relative' }}>
+                  <img
+                    src={URL.createObjectURL(thumbnail)}
+                    alt="Thumbnail preview"
+                    style={{
+                      width: '100%',
+                      height: '200px',
+                      objectFit: 'cover',
+                      borderRadius: '4px',
+                    }}
+                  />
+                  <IconButton
+                    onClick={removeThumbnail}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      bgcolor: 'background.paper',
+                      '&:hover': { bgcolor: 'grey.100' },
+                    }}
+                  >
+                    <CloseIcon size={20} />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Button
+                  component="label"
+                  sx={{
+                    width: '100%',
+                    height: '200px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1,
+                  }}
+                >
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleThumbnailChange}
+                  />
+                  <ImageIcon size={40} />
+                  <Typography>대표 이미지 추가</Typography>
+                </Button>
+              )}
+            </Box>
+          </Grid>
 
-            {/* Preview */}
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                미리보기
-              </Typography>
-              <MarkdownPreview>
-                <ReactMarkdown>{markdownContent}</ReactMarkdown>
-              </MarkdownPreview>
-            </Grid>
+          {/* Markdown Editor */}
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              내용 (Markdown)
+            </Typography>
+            <MarkdownEditor
+              fullWidth
+              multiline
+              variant="outlined"
+              value={markdownContent}
+              onChange={(e) => setMarkdownContent(e.target.value)}
+              placeholder="Write your content in Markdown..."
+            />
+          </Grid>
 
-            {/* File Upload */}
-            <Grid item xs={12}>
-              <Card sx={{ mt: 2 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    파일 첨부
-                  </Typography>
-                  <Box sx={{ mb: 2 }}>
-                    <label htmlFor="file-upload">
-                      <StyledInput
-                        id="file-upload"
-                        type="file"
-                        multiple
-                        onChange={handleFileChange}
-                      />
-                      <Button variant="contained" component="span"
-                      style={{ backgroundColor: '#0066CC' }}>
-                        Choose Files
-                      </Button>
-                    </label>
-                  </Box>
+          {/* Preview */}
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              미리보기
+            </Typography>
+            <MarkdownPreview>
+              <ReactMarkdown>{markdownContent}</ReactMarkdown>
+            </MarkdownPreview>
+          </Grid>
 
-                  {files.length > 0 && (
-                    <List>
-                      {files.map((file, index) => (
-                        <ListItem key={index}>
-                          <ListItemText primary={file.name} />
-                          <ListItemSecondaryAction>
-                            <IconButton edge="end" onClick={() => removeFile(index)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Links Section */}
-            <Grid item xs={12}>
-              <Card sx={{ mt: 2 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    링크 첨부
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <TextField
-                      fullWidth
-                      type="url"
-                      value={newLink}
-                      onChange={(e) => setNewLink(e.target.value)}
-                      placeholder="Enter URL"
-                      variant="outlined"
+          {/* File Upload */}
+          <Grid item xs={12}>
+            <Card sx={{ mt: 2 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  파일 첨부
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                  <label htmlFor="file-upload">
+                    <StyledInput
+                      id="file-upload"
+                      type="file"
+                      multiple
+                      onChange={handleFileChange}
                     />
-                    <Button
-                      variant="contained"
-                      onClick={handleLinkAdd}
-                      startIcon={<AddIcon />}
-                      style={{ backgroundColor: '#0066CC' }}
-                    >
-                      add
+                    <Button variant="contained" component="span"
+                    style={{ backgroundColor: '#0066CC' }}>
+                      Choose Files
                     </Button>
-                  </Box>
+                  </label>
+                </Box>
 
-                  {links.length > 0 && (
-                    <List>
-                      {links.map((link, index) => (
-                        <ListItem key={index}>
-                          <ListItemText
-                            primary={
-                              <Link href={link} target="_blank" rel="noopener noreferrer">
-                                {link}
-                              </Link>
-                            }
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton edge="end" onClick={() => removeLink(index)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
+                {files.length > 0 && (
+                  <List>
+                    {files.map((file, index) => (
+                      <ListItem key={index}>
+                        <ListItemText primary={file.name} />
+                        <ListItemSecondaryAction>
+                          <IconButton edge="end" onClick={() => removeFile(index)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Links Section */}
+          <Grid item xs={12}>
+            <Card sx={{ mt: 2 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  링크 첨부
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                  <TextField
+                    fullWidth
+                    type="url"
+                    value={newLink}
+                    onChange={(e) => setNewLink(e.target.value)}
+                    placeholder="Enter URL"
+                    variant="outlined"
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={handleLinkAdd}
+                    startIcon={<AddIcon />}
+                    style={{ backgroundColor: '#0066CC' }}
+                  >
+                    add
+                  </Button>
+                </Box>
+
+                {links.length > 0 && (
+                  <List>
+                    {links.map((link, index) => (
+                      <ListItem key={index}>
+                        <ListItemText
+                          primary={
+                            <Link href={link} target="_blank" rel="noopener noreferrer">
+                              {link}
+                            </Link>
+                          }
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton edge="end" onClick={() => removeLink(index)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
 
             <Button
             type="submit"
