@@ -7,46 +7,7 @@ import {
   IconButton
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { commonStyles } from './styles';
-
-const styles = {
-  container: {
-    display: 'flex', 
-    flexDirection: {
-      xs: 'column',
-      sm: 'column',
-      md: 'row'
-    },
-    alignItems: { xs: 'stretch', md: 'center' },
-    justifyContent: 'space-between',
-    gap: 4,
-    mb: 4
-  },
-  searchArea: {
-    display: 'flex', 
-    flexDirection: { xs: 'column', md: 'row' },
-    alignItems: { xs: 'center', md: 'center' },
-    gap: { xs: 3, md: 7 }
-  },
-  logo: {
-    width: { xs: 150, md: 220 },
-    height: 'auto',
-  },
-  searchField: {
-    ...commonStyles.searchField,
-    width: { xs: '100%', md: 500 }
-  },
-  buttonGroup: {
-    display: 'flex', 
-    gap: 2,
-    justifyContent: { xs: 'center', lg: 'flex-end' },
-    flexWrap: 'wrap'
-  },
-  button: {
-    flexShrink: 0,
-    minWidth: 'auto'
-  }
-};
+import { commonStyles, searchHeaderStyles } from './styles';
 
 const SearchHeader = ({ 
   searchText,
@@ -57,13 +18,13 @@ const SearchHeader = ({
   sortButtons
 }) => {
   return (
-    <Box sx={styles.container}>
-      <Box sx={styles.searchArea}>
+    <Box sx={searchHeaderStyles.container}>
+      <Box sx={searchHeaderStyles.searchArea}>
         <Box 
           component="img"
           src="/ui.png"
           alt="UI Logo"
-          sx={styles.logo}
+          sx={searchHeaderStyles.logo}
         />
         <TextField 
           placeholder="Search"
@@ -71,7 +32,7 @@ const SearchHeader = ({
           size="small"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          sx={styles.searchField}
+          sx={searchHeaderStyles.searchField}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
@@ -84,7 +45,7 @@ const SearchHeader = ({
         />
       </Box>
 
-      <Box sx={styles.buttonGroup}>
+      <Box sx={searchHeaderStyles.buttonGroup}>
         {sortButtons.map((button) => (
           <Button 
             key={button.value}
@@ -92,7 +53,7 @@ const SearchHeader = ({
             onClick={() => handleSortChange(button.value)}
             size="small"
             color="primary"
-            sx={styles.button}
+            sx={searchHeaderStyles.button}
           >
             {button.label}
           </Button>
