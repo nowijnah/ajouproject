@@ -69,21 +69,39 @@ function UploadPost({ savedContent, onSave }) {
     const [files, setFiles] = useState(savedContent?.files || []);
     const [links, setLinks] = useState(savedContent?.links || []);
     const [newLink, setNewLink] = useState('');
+    const [newLinkDescription, setNewLinkDescription] = useState('');
+    const [selectedFileDescription, setSelectedFileDescription] = useState('');
     const [isPreview, setIsPreview] = useState(false);
     const [thumbnail, setThumbnail] = useState(savedContent?.thumbnail || null);
-
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setFiles(prev => [...prev, ...selectedFiles]);
-  };
-
-  const handleLinkAdd = (e) => {
-    e.preventDefault();
-    if (newLink.trim()) {
-      setLinks(prev => [...prev, newLink.trim()]);
-      setNewLink('');
-    }
-  };
+  
+    const handleFileChange = (e) => {
+      const selectedFiles = Array.from(e.target.files);
+      // 파일 선택시 설명 입력 다이얼로그 표시 또는 바로 입력 필드 표시
+      selectedFiles.forEach(file => {
+        setFiles(prev => [...prev, {
+          file: file,
+          description: ''  // 사용자가 입력할 설명
+        }]);
+      });
+    };
+    
+    const updateFileDescription = (index, description) => {
+      setFiles(prev => prev.map((item, i) => 
+        i === index ? { ...item, description } : item
+      ));
+    };
+    
+    const handleLinkAdd = (e) => {
+      e.preventDefault();
+      if (newLink.trim()) {
+        setLinks(prev => [...prev, {
+          url: newLink.trim(),
+          description: newLinkDescription.trim()
+        }]);
+        setNewLink('');
+        setNewLinkDescription('');
+      }
+    };    
 
   const removeFile = (index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
@@ -333,56 +351,121 @@ function UploadPost({ savedContent, onSave }) {
               </CardContent>
             </Card>
           </Grid>
-
-          {/* Links Section */}
-          <Grid item xs={12}>
-            <Card sx={{ mt: 2 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  링크 첨부
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+{/* File List */}
+{files.length > 0 && (
+            <List sx={{ mt: 2 }}>
+              {files.map((fileItem, index) => (
+                <ListItem 
+                  key={index}
+                  sx={{ 
+                    bgcolor: 'grey.50',
+                    borderRadius: 1,
+                    mb: 1,
+                    flexDirection: 'column',
+                    alignItems: 'stretch'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <Typography>{fileItem.file.name}</Typography>
+                    <IconButton 
+                      onClick={() => removeFile(index)}
+                      sx={{ color: 'error.main' }}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
                   <TextField
                     fullWidth
-                    type="url"
-                    value={newLink}
-                    onChange={(e) => setNewLink(e.target.value)}
-                    placeholder="Enter URL"
-                    variant="outlined"
+                    size="small"
+                    placeholder="파일 설명 입력"
+                    value={fileItem.description}
+                    onChange={(e) => updateFileDescription(index, e.target.value)}
+                    sx={{ mt: 1 }}
                   />
-                  <Button
-                    variant="contained"
-                    onClick={handleLinkAdd}
-                    startIcon={<AddIcon />}
-                    style={{ backgroundColor: '#0066CC' }}
-                  >
-                    add
-                  </Button>
-                </Box>
+                </ListItem>
+              ))}
+            </List>
+          )}
+          
+          {/* Links Section */}
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Add Links
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                fullWidth
+                type="url"
+                value={newLink}
+                onChange={(e) => setNewLink(e.target.value)}
+                placeholder="Enter URL"
+                variant="outlined"
+              />
+              <TextField
+                fullWidth
+                value={newLinkDescription}
+                onChange={(e) => setNewLinkDescription(e.target.value)}
+                placeholder="링크 설명 입력"
+                variant="outlined"
+              />
+              <Button
+                onClick={handleLinkAdd}
+                variant="outlined"
+                startIcon={<PlusIcon />}
+                sx={{ alignSelf: 'flex-end' }}
+              >
+                Add Link
+              </Button>
+            </Box>
 
-                {links.length > 0 && (
-                  <List>
-                    {links.map((link, index) => (
-                      <ListItem key={index}>
-                        <ListItemText
-                          primary={
-                            <Link href={link} target="_blank" rel="noopener noreferrer">
-                              {link}
-                            </Link>
-                          }
-                        />
-                        <ListItemSecondaryAction>
-                          <IconButton edge="end" onClick={() => removeLink(index)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+            {/* Added Links List */}
+            {links.length > 0 && (
+              <List sx={{ mt: 2 }}>
+                {links.map((linkItem, index) => (
+                  <ListItem 
+                    key={index}
+                    sx={{ 
+                      bgcolor: 'grey.50',
+                      borderRadius: 1,
+                      mb: 1,
+                      flexDirection: 'column',
+                      alignItems: 'stretch'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <Typography 
+                        sx={{ 
+                          color: '#0066CC',
+                          textDecoration: 'none',
+                          '&:hover': { textDecoration: 'underline' }
+                        }}
+                      >
+                        {linkItem.url}
+                      </Typography>
+                      <IconButton 
+                        onClick={() => removeLink(index)}
+                        sx={{ color: 'error.main' }}
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </Box>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="링크 설명 입력"
+                      value={linkItem.description}
+                      onChange={(e) => {
+                        const newLinks = [...links];
+                        newLinks[index] = { ...linkItem, description: e.target.value };
+                        setLinks(newLinks);
+                      }}
+                      sx={{ mt: 1 }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Box>
 
             <Button
             type="submit"
