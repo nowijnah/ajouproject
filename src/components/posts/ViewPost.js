@@ -14,7 +14,7 @@ import {
   ExternalLink as ExternalLinkIcon
 } from 'lucide-react';
 
-function ViewPost({ title, subtitle, content, files, links, onEdit }) {
+function ViewPost({ title, subtitle, content, thumbnail, files, links, onEdit }) {
   const theme = useTheme();
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -57,50 +57,71 @@ function ViewPost({ title, subtitle, content, files, links, onEdit }) {
           textAlign: 'center',
           position: 'relative',
         }}>
-          {/* Title */}
-          <Typography 
-            variant="h1" 
-            sx={{
-              color: '#0066CC',
-              fontSize: '2.5rem',
-              fontWeight: 700,
-              marginBottom: theme.spacing(1),
-              fontFamily: "'Noto Sans KR', sans-serif",
-            }}
-          >
-            {title}
-          </Typography>
 
-          {/* Subtitle */}
-          <Typography 
-            variant="subtitle1"
-            sx={{
-              color: '#0066CC',
-              fontSize: '1.1rem',
-              fontWeight: 400,
-              opacity: 0.9,
-              fontFamily: "'Noto Sans KR', sans-serif",
-            }}
-          >
-            {subtitle}
-          </Typography>
+        {/* Title */}
+        <Typography 
+          variant="h1" 
+          sx={{
+            color: '#0066CC',
+            fontSize: '2.5rem',
+            fontWeight: 700,
+            marginBottom: theme.spacing(1),
+            fontFamily: "'Noto Sans KR', sans-serif",
+          }}
+        >
+          {title}
+        </Typography>
 
-          {/* Edit Button */}
-          {onEdit && (
-            <Button
-              startIcon={<Edit size={20} />}
-              onClick={onEdit}
-              sx={{ 
-                position: 'absolute',
-                right: 24,
-                top: 24,
-                color: '#0066CC',
-              }}
-            >
-              Edit
-            </Button>
-          )}
+        {/* Subtitle */}
+        <Typography 
+          variant="subtitle1"
+          sx={{
+            color: '#0066CC',
+            fontSize: '1.1rem',
+            fontWeight: 400,
+            opacity: 0.9,
+            fontFamily: "'Noto Sans KR', sans-serif",
+          }}
+        >
+          {subtitle}
+        </Typography>
+
+        {thumbnail && (
+        <Box sx={{ 
+          width: '100%', 
+          height: '300px', 
+          position: 'relative',
+          mb: 4,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}>
+          <img
+            src={URL.createObjectURL(thumbnail)}
+            alt="Post thumbnail"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
         </Box>
+      )}
+
+        {/* Edit Button */}
+        {onEdit && (
+          <Button
+            startIcon={<Edit size={20} />}
+            onClick={onEdit}
+            sx={{ 
+              position: 'absolute',
+              right: 24,
+              top: 24,
+              color: '#0066CC',
+            }}
+          >
+            Edit
+          </Button>
+        )}
+      </Box>
 
         {/* Content Section */}
         <Box sx={{ padding: theme.spacing(4) }}>
@@ -126,117 +147,84 @@ function ViewPost({ title, subtitle, content, files, links, onEdit }) {
           </Box>
         </Box>
 
-        {/* Files Section */}
-        {files && files.length > 0 && (
+        {(files.length > 0 || links.length > 0) && (
           <Box sx={{ 
             padding: theme.spacing(4),
-            backgroundColor: theme.palette.grey[50],
-            borderTop: `1px solid ${theme.palette.divider}`,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2
           }}>
-            <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-              첨부 자료
-            </Typography>
-            <Grid container spacing={3}>
-              {files.map((file, index) => {
-                const isImage = file.type.startsWith('image/');
-                const isPdf = file.type === 'application/pdf';
-                return (
-                  <Grid item xs={12} sm={6} md={4} key={index}>
-                    <Paper
-                      onClick={() => handleFileClick(file)}
-                      sx={{
-                        cursor: 'pointer',
-                        overflow: 'hidden',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: theme.shadows[4],
-                        },
-                      }}
-                    >
-                      <Box sx={{
-                        height: 200,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: theme.palette.grey[100],
-                      }}>
-                        {isImage ? (
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={file.name}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                            }}
-                          />
-                        ) : isPdf ? (
-                          <FileText size={48} color="#0066CC" />
-                        ) : (
-                          <FileText size={48} color={theme.palette.grey[500]} />
-                        )}
-                      </Box>
-                      <Box sx={{ p: 2 }}>
-                        <Typography variant="body2" noWrap>
-                          {file.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {(file.size / (1024 * 1024)).toFixed(2)} MB
-                        </Typography>
-                      </Box>
-                    </Paper>
-                  </Grid>
-                );
-              })}
-            </Grid>
+            {files.map((fileItem, index) => (
+              <Box
+                key={`file-${index}`}
+                sx={{
+                  border: '1px dashed #6366F1',
+                  borderRadius: '8px',
+                  p: 2,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                  },
+                }}
+                onClick={() => handleFileClick(fileItem.file)}
+              >
+                <Typography sx={{ 
+                  color: '#6366F1',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  mb: 0.5
+                }}>
+                  {fileItem.file.name}
+                </Typography>
+                {fileItem.description && (
+                  <Typography sx={{ 
+                    color: '#6B7280',
+                    fontSize: '0.875rem'
+                  }}>
+                    {fileItem.description}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+
+            {links.map((linkItem, index) => (
+              <Box
+                key={`link-${index}`}
+                component="a"
+                href={linkItem.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  border: '1px dashed #6366F1',
+                  borderRadius: '8px',
+                  p: 2,
+                  textDecoration: 'none',
+                  display: 'block',
+                  '&:hover': {
+                    backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                  },
+                }}
+              >
+                <Typography sx={{ 
+                  color: '#6366F1',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  mb: 0.5
+                }}>
+                  {linkItem.url.split('/').pop() || linkItem.url}
+                </Typography>
+                {linkItem.description && (
+                  <Typography sx={{ 
+                    color: '#6B7280',
+                    fontSize: '0.875rem'
+                  }}>
+                    {linkItem.description}
+                  </Typography>
+                )}
+              </Box>
+            ))}
           </Box>
         )}
-
-        {/* Links Section */}
-        {links && links.length > 0 && (
-          <Box sx={{ 
-            padding: theme.spacing(4),
-            borderTop: `1px solid ${theme.palette.divider}`,
-          }}>
-            <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-              첨부 링크
-            </Typography>
-            <Grid container spacing={2}>
-              {links.map((link, index) => (
-                <Grid item xs={12} key={index}>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      '&:hover': {
-                        backgroundColor: theme.palette.grey[50],
-                      },
-                    }}
-                  >
-                    <LinkIcon size={20} color="#0066CC" />
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: '#0066CC',
-                        textDecoration: 'none',
-                        flex: 1,
-                      }}
-                    >
-                      {link}
-                    </a>
-                    <ExternalLinkIcon size={16} color="#0066CC" />
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        )}
-
         {/* File Preview Dialog */}
         <Dialog
           open={Boolean(selectedFile)}
