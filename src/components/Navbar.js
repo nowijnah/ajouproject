@@ -59,7 +59,6 @@ export default function Navbar() {
       <Toolbar sx={styles.toolbar}>
         <LogoComponent />
         <div style={styles.rightGroup}>
-          <Typography variant='body2' color="#000000" sx={styles.text}>Contact</Typography>
           <RouterLink to="/portfolio" style={styles.link}>
             <Typography variant='body2' color="#000000" sx={styles.text}>포트폴리오</Typography>
           </RouterLink>
@@ -69,7 +68,9 @@ export default function Navbar() {
           <RouterLink to="/lab" style={styles.link}>
           <Typography variant='body2' color="#000000" sx={styles.text}>연구실</Typography>
           </RouterLink>
+          <RouterLink to="/mypage" style={styles.link}>
           <Typography variant='body2' color="#000000" sx={styles.text}>MyPage</Typography>
+          </RouterLink>
           <button style={styles.button}>Sign in</button>
           <button style={styles.button}>Register</button>
         </div>
