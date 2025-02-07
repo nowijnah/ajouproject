@@ -24,9 +24,9 @@
     "babel-loader": "^8.2.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "webpack": "^5.73.0",
+    "webpack": "^5.97.1",
     "webpack-cli": "^4.10.0",
-    "webpack-dev-server": "^4.13.2"
+    "webpack-dev-server": "^4.15.2"
   },
   "scripts": {
     "start": "webpack-dev-server --open --mode development --port 3000",
