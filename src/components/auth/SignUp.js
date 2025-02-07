@@ -26,7 +26,6 @@ import {
 import { auth, db } from '../../firebase';  // firebase 설정 파일 경로에 맞게 수정
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-
 const AJOU_BLUE = '#0A2B5D';
 
 export const SignUp = () => {
@@ -52,7 +51,14 @@ export const SignUp = () => {
     }
 
     try {
+
+      if (!email || !password || !displayName || !description) {
+        setError('모든 필드를 입력해주세요.');
+        return;
+      }
+
       const result = await createUserWithEmailAndPassword(auth, email, password);
+
       await setDoc(doc(db, 'users', result.user.uid), {
         userId: result.user.uid,
         email,
@@ -62,6 +68,7 @@ export const SignUp = () => {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      
       navigate('/');
     } catch (error) {
       setError('회원가입에 실패했습니다.');
