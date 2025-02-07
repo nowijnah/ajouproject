@@ -9,6 +9,7 @@
     "@mui/icons-material": "^5.16.14",
     "@mui/material": "^5.16.14",
     "@react-pdf/renderer": "^4.1.6",
+    "firebase": "^11.2.0",
     "lucide-react": "^0.474.0",
     "react-markdown": "^9.0.3",
     "react-pdf": "^9.2.1",
