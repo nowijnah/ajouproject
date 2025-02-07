@@ -1,10 +1,8 @@
-// App.js
 import React from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline, Box } from '@mui/material';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-//import PortfolioList from './components/portfolio/PortfolioList';
 import Home from './pages/Home';
 import PortfolioPage from './pages/PortfolioPage';
 import CompanyPage from './pages/CompanyPage';

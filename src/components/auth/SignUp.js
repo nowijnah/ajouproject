@@ -23,7 +23,7 @@ import {
   signInWithPopup, 
   GoogleAuthProvider,
 } from 'firebase/auth';
-import { auth, db } from '../../firebase';  // firebase 설정 파일 경로에 맞게 수정
+import { auth, db } from '../../firebase'; 
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const AJOU_BLUE = '#0A2B5D';
@@ -92,7 +92,6 @@ export const SignUp = () => {
         return;
       }
 
-      // 추가 정보 입력을 위한 상태 업데이트
       setShowDescriptionForm(true);
       setTempUserData(result.user);
     } catch (error) {
@@ -112,7 +111,7 @@ export const SignUp = () => {
         email: tempUserData.email,
         displayName: tempUserData.displayName,
         description,
-        role: role === 0 ? 'STUDENT' : 'PROFESSOR',
+        role: 'STUDENT',
         profileImage: tempUserData.photoURL,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -187,8 +186,7 @@ export const SignUp = () => {
             }
           }}
         >
-          <Tab label="학생" />
-          <Tab label="교수" />
+          <Tab label="학생/교수" />
           <Tab label="기업" />
         </Tabs>
 
