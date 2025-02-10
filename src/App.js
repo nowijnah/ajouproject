@@ -1,3 +1,4 @@
+// App.js
 import React from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline, Box } from '@mui/material';
@@ -42,7 +43,7 @@ export default function App() {
             <Route path='/mypage' element={<MyPage />} />
             <Route path="/upload" element={<UploadPost />} />   
             <Route path="/signup" element={<SignUp />} /> 
-            <Route path="/signin" element={<SignIn />} />       
+            <Route path="/signin" element={<SignIn />} />            
           </Routes>
         </Box>
         <Footer />

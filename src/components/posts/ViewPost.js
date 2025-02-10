@@ -54,6 +54,7 @@ function ViewPost() {
   }, [postId]);
 
   // 파일 미리보기 핸들러
+
   const handleFileClick = (file) => {
     setSelectedFile(file);
   };
