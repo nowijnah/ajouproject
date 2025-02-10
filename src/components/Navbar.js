@@ -1,4 +1,3 @@
-// components/Navbar.js
 import React from 'react';
 import { Typography, AppBar, Toolbar, Button } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
@@ -71,8 +70,12 @@ export default function Navbar() {
           <RouterLink to="/mypage" style={styles.link}>
           <Typography variant='body2' color="#000000" sx={styles.text}>MyPage</Typography>
           </RouterLink>
-          <button style={styles.button}>Sign in</button>
-          <button style={styles.button}>Register</button>
+          <RouterLink to="/signin" style={{ textDecoration: 'none' }}>
+            <button style={styles.button}>Sign in</button>
+          </RouterLink>
+          <RouterLink to="/signup" style={{ textDecoration: 'none' }}>
+            <button style={styles.button}>Register</button>
+          </RouterLink>
         </div>
       </Toolbar>
     </AppBar>
