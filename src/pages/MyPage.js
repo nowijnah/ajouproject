@@ -29,12 +29,21 @@ const MyPage = () => {
   const portfolios = [
     {
       id: 1,
-      title: "예코딩",
-      description: "팀스 지원 및 관리",
-      image: "/dnag.png",
-      likes: 12,
+      title: "에코잉",
+      description: "환경 문제에 대한 젊은층의 관심도 저하를 해결하고자 게임화 요소를 적용한 탄소 저감 앱",
+      image: "/ecoing.png",
+      likes: 1,
+      comments: 0,
+      tags: ["Flutter", "Firebase", "Dart", "JavaScript"]
+    },
+    {
+      id: 2,
+      title: "ML_TeamProject_24SS",
+      description: "반려견의 백내장을 진단하는 AI 모델 개발 프로젝트에서, 초기 모델 리서치와 데이터 전처리 파트를 담당",
+      image: "/dog.png",
+      likes: 7,
       comments: 5,
-      tags: ["웹개발", "리액트이야요"]
+      tags: ["ViT", "AI", "ML", "CNN"]
     },
   ];
 
@@ -62,7 +71,7 @@ const MyPage = () => {
             color: 'rgb(0, 51, 161)',
             mb: 1 
           }}>
-            한지원
+            권세빈
           </Typography>
           <Typography variant="h5" sx={{ 
             ...fontStyle,

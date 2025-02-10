@@ -5,15 +5,15 @@ import { filters } from '../components/common/ContentList';
 const SAMPLE_PORTFOLIOS = [
   {
     id: 1,
-    title: "2024-1학기 소프트콘",
-    description: "강수빈",
-    image: "/logo.png",
+    title: "에코잉",
+    description: "한지원",
+    image: "/ecoing.png",
   },
   {
     id: 2,
     title: "2024-1 파란학기",
-    description: "한지원",
-    image: "/dnag.png",
+    description: "강수빈",
+    image: "/dog.png",
   },
   // ... 기존 포트폴리오 데이터
 ];
