@@ -168,7 +168,7 @@ export const contentCardStyles = {
     maxHeight: '100%',
     width: 'auto',
     height: 'auto',
-    objectFit: 'contain'
+    objectFit: 'cover'
   },
   title: {
     fontSize: { xs: '1rem', sm: '1.25rem' },
