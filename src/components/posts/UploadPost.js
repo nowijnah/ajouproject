@@ -1,4 +1,3 @@
-// UploadPage.js
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
@@ -86,12 +85,14 @@ function UploadPost({ onSave }) {
 
 
   // 썸네일 핸들러
+
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setThumbnail(file);
     } else {
-      alert('이미지 파일을 선택해주세요.');
+      // 에러 핸들링 추가하기
+      alert('이미지 파일을 선택하세요.');
     }
   };
 
@@ -337,6 +338,7 @@ function UploadPost({ onSave }) {
         </Box>
   
         <form onSubmit={handleSubmit}>
+
           {/* Title and Subtitle Fields */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12}>
@@ -562,6 +564,7 @@ function UploadPost({ onSave }) {
           <Box sx={{ mb: 4 }}>
             <Typography variant="h6" gutterBottom>
               링크 추가
+
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
@@ -569,7 +572,7 @@ function UploadPost({ onSave }) {
                 type="url"
                 value={newLink}
                 onChange={(e) => setNewLink(e.target.value)}
-                placeholder="URL을 입력하세요"
+                placeholder="URL을 입력하세요
                 variant="outlined"
               />
               <TextField
@@ -621,7 +624,7 @@ function UploadPost({ onSave }) {
               </List>
             )}
           </Box>
-  
+
           {/* Submit Button */}
           <Button
             type="submit"
@@ -642,5 +645,4 @@ function UploadPost({ onSave }) {
     </Container>
   );
 }
-
 export default UploadPost;
