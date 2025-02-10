@@ -23,16 +23,8 @@ import {
   signInWithPopup, 
   GoogleAuthProvider,
 } from 'firebase/auth';
-<<<<<<< HEAD
 import { auth, db } from '../../firebase'; 
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-
-=======
-import { auth, db } from '../../firebase';  // firebase 설정 파일 경로에 맞게 수정
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-
-
->>>>>>> d858f3a (signup&signin)
 const AJOU_BLUE = '#0A2B5D';
 
 export const SignUp = () => {
@@ -58,7 +50,6 @@ export const SignUp = () => {
     }
 
     try {
-<<<<<<< HEAD
 
       if (!email || !password || !displayName || !description) {
         setError('모든 필드를 입력해주세요.');
@@ -67,9 +58,6 @@ export const SignUp = () => {
 
       const result = await createUserWithEmailAndPassword(auth, email, password);
 
-=======
-      const result = await createUserWithEmailAndPassword(auth, email, password);
->>>>>>> d858f3a (signup&signin)
       await setDoc(doc(db, 'users', result.user.uid), {
         userId: result.user.uid,
         email,
@@ -79,10 +67,7 @@ export const SignUp = () => {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-<<<<<<< HEAD
-      
-=======
->>>>>>> d858f3a (signup&signin)
+
       navigate('/');
     } catch (error) {
       setError('회원가입에 실패했습니다.');
@@ -106,10 +91,7 @@ export const SignUp = () => {
         return;
       }
 
-<<<<<<< HEAD
-=======
       // 추가 정보 입력을 위한 상태 업데이트
->>>>>>> d858f3a (signup&signin)
       setShowDescriptionForm(true);
       setTempUserData(result.user);
     } catch (error) {
@@ -129,11 +111,7 @@ export const SignUp = () => {
         email: tempUserData.email,
         displayName: tempUserData.displayName,
         description,
-<<<<<<< HEAD
         role: 'STUDENT',
-=======
-        role: role === 0 ? 'STUDENT' : 'PROFESSOR',
->>>>>>> d858f3a (signup&signin)
         profileImage: tempUserData.photoURL,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
