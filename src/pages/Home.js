@@ -41,7 +41,7 @@ function Home() {
     '& img': { 
       width: '100%',
       height: '100%',
-      objectFit: 'contain'
+      objectFit: 'cover'
     }
   };
 
@@ -108,7 +108,7 @@ function Home() {
               <RouterLink to="/portfolio" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <Box sx={sectionStyle}>
                   <Box sx={imageBoxStyle}>
-                    <img src="/dnag.png" alt="학생 포트폴리오" />
+                    <img src="/student.png" alt="학생 포트폴리오" />
                   </Box>
                   <Box sx={contentBoxStyle}>
                     <Typography variant="h5" sx={{ 
@@ -131,7 +131,7 @@ function Home() {
               <RouterLink to="/lab" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <Box sx={sectionStyle}>
                   <Box sx={imageBoxStyle}>
-                    <img src="/dnag.png" alt="연구실 목록" />
+                    <img src="/lab.png" alt="연구실 목록" />
                   </Box>
                   <Box sx={contentBoxStyle}>
                     <Typography variant="h5" sx={{ 
@@ -153,7 +153,7 @@ function Home() {
               <RouterLink to="/company" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <Box sx={sectionStyle}>
                   <Box sx={imageBoxStyle}>
-                    <img src="/dnag.png" alt="기업 뉴스" />
+                    <img src="/company.png" alt="기업 뉴스" />
                   </Box>
                   <Box sx={contentBoxStyle}>
                     <Typography variant="h5" sx={{ 
@@ -219,7 +219,7 @@ function Home() {
                 </Typography>
                 
 {/* 이미지 컨테이너 */}
-<Box sx={{ 
+                <Box sx={{ 
                   display: 'flex', 
                   gap: 2,
                   mt: 3,
@@ -236,14 +236,14 @@ function Home() {
                     height: { xs: '200px', sm: '240px' },
                     overflow: 'hidden'
                   }}>
-                    <img src="/dnag.png" alt="포트폴리오 예시 1" />
+                    <img src="/guide1.png" alt="포트폴리오 예시 1" />
                   </Box>
                   <Box sx={{ 
                     flex: 1,
                     height: { xs: '200px', sm: '240px' },
                     overflow: 'hidden'
                   }}>
-                    <img src="/dnag.png" alt="포트폴리오 예시 2" />
+                    <img src="/guide2.png" alt="포트폴리오 예시 2" />
                   </Box>
                 </Box>
 
