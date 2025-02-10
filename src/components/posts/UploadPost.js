@@ -1,140 +1,97 @@
-import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import {
-  Container,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  Box,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Grid,
-  Link,
-  Card,
-  CardContent,
-  useTheme,
-  alpha
+// UploadPage.js
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { 
+  Container, Paper, Typography, Box, Grid, TextField,
+  Button, IconButton, List, ListItem,
+  useTheme 
 } from '@mui/material';
 import {
-  Delete as DeleteIcon,
-  Preview as PreviewIcon,
-  Edit as EditIcon,
-  // Link as LinkIcon,
-  Add as AddIcon,
-  Visibility as Eye,
   CloudUpload as UploadIcon,
   Close as CloseIcon,
-  Link as LinkIcon,
-  Add as PlusIcon,
-  ImageOutlined as ImageIcon
+  Add as AddIcon,
+  Visibility as EyeIcon,
+  Image as ImageIcon
 } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
-import ViewPost from '../posts/ViewPost.js';
-// import { Eye } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import { useAuth } from '../auth/AuthContext';
+import { doc, collection, addDoc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage, db } from '../../firebase';
+import ViewPost from './ViewPost';
 
-const StyledInput = styled('input')({
-  display: 'none',
-});
+function UploadPost({ onSave }) {
+  const { postId } = useParams();
+  const { currentUser } = useAuth();
+  const theme = useTheme();
+  const textAreaRef = useRef(null);
 
-const MarkdownPreview = styled(Box)(({ theme }) => ({
-  height: '400px',
-  overflowY: 'auto',
-  padding: theme.spacing(2),
-  backgroundColor: theme.palette.grey[50],
-  borderRadius: theme.shape.borderRadius,
-  border: `1px solid ${theme.palette.divider}`,
-  '& img': {
-    maxWidth: '100%',
-  },
-}));
+  // 기본 정보 states
+  const [title, setTitle] = useState('');
+  const [subtitle, setSubtitle] = useState('');
+  const [markdownContent, setMarkdownContent] = useState('');
+  const [isPreview, setIsPreview] = useState(false);
 
-const MarkdownEditor = styled(TextField)(({ theme }) => ({
-  '& .MuiInputBase-root': {
-    height: '400px',
-    '& textarea': {
-      height: '100% !important',
-    },
-  },
-}));
+  // 파일 관련 states
+  const [thumbnail, setThumbnail] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
 
-function UploadPost({ savedContent, onSave }) {
-    const theme = useTheme();
-    const [title, setTitle] = useState(savedContent?.title || '');
-    const [subtitle, setSubtitle] = useState(savedContent?.subtitle || '');
-    const [markdownContent, setMarkdownContent] = useState(savedContent?.content || '');
-    const [files, setFiles] = useState(savedContent?.files || []);
-    const [links, setLinks] = useState(savedContent?.links || []);
-    const [newLink, setNewLink] = useState('');
-    const [newLinkDescription, setNewLinkDescription] = useState('');
-    const [selectedFileDescription, setSelectedFileDescription] = useState('');
-    const [isPreview, setIsPreview] = useState(false);
-    const [thumbnail, setThumbnail] = useState(savedContent?.thumbnail || null);
+  // 링크 관련 states
+  const [links, setLinks] = useState([]);
+  const [newLink, setNewLink] = useState('');
+  const [newLinkDescription, setNewLinkDescription] = useState('');
+
+  const navigate = useNavigate();
   
-    const handleFileChange = (e) => {
-      const selectedFiles = Array.from(e.target.files);
-      // 파일 선택시 설명 입력 다이얼로그 표시 또는 바로 입력 필드 표시
-      selectedFiles.forEach(file => {
-        setFiles(prev => [...prev, {
-          file: file,
-          description: ''  // 사용자가 입력할 설명
-        }]);
-      });
-    };
-    
-    const updateFileDescription = (index, description) => {
-      setFiles(prev => prev.map((item, i) => 
-        i === index ? { ...item, description } : item
-      ));
-    };
-    
-    const handleLinkAdd = (e) => {
-      e.preventDefault();
-      if (newLink.trim()) {
-        setLinks(prev => [...prev, {
-          url: newLink.trim(),
-          description: newLinkDescription.trim()
-        }]);
-        setNewLink('');
-        setNewLinkDescription('');
+  // 기존 포스트 데이터 불러오기
+  useEffect(() => {
+    const fetchPost = async () => {
+      if (postId) {
+        try {
+          const postDoc = await getDoc(doc(db, 'posts', postId));
+          if (postDoc.exists()) {
+            const data = postDoc.data();
+            // 각 state 설정
+            setTitle(data.title);
+            setSubtitle(data.subtitle || '');
+            setMarkdownContent(data.content);
+            setThumbnail(data.thumbnail || null);
+            
+            // 기존 파일 데이터 설정
+            if (data.files) {
+              setFiles(data.files.map(file => ({
+                ...file,
+                fileId: file.fileId || `file-${Date.now()}-${Math.random()}`
+              })));
+            }
+            
+            // 기존 링크 데이터 설정
+            if (data.links) {
+              setLinks(data.links.map(link => ({
+                ...link,
+                linkId: link.linkId || `link-${Date.now()}-${Math.random()}`
+              })));
+            }
+          }
+        } catch (error) {
+          console.error('Error loading post:', error);
+          alert('게시글을 불러오는데 실패했습니다.');
+        }
       }
-    };    
-
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const removeLink = (index) => {
-    setLinks(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const content = {
-      title,
-      subtitle,
-      thumbnail,
-      content: markdownContent,
-      files,
-      links,
-      timestamp: new Date().toISOString(),
     };
-    if (onSave) {
-      onSave(content);
-    }
-    setIsPreview(true);
-  };
 
+    fetchPost();
+  }, [postId]);
+
+
+  // 썸네일 핸들러
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setThumbnail(file);
     } else {
-      // 에러 핸들링 추가하기
-      alert('이미지 파일을 선택하세요.');
+      alert('이미지 파일을 선택해주세요.');
     }
   };
 
@@ -142,37 +99,244 @@ function UploadPost({ savedContent, onSave }) {
     setThumbnail(null);
   };
 
+  // 파일 핸들러
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    selectedFiles.forEach(file => {
+      const fileType = file.type.startsWith('image/') ? 'IMAGE' 
+                    : file.type === 'application/pdf' ? 'PDF' 
+                    : 'DOC';
+      setFiles(prev => [...prev, {
+        fileId: `file-${Date.now()}-${Math.random()}`,
+        file: file,
+        type: fileType,
+        description: ''
+      }]);
+    });
+  };
+
+  const updateFileDescription = (fileId, description) => {
+    setFiles(prev => prev.map(file => 
+      file.fileId === fileId ? { ...file, description } : file
+    ));
+  };
+
+  const removeFile = (fileId) => {
+    setFiles(prev => prev.filter(file => file.fileId !== fileId));
+  };
+
+  // 링크 핸들러
+  const handleLinkAdd = (e) => {
+    e.preventDefault();
+    if (newLink.trim()) {
+      const type = newLink.includes('github.com') ? 'GITHUB'
+                 : newLink.includes('youtube.com') ? 'YOUTUBE'
+                 : 'WEBSITE';
+      
+      setLinks(prev => [...prev, {
+        linkId: `link-${Date.now()}-${Math.random()}`,
+        url: newLink.trim(),
+        title: newLinkDescription.trim() || newLink.trim(),
+        type
+      }]);
+      setNewLink('');
+      setNewLinkDescription('');
+    }
+  };
+
+  const removeLink = (linkId) => {
+    setLinks(prev => prev.filter(link => link.linkId !== linkId));
+  };
+
+  // 드래그 & 드롭 핸들러
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const validFiles = files.filter(file => 
+      file.type.startsWith('image/') || file.type === 'application/pdf'
+    );
+
+    if (validFiles.length > 0) {
+      const textArea = textAreaRef.current;
+      const cursorPosition = textArea.selectionStart;
+      
+      for (const file of validFiles) {
+        const markdown = file.type === 'application/pdf' 
+          ? `[PDF: ${file.name}](${URL.createObjectURL(file)})\n`
+          : `![${file.name}](${URL.createObjectURL(file)})\n`;
+        
+        const newContent = markdownContent.slice(0, cursorPosition) + 
+                       markdown + 
+                       markdownContent.slice(cursorPosition);
+        
+        setMarkdownContent(newContent);
+        
+        const fileType = file.type.startsWith('image/') ? 'IMAGE' : 'PDF';
+        setFiles(prev => [...prev, {
+          fileId: `file-${Date.now()}-${Math.random()}`,
+          file: file,
+          type: fileType,
+          description: ''
+        }]);
+      }
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+  
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+  
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      let thumbnailUrl = thumbnail;
+      // 새로운 썸네일이 파일 객체인 경우에만 업로드
+      if (thumbnail instanceof File) {
+        const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${thumbnail.name}`);
+        const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnail);
+        thumbnailUrl = await getDownloadURL(thumbnailSnapshot.ref);
+      }
+
+      // 새로운 파일들만 업로드
+      const uploadedFiles = await Promise.all(
+        files.map(async (fileItem) => {
+          // 이미 업로드된 파일은 그대로 사용
+          if (fileItem.url) {
+            return fileItem;
+          }
+          // 새로운 파일 업로드
+          const fileRef = ref(storage, `files/${currentUser.uid}/${Date.now()}-${fileItem.file.name}`);
+          const fileSnapshot = await uploadBytes(fileRef, fileItem.file);
+          const url = await getDownloadURL(fileSnapshot.ref);
+          
+          return {
+            fileId: fileItem.fileId,
+            url: url,
+            filename: fileItem.file.name,
+            type: fileItem.type,
+            description: fileItem.description
+          };
+        })
+      );
+
+      const updatedData = {
+        title,
+        subtitle,
+        content: markdownContent,
+        files: uploadedFiles,
+        links,
+        thumbnail: thumbnailUrl,
+        updatedAt: serverTimestamp()
+      };
+
+      if (postId) {
+        // 기존 포스트 수정
+        await updateDoc(doc(db, 'posts', postId), updatedData);
+      } else {
+        // 새 포스트 작성
+        updatedData.authorId = currentUser.uid;
+        updatedData.type = 'PORTFOLIO';
+        updatedData.likeCount = 0;
+        updatedData.commentCount = 0;
+        updatedData.createdAt = serverTimestamp();
+        
+        const docRef = await addDoc(collection(db, 'posts'), updatedData);
+      }
+
+      // 성공 메시지 표시
+      alert(postId ? '게시글이 수정되었습니다.' : '게시글이 작성되었습니다.');
+      // 게시글 보기 페이지로 이동
+      navigate(`/posts/${postId || docRef.id}`);
+
+    } catch (error) {
+      console.error('Error:', error);
+      alert(`업로드 중 오류 발생: ${error.message}`);
+    }
+  };
+
   if (isPreview) {
+    const previewData = {
+      postId: postId || 'preview-id',
+      authorId: currentUser.uid,
+      type: 'PORTFOLIO',
+      title,
+      subtitle,
+      content: markdownContent,
+      files: files.map(file => ({
+        fileId: file.fileId,
+        url: file.url || URL.createObjectURL(file.file),
+        filename: file.file.name || file.filename,
+        type: file.type,
+        description: file.description
+      })),
+      links,
+      likeCount: 0,
+      commentCount: 0,
+      thumbnail: thumbnail instanceof File ? URL.createObjectURL(thumbnail) : thumbnail,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
     return (
       <ViewPost
-        title={title}
-        subtitle={subtitle}
-        content={markdownContent}
-        thumbnail={thumbnail}
-        files={files}
-        links={links}
+        postData={previewData}
+        authorData={{
+          userId: currentUser.uid,
+          displayName: currentUser.displayName,
+          profileImage: currentUser.photoURL,
+          role: currentUser.role || 'STUDENT'
+        }}
+        currentUser={currentUser}
+        likeData={[]}
+        onLike={() => {}}
         onEdit={() => setIsPreview(false)}
       />
     );
   }
 
+  
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Typography variant="h4" component="h1">글 작성하기</Typography>
+        {/* Header */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 4 
+        }}>
+          <Typography variant="h4" component="h1">
+            {postId ? '포트폴리오 수정' : '포트폴리오 작성'}
+          </Typography>
           {(title || markdownContent) && (
             <Button
-              startIcon={<Eye size={20} />}
+              startIcon={<EyeIcon />}
               onClick={() => setIsPreview(true)}
               sx={{ color: '#0066CC' }}
             >
-              Preview
+              미리보기
             </Button>
           )}
         </Box>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
+  
+        <form onSubmit={handleSubmit}>
           {/* Title and Subtitle Fields */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12}>
@@ -181,20 +345,8 @@ function UploadPost({ savedContent, onSave }) {
                 label="제목"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                required
                 variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '&:hover fieldset': {
-                      borderColor: '#0066CC',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#0066CC',
-                    },
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#0066CC',
-                  },
-                }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -204,25 +356,12 @@ function UploadPost({ savedContent, onSave }) {
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
                 variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '&:hover fieldset': {
-                      borderColor: '#0066CC',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#0066CC',
-                    },
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#0066CC',
-                  },
-                }}
               />
             </Grid>
           </Grid>
-
-          {/* 섬네일 추가 */}
-          <Grid item xs={12}>
+  
+          {/* Thumbnail Section */}
+          <Grid item xs={12} sx={{ mb: 4 }}>
             <Typography variant="subtitle1" gutterBottom>
               대표 이미지
             </Typography>
@@ -232,14 +371,11 @@ function UploadPost({ savedContent, onSave }) {
               borderRadius: 1,
               p: 2,
               position: 'relative',
-              '&:hover': {
-                borderColor: 'primary.main',
-              },
             }}>
               {thumbnail ? (
                 <Box sx={{ position: 'relative' }}>
                   <img
-                    src={URL.createObjectURL(thumbnail)}
+                    src={thumbnail instanceof File ? URL.createObjectURL(thumbnail) : thumbnail}
                     alt="Thumbnail preview"
                     style={{
                       width: '100%',
@@ -258,7 +394,7 @@ function UploadPost({ savedContent, onSave }) {
                       '&:hover': { bgcolor: 'grey.100' },
                     }}
                   >
-                    <CloseIcon size={20} />
+                    <CloseIcon />
                   </IconButton>
                 </Box>
               ) : (
@@ -280,170 +416,129 @@ function UploadPost({ savedContent, onSave }) {
                     accept="image/*"
                     onChange={handleThumbnailChange}
                   />
-                  <ImageIcon size={40} />
+                  <ImageIcon sx={{ fontSize: 40 }} />
                   <Typography>대표 이미지 추가</Typography>
                 </Button>
               )}
             </Box>
           </Grid>
-
-          {/* Markdown Editor */}
-          <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom>
-              내용 (Markdown)
-            </Typography>
-            <MarkdownEditor
-              fullWidth
-              multiline
-              variant="outlined"
-              value={markdownContent}
-              onChange={(e) => setMarkdownContent(e.target.value)}
-              placeholder="Write your content in Markdown..."
-            />
-          </Grid>
-
-          {/* Preview */}
-          <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom>
-              미리보기
-            </Typography>
-            <MarkdownPreview>
-              <ReactMarkdown>{markdownContent}</ReactMarkdown>
-            </MarkdownPreview>
-          </Grid>
-
-          {/* File Upload */}
-          <Grid item xs={12}>
-            <Card sx={{ mt: 2 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  파일 첨부
-                </Typography>
-                <Box sx={{ mb: 2 }}>
-                  <label htmlFor="file-upload">
-                    <StyledInput
-                      id="file-upload"
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                    />
-                    <Button variant="contained" component="span"
-                    style={{ backgroundColor: '#0066CC' }}>
-                      Choose Files
-                    </Button>
-                  </label>
-                </Box>
-
-                {files.length > 0 && (
-                  <List>
-                    {files.map((file, index) => (
-                      <ListItem key={index}>
-                        <ListItemText primary={file.name} />
-                        <ListItemSecondaryAction>
-                          <IconButton edge="end" onClick={() => removeFile(index)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-{/* File List */}
-{files.length > 0 && (
-            <List sx={{ mt: 2 }}>
-              {files.map((fileItem, index) => (
-                <ListItem 
-                  key={index}
-                  sx={{ 
-                    bgcolor: 'grey.50',
-                    borderRadius: 1,
-                    mb: 1,
-                    flexDirection: 'column',
-                    alignItems: 'stretch'
-                  }}
-                >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <Typography>{fileItem.file.name}</Typography>
-                    <IconButton 
-                      onClick={() => removeFile(index)}
-                      sx={{ color: 'error.main' }}
-                    >
-                      <CloseIcon />
-                    </IconButton>
-                  </Box>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="파일 설명 입력"
-                    value={fileItem.description}
-                    onChange={(e) => updateFileDescription(index, e.target.value)}
-                    sx={{ mt: 1 }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-          
-          {/* Links Section */}
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Add Links
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField
-                fullWidth
-                type="url"
-                value={newLink}
-                onChange={(e) => setNewLink(e.target.value)}
-                placeholder="Enter URL"
-                variant="outlined"
-              />
-              <TextField
-                fullWidth
-                value={newLinkDescription}
-                onChange={(e) => setNewLinkDescription(e.target.value)}
-                placeholder="링크 설명 입력"
-                variant="outlined"
-              />
-              <Button
-                onClick={handleLinkAdd}
-                variant="outlined"
-                startIcon={<PlusIcon />}
-                sx={{ alignSelf: 'flex-end' }}
+  
+          {/* Markdown Editor and Preview */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                내용 작성
+              </Typography>
+              <Box
+                sx={{
+                  position: 'relative',
+                  '& .MuiTextField-root': {
+                    backgroundColor: isDragging ? 'rgba(0, 102, 204, 0.05)' : 'transparent',
+                  },
+                }}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
-                Add Link
-              </Button>
-            </Box>
-
-            {/* Added Links List */}
-            {links.length > 0 && (
-              <List sx={{ mt: 2 }}>
-                {links.map((linkItem, index) => (
+                {isDragging && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                      border: '2px dashed #0066CC',
+                      borderRadius: 1,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Typography variant="body1" color="primary">
+                      파일을 여기에 놓아주세요
+                    </Typography>
+                  </Box>
+                )}
+                <TextField
+                  inputRef={textAreaRef}
+                  fullWidth
+                  multiline
+                  rows={15}
+                  value={markdownContent}
+                  onChange={(e) => setMarkdownContent(e.target.value)}
+                  placeholder="마크다운으로 내용을 작성해주세요. 이미지나 PDF 파일을 드래그하여 추가할 수 있습니다."
+                  variant="outlined"
+                  required
+                />
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                미리보기
+              </Typography>
+              <Box sx={{
+                height: '400px',
+                overflow: 'auto',
+                p: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'grey.50'
+              }}>
+                <ReactMarkdown>{markdownContent}</ReactMarkdown>
+              </Box>
+            </Grid>
+          </Grid>
+  
+          {/* Files Section */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              파일 첨부
+            </Typography>
+            <Button
+              component="label"
+              variant="outlined"
+              startIcon={<UploadIcon />}
+              sx={{ mb: 2 }}
+            >
+              파일 선택
+              <input
+                type="file"
+                hidden
+                multiple
+                onChange={handleFileChange}
+              />
+            </Button>
+  
+            {files.length > 0 && (
+              <List>
+                {files.map((file) => (
                   <ListItem 
-                    key={index}
+                    key={file.fileId}
                     sx={{ 
                       bgcolor: 'grey.50',
                       borderRadius: 1,
                       mb: 1,
+                      display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'stretch'
                     }}
                   >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <Typography 
-                        sx={{ 
-                          color: '#0066CC',
-                          textDecoration: 'none',
-                          '&:hover': { textDecoration: 'underline' }
-                        }}
-                      >
-                        {linkItem.url}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      width: '100%'
+                    }}>
+                      <Typography>
+                        {file.filename || file.file.name}
                       </Typography>
                       <IconButton 
-                        onClick={() => removeLink(index)}
+                        onClick={() => removeFile(file.fileId)}
                         sx={{ color: 'error.main' }}
                       >
                         <CloseIcon />
@@ -452,13 +547,9 @@ function UploadPost({ savedContent, onSave }) {
                     <TextField
                       fullWidth
                       size="small"
-                      placeholder="링크 설명 입력"
-                      value={linkItem.description}
-                      onChange={(e) => {
-                        const newLinks = [...links];
-                        newLinks[index] = { ...linkItem, description: e.target.value };
-                        setLinks(newLinks);
-                      }}
+                      placeholder="파일 설명 입력"
+                      value={file.description}
+                      onChange={(e) => updateFileDescription(file.fileId, e.target.value)}
                       sx={{ mt: 1 }}
                     />
                   </ListItem>
@@ -466,8 +557,73 @@ function UploadPost({ savedContent, onSave }) {
               </List>
             )}
           </Box>
-
-            <Button
+  
+          {/* Links Section */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              링크 추가
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                fullWidth
+                type="url"
+                value={newLink}
+                onChange={(e) => setNewLink(e.target.value)}
+                placeholder="URL을 입력하세요"
+                variant="outlined"
+              />
+              <TextField
+                fullWidth
+                value={newLinkDescription}
+                onChange={(e) => setNewLinkDescription(e.target.value)}
+                placeholder="링크 설명을 입력하세요"
+                variant="outlined"
+              />
+              <Button
+                onClick={handleLinkAdd}
+                variant="outlined"
+                startIcon={<AddIcon />}
+                sx={{ alignSelf: 'flex-end' }}
+              >
+                링크 추가
+              </Button>
+            </Box>
+  
+            {links.length > 0 && (
+              <List sx={{ mt: 2 }}>
+                {links.map((link) => (
+                  <ListItem 
+                    key={link.linkId}
+                    sx={{ 
+                      bgcolor: 'grey.50',
+                      borderRadius: 1,
+                      mb: 1
+                    }}
+                  >
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      flex: 1
+                    }}>
+                      <Typography>{link.url}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {link.title}
+                      </Typography>
+                    </Box>
+                    <IconButton 
+                      onClick={() => removeLink(link.linkId)}
+                      sx={{ color: 'error.main' }}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Box>
+  
+          {/* Submit Button */}
+          <Button
             type="submit"
             fullWidth
             variant="contained"
@@ -479,11 +635,12 @@ function UploadPost({ savedContent, onSave }) {
               },
             }}
           >
-            Submit
+            {postId ? '수정 완료' : '작성 완료'}
           </Button>
         </form>
       </Paper>
     </Container>
   );
 }
+
 export default UploadPost;

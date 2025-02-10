@@ -9,6 +9,7 @@ import CompanyPage from './pages/CompanyPage';
 import LabPage from './pages/LabPage';
 import MyPage from './pages/MyPage';
 import UploadPost from './components/posts/UploadPost';
+import ViewPost from './components/posts/ViewPost';
 import {SignIn} from './components/auth/SignIn';
 import {SignUp} from './components/auth/SignUp';
 import { AuthProvider } from './components/auth/AuthContext';
@@ -34,6 +35,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="/posts/:postId" element={<ViewPost />} />
+            <Route path="/posts/:postId/edit" element={<UploadPost />} />
             <Route path="/company" element={<CompanyPage />} />
             <Route path="/lab" element={<LabPage />} /> 
             <Route path='/mypage' element={<MyPage />} />

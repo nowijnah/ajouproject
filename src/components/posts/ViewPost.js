@@ -1,23 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate, useParams } from 'react-router-dom';
+import {useAuth} from '../auth/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
 import { 
   Container, Paper, Typography, Box, Button, 
   Grid, Dialog, DialogContent, DialogTitle, 
-  DialogActions, IconButton, useTheme
+  DialogActions, IconButton, Avatar, Tooltip,
+  useTheme 
 } from '@mui/material';
 import {
-  Edit,
-  FileText,
+  Edit as EditIcon,
+  Close as CloseIcon,
+  ThumbUp as ThumbUpIcon,
+  ThumbUpOutlined as ThumbUpOutlinedIcon,
+  FilePresent as FileIcon,
   Download as DownloadIcon,
-  X as CloseIcon,
-  Link as LinkIcon,
-  ExternalLink as ExternalLinkIcon
-} from 'lucide-react';
+  OpenInNew as OpenInNewIcon,
+  Image as ImageIcon,
+  GitHub as GitHubIcon,
+  YouTube as YouTubeIcon,
+  Link as LinkIcon
+} from '@mui/icons-material';
 
-function ViewPost({ title, subtitle, content, thumbnail, files, links, onEdit }) {
+function ViewPost() {
   const theme = useTheme();
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isLiked, setIsLiked] = useState(
+    likeData?.some(like => like.userId === currentUser?.userId) || false
+  );
+  const { postId } = useParams(); 
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const [postData, setPostData] = useState(null);
+  const [authorData, setAuthorData] = useState(null);
+  const [likeData, setLikeData] = useState([]);
 
+  useEffect(() => {
+    const fetchPost = async () => {
+      const postDoc = await getDoc(doc(db, 'posts', postId));
+      if (postDoc.exists()) {
+        setPostData({ id: postDoc.id, ...postDoc.data() });
+        
+        // 작성자 정보 가져오기
+        const authorDoc = await getDoc(doc(db, 'users', postDoc.data().authorId));
+        if (authorDoc.exists()) {
+          setAuthorData({ id: authorDoc.id, ...authorDoc.data() });
+        }
+      }
+    };
+    fetchPost();
+  }, [postId]);
+
+  // 파일 미리보기 핸들러
   const handleFileClick = (file) => {
     setSelectedFile(file);
   };
@@ -26,205 +62,340 @@ function ViewPost({ title, subtitle, content, thumbnail, files, links, onEdit })
     setSelectedFile(null);
   };
 
-  const handleDownload = (file) => {
-    const url = URL.createObjectURL(file);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // 좋아요 핸들러
+  const handleLike = () => {
+    if (!currentUser) return;
+    setIsLiked(!isLiked);
+    onLike && onLike({
+      postId: postData.postId,
+      userId: currentUser.userId,
+      isLiked: !isLiked
+    });
   };
+
+  // 작성자 프로필로 이동
+  const handleAuthorClick = () => {
+    window.location.href = `/profile/${authorData.userId}`;
+  };
+
+  // 파일 다운로드 핸들러
+  const handleDownload = (file) => {
+    window.open(file.url, '_blank');
+  };
+
+  // 링크 아이콘 선택
+  const getLinkIcon = (type) => {
+    switch (type) {
+      case 'GITHUB':
+        return <GitHubIcon />;
+      case 'YOUTUBE':
+        return <YouTubeIcon />;
+      default:
+        return <LinkIcon />;
+    }
+  };
+
+  const handleEdit = () => {
+    navigate(`/posts/${postId}/edit`);  // 수정 페이지로 이동
+  };
+
+  if (!postData || !authorData) return <div>Loading...</div>;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          borderRadius: 2,
-          overflow: 'hidden',
-        }}
-      >
-        {/* Header */}
-        <Box sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: theme.spacing(6, 2),
-          marginBottom: theme.spacing(4),
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          textAlign: 'center',
-          position: 'relative',
-        }}>
-
-        {/* Title */}
-        <Typography 
-          variant="h1" 
-          sx={{
-            color: '#0066CC',
-            fontSize: '2.5rem',
-            fontWeight: 700,
-            marginBottom: theme.spacing(1),
-            fontFamily: "'Noto Sans KR', sans-serif",
-          }}
-        >
-          {title}
-        </Typography>
-
-        {/* Subtitle */}
-        <Typography 
-          variant="subtitle1"
-          sx={{
-            color: '#0066CC',
-            fontSize: '1.1rem',
-            fontWeight: 400,
-            opacity: 0.9,
-            fontFamily: "'Noto Sans KR', sans-serif",
-          }}
-        >
-          {subtitle}
-        </Typography>
-
-        {thumbnail && (
+      <Paper elevation={0} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        {/* Author Info and Likes Section */}
         <Box sx={{ 
-          width: '100%', 
-          height: '300px', 
-          position: 'relative',
-          mb: 4,
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          p: 3, 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid',
+          borderColor: 'divider'
         }}>
-          <img
-            src={URL.createObjectURL(thumbnail)}
-            alt="Post thumbnail"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
+          <Box 
+            onClick={handleAuthorClick}
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 2,
+              cursor: 'pointer',
+              '&:hover': { opacity: 0.8 }
             }}
-          />
-        </Box>
-      )}
+          >
+            <Avatar 
+              src={authorData?.profileImage} 
+              alt={authorData?.displayName}
+              sx={{ width: 48, height: 48 }}
+            />
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                {authorData?.displayName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {authorData?.role === 'STUDENT' ? '학생' : 
+                 authorData?.role === 'COMPANY' ? '기업' :
+                 authorData?.role === 'PROFESSOR' ? '교수' : '관리자'}
+              </Typography>
+            </Box>
+          </Box>
 
-        {/* Edit Button */}
-        {onEdit && (
-          <Button
-            startIcon={<Edit size={20} />}
-            onClick={onEdit}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {currentUser ? (
+              <Tooltip title={
+                authorData?.userId === currentUser?.userId 
+                  ? `좋아요 ${postData.likeCount}개`
+                  : isLiked ? '좋아요 취소' : '좋아요'
+              }>
+                <IconButton 
+                  onClick={handleLike}
+                  sx={{ 
+                    color: isLiked ? 'primary.main' : 'grey.500',
+                    '&:hover': { color: 'primary.main' }
+                  }}
+                >
+                  {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Tooltip title="로그인이 필요합니다">
+                <span>
+                  <IconButton disabled>
+                    <ThumbUpOutlinedIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+            <Typography variant="body2" color="text.secondary">
+              {postData.likeCount}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Title Section */}
+        <Box sx={{
+          position: 'relative',
+          textAlign: 'center',
+          p: 6
+        }}>
+          <Typography 
+            variant="h1" 
+            sx={{
+              color: '#0066CC',
+              fontSize: '2.5rem',
+              fontWeight: 700,
+              mb: 2,
+              fontFamily: "'Noto Sans KR', sans-serif",
+            }}
+          >
+            {postData.title}
+          </Typography>
+
+          {postData.subtitle && (
+            <Typography 
+              variant="subtitle1"
+              sx={{
+                color: '#0066CC',
+                fontSize: '1.1rem',
+                fontWeight: 400,
+                opacity: 0.9,
+                fontFamily: "'Noto Sans KR', sans-serif",
+              }}
+            >
+              {postData.subtitle}
+            </Typography>
+          )}
+
+        {currentUser?.userId === authorData?.userId && (
+          <IconButton
+            onClick={handleEdit}
             sx={{ 
               position: 'absolute',
-              right: 24,
-              top: 24,
+              right: 16,
+              top: 16,
               color: '#0066CC',
             }}
           >
-            Edit
-          </Button>
+            <EditIcon />
+          </IconButton>
         )}
-      </Box>
+        </Box>
 
-        {/* Content Section */}
-        <Box sx={{ padding: theme.spacing(4) }}>
+        {/* Thumbnail */}
+        {postData.thumbnail && (
+          <Box sx={{ 
+            width: '100%',
+            height: '400px',
+            position: 'relative',
+            mb: 4
+          }}>
+            <img
+              src={postData.thumbnail}
+              alt="Post thumbnail"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          </Box>
+        )}
+
+        {/* Content */}
+        <Box sx={{ px: 4, py: 6 }}>
           <Box sx={{ 
             maxWidth: '800px', 
             margin: '0 auto',
             '& img': {
               maxWidth: '100%',
               height: 'auto',
-              borderRadius: 1,
+              borderRadius: theme.shape.borderRadius,
+              my: 2
             },
             '& h1, & h2, & h3, & h4, & h5, & h6': {
               color: theme.palette.text.primary,
-              marginTop: theme.spacing(3),
-              marginBottom: theme.spacing(2),
+              mt: 4,
+              mb: 2
             },
             '& p': {
-              marginBottom: theme.spacing(2),
-              lineHeight: 1.7,
+              mb: 2,
+              lineHeight: 1.7
             },
+            '& a': {
+              color: theme.palette.primary.main,
+              textDecoration: 'none',
+              '&:hover': {
+                textDecoration: 'underline'
+              }
+            }
           }}>
-            <ReactMarkdown>{content}</ReactMarkdown>
+            <ReactMarkdown>{postData.content}</ReactMarkdown>
           </Box>
         </Box>
 
-        {(files.length > 0 || links.length > 0) && (
+        {/* Files Section */}
+        {postData.files && postData.files.length > 0 && (
           <Box sx={{ 
-            padding: theme.spacing(4),
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2
+            px: 4, 
+            py: 4,
+            bgcolor: 'grey.50',
+            borderTop: '1px solid',
+            borderColor: 'divider'
           }}>
-            {files.map((fileItem, index) => (
-              <Box
-                key={`file-${index}`}
-                sx={{
-                  border: '1px dashed #6366F1',
-                  borderRadius: '8px',
-                  p: 2,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    backgroundColor: 'rgba(99, 102, 241, 0.05)',
-                  },
-                }}
-                onClick={() => handleFileClick(fileItem.file)}
-              >
-                <Typography sx={{ 
-                  color: '#6366F1',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  mb: 0.5
-                }}>
-                  {fileItem.file.name}
-                </Typography>
-                {fileItem.description && (
-                  <Typography sx={{ 
-                    color: '#6B7280',
-                    fontSize: '0.875rem'
-                  }}>
-                    {fileItem.description}
-                  </Typography>
-                )}
-              </Box>
-            ))}
-
-            {links.map((linkItem, index) => (
-              <Box
-                key={`link-${index}`}
-                component="a"
-                href={linkItem.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{
-                  border: '1px dashed #6366F1',
-                  borderRadius: '8px',
-                  p: 2,
-                  textDecoration: 'none',
-                  display: 'block',
-                  '&:hover': {
-                    backgroundColor: 'rgba(99, 102, 241, 0.05)',
-                  },
-                }}
-              >
-                <Typography sx={{ 
-                  color: '#6366F1',
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  mb: 0.5
-                }}>
-                  {linkItem.url.split('/').pop() || linkItem.url}
-                </Typography>
-                {linkItem.description && (
-                  <Typography sx={{ 
-                    color: '#6B7280',
-                    fontSize: '0.875rem'
-                  }}>
-                    {linkItem.description}
-                  </Typography>
-                )}
-              </Box>
-            ))}
+            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+              첨부파일
+            </Typography>
+            <Grid container spacing={2}>
+              {postData.files.map((file) => (
+                <Grid item xs={12} sm={6} md={4} key={file.fileId}>
+                  <Paper
+                    elevation={0}
+                    onClick={() => handleFileClick(file)}
+                    sx={{
+                      p: 2,
+                      cursor: 'pointer',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      '&:hover': {
+                        bgcolor: 'grey.100'
+                      }
+                    }}
+                  >
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 2 
+                    }}>
+                      {file.type === 'IMAGE' ? (
+                        <ImageIcon color="primary" />
+                      ) : (
+                        <FileIcon color="primary" />
+                      )}
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2" noWrap>
+                          {file.filename}
+                        </Typography>
+                        {file.description && (
+                          <Typography 
+                            variant="caption" 
+                            color="text.secondary"
+                            display="block"
+                          >
+                            {file.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
           </Box>
         )}
+
+        {/* Links Section */}
+        {postData.links && postData.links.length > 0 && (
+          <Box sx={{ 
+            px: 4, 
+            py: 4,
+            borderTop: '1px solid',
+            borderColor: 'divider'
+          }}>
+            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+              관련 링크
+            </Typography>
+            <Grid container spacing={2}>
+              {postData.links.map((link) => (
+                <Grid item xs={12} key={link.linkId}>
+                  <Paper
+                    elevation={0}
+                    component="a"
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      '&:hover': {
+                        bgcolor: 'grey.50'
+                      }
+                    }}
+                  >
+                    {getLinkIcon(link.type)}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2">
+                        {link.title}
+                      </Typography>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        sx={{ 
+                          display: 'block',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        {link.url}
+                      </Typography>
+                    </Box>
+                    <OpenInNewIcon 
+                      sx={{ 
+                        fontSize: 16,
+                        color: 'text.secondary'
+                      }} 
+                    />
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+
         {/* File Preview Dialog */}
         <Dialog
           open={Boolean(selectedFile)}
@@ -235,30 +406,34 @@ function ViewPost({ title, subtitle, content, thumbnail, files, links, onEdit })
           <DialogTitle sx={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
-            alignItems: 'center' 
+            alignItems: 'center'
           }}>
             <Typography variant="h6">
-              {selectedFile?.name}
+              {selectedFile?.filename}
             </Typography>
-            <IconButton onClick={handleClosePreview} size="small">
-              <CloseIcon size={20} />
+            <IconButton 
+              onClick={handleClosePreview}
+              size="small"
+            >
+              <CloseIcon />
             </IconButton>
           </DialogTitle>
+          
           <DialogContent>
-            {selectedFile?.type.startsWith('image/') ? (
+            {selectedFile?.type === 'IMAGE' ? (
               <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
+                display: 'flex',
+                justifyContent: 'center',
                 alignItems: 'center',
-                minHeight: 400,
+                minHeight: 400
               }}>
                 <img
-                  src={URL.createObjectURL(selectedFile)}
-                  alt={selectedFile.name}
+                  src={selectedFile.url}
+                  alt={selectedFile.filename}
                   style={{
                     maxWidth: '100%',
                     maxHeight: '70vh',
-                    objectFit: 'contain',
+                    objectFit: 'contain'
                   }}
                 />
               </Box>
@@ -268,29 +443,26 @@ function ViewPost({ title, subtitle, content, thumbnail, files, links, onEdit })
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 2,
-                py: 4,
+                py: 4
               }}>
-                <FileText size={100} color="#0066CC" />
+                <FileIcon sx={{ fontSize: 60, color: 'primary.main' }} />
                 <Typography>
-                  This file type cannot be previewed
+                  이 파일은 미리보기를 지원하지 않습니다
                 </Typography>
               </Box>
             )}
           </DialogContent>
+
           <DialogActions>
-            <Button onClick={handleClosePreview}>Close</Button>
+            <Button onClick={handleClosePreview}>
+              닫기
+            </Button>
             <Button
-              startIcon={<DownloadIcon />}
               variant="contained"
+              startIcon={<DownloadIcon />}
               onClick={() => handleDownload(selectedFile)}
-              sx={{
-                bgcolor: '#0066CC',
-                '&:hover': {
-                  bgcolor: '#0055AA',
-                },
-              }}
             >
-              Download
+              다운로드
             </Button>
           </DialogActions>
         </Dialog>
