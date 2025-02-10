@@ -572,7 +572,7 @@ function UploadPost({ onSave }) {
                 type="url"
                 value={newLink}
                 onChange={(e) => setNewLink(e.target.value)}
-                placeholder="URL을 입력하세요
+                placeholder="URL을 입력하세요"
                 variant="outlined"
               />
               <TextField
