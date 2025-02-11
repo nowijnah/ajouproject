@@ -4,6 +4,8 @@ import { theme, contentListStyles } from './styles';
 import FilterSection from '../portfolio/FilterSection';
 import ContentCard from './ContentCard';
 import SearchHeader from './SearchHeader';
+import CompanyCard  from '../../pages/companies/CompanyCard';
+import PortfolioCard from '../../pages/portfolios/PortfolioCard';
 
 // 컨텐츠 타입별 설정
 const contentConfig = {
@@ -52,9 +54,9 @@ export const filters = [
   }
 ];
 
-export default function ContentList({ type, data, filters }) {
+export default function ContentList({ type, data, filters, renderContent }) {
   const config = contentConfig;
-  const [activeSort, setActiveSort] = useState(config.sortButtons[0].value);
+  const [activeSort, setActiveSort] = useState('latest'); 
   const [searchText, setSearchText] = useState('');
   const [activeFilters, setActiveFilters] = useState({});
   const isMobile = useMediaQuery('(max-width:900px)');
@@ -78,8 +80,8 @@ export default function ContentList({ type, data, filters }) {
     // 검색어 필터링
     if (searchText) {
       filteredData = filteredData.filter(item => 
-        item.title.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchText.toLowerCase())
+        item.title?.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
 
@@ -94,16 +96,19 @@ export default function ContentList({ type, data, filters }) {
 
     // 정렬 적용
     switch (activeSort) {
-      case '최신순':
-        filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
+      case 'latest':
+        filteredData.sort((a, b) => {
+          // Firestore Timestamp 객체 처리
+          const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt);
+          const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt);
+          return dateB - dateA;
+        });
         break;
-      case '인기순':
-        filteredData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      case 'popular':
+        filteredData.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
         break;
-      case '가나다순':
-        filteredData.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      default:
+      case 'comment':
+        filteredData.sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0));
         break;
     }
 
@@ -119,17 +124,39 @@ export default function ContentList({ type, data, filters }) {
     />
   );
 
+  // ContentList.js의 renderContentGrid 함수 수정
+
   const renderContentGrid = () => (
     <Box sx={{ flexGrow: 1 }}>
       <Grid container spacing={{ xs: 2, md: 3 }}>
         {getFilteredContent().map((item) => (
           <Grid item xs={12} sm={6} md={4} key={item.id}>
-            <ContentCard 
-              title={item.title}
-              description={item.description}
-              image={item.image}
-              additionalInfo={item.additionalInfo}
-            />
+            {type === 'company' ? (
+              <CompanyCard 
+                id={item.id}
+                title={item.title}
+                description={item.description}
+                image={item.image}
+                likeCount={item.likeCount}
+                commentCount={item.commentCount}
+              />
+            ) : type === 'portfolio' ? (
+              <PortfolioCard 
+                id={item.id}
+                title={item.title}
+                description={item.description}
+                image={item.image}
+                likeCount={item.likeCount}
+                commentCount={item.commentCount}
+              />
+            ) : (
+              <ContentCard 
+                title={item.title}
+                description={item.description}
+                image={item.image}
+                additionalInfo={item.additionalInfo}
+              />
+            )}
           </Grid>
         ))}
       </Grid>
