@@ -1,20 +1,24 @@
 import React from 'react';
+import { useAuth } from '../auth/AuthContext';
 import CommentInput from './CommentInput';
 import CommentList from './CommentList';
 import commentsHook from '../../hooks/commentsHook';
 
-const Comments = () => {
+const Comments = ({ postId, collectionName }) => {
+  const { currentUser } = useAuth();
   const { 
     comments, 
     loading, 
+    error,
     addComment, 
     addReply,
     editComment, 
     deleteComment 
-  } = commentsHook();
-  // error도 추가해야됨.
+  } = commentsHook(postId, collectionName);
 
-  if (loading) return <div>로딩 중...</div>;
+  if (loading) return <div>댓글을 불러오는 중...</div>;
+  if (error) return <div>댓글을 불러오는데 실패했습니다.</div>;
+  if (!currentUser) return <div>댓글을 작성하려면 로그인이 필요합니다.</div>;
 
   return (
     <div>
@@ -23,8 +27,8 @@ const Comments = () => {
         comments={comments}
         onEdit={editComment}
         onDelete={deleteComment}
-        onReply={addReply} 
-        currentUser={{ id: 1, name: "테스트 사용자" } /* test용 -> 유저 정보 받아야 함*/}
+        onReply={addReply}
+        currentUser={currentUser}
       />
     </div>
   );
