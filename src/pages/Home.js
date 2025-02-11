@@ -105,7 +105,7 @@ function Home() {
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3, md: 4 } }}>
               {/* 학생 포트폴리오 섹션 */}
-              <RouterLink to="/portfolio" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <RouterLink to="/portfolios" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <Box sx={sectionStyle}>
                   <Box sx={imageBoxStyle}>
                     <img src="/student.png" alt="학생 포트폴리오" />
@@ -128,7 +128,7 @@ function Home() {
               </RouterLink>
 
               {/* 연구실 목록 섹션 */}
-              <RouterLink to="/lab" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <RouterLink to="/labs" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <Box sx={sectionStyle}>
                   <Box sx={imageBoxStyle}>
                     <img src="/lab.png" alt="연구실 목록" />
@@ -150,7 +150,7 @@ function Home() {
               </RouterLink>
 
               {/* 기업 뉴스 섹션 */}
-              <RouterLink to="/company" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <RouterLink to="/companies" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <Box sx={sectionStyle}>
                   <Box sx={imageBoxStyle}>
                     <img src="/company.png" alt="기업 뉴스" />

@@ -1,62 +1,118 @@
 import { useState, useEffect } from 'react';
+import { 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  addDoc, 
+  updateDoc,
+  deleteDoc,
+  doc,
+  limit,
+  serverTimestamp,
+  onSnapshot
+} from 'firebase/firestore';
+import { db } from '../firebase';
+import { useAuth } from '../components/auth/AuthContext';
 
-const commentsHook = () => {
+const commentsHook = (postId, collectionName) => {
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { currentUser } = useAuth();
 
-  // 테스트용 더미 데이터
+  // 댓글 실시간 업데이트
   useEffect(() => {
-    setComments([
-      {
-        id: 1,
-        author: { id: 1, name: '사용자1' },
-        content: '테스트 댓글 1',
-        timestamp: new Date().toISOString(),
-        parentId: null  // 최상위 댓글
+    if (!postId || !collectionName) return;
+
+    const commentsRef = collection(db, `${collectionName}_comments`);
+    const q = query(
+      commentsRef,
+      where("postId", "==", postId),
+      orderBy("timestamp", "desc")
+      ,limit(10)
+    );
+
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        const commentsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setComments(commentsData);
+        setLoading(false);
       },
-      {
-        id: 2,
-        author: { id: 2, name: '사용자2' },
-        content: '테스트 댓글 2',
-        timestamp: new Date().toISOString(),
-        parentId: 1     // 댓글 1의 답글
+      (err) => {
+        console.error("Error fetching comments:", err);
+        setError(err);
+        setLoading(false);
       }
-    ]);
-  }, []);
+    );
 
-  const addComment = (content) => {
-    const newComment = {
-      id: comments.length + 1,
-      author: { id: 1, name: '현재 사용자' } /*테스트용!*/ ,
-      content,
-      timestamp: new Date().toISOString()
-    };
-    setComments(prev => [...prev, newComment]);
+    return () => unsubscribe();
+  }, [postId, collectionName]);
+
+  const addComment = async (content) => {
+    try {
+      const commentsRef = collection(db, `${collectionName}_comments`);
+      await addDoc(commentsRef, {
+        postId,
+        content,
+        author: {
+          id: currentUser.uid,
+          name: currentUser.displayName || '익명',
+          photoURL: currentUser.photoURL
+        },
+        timestamp: serverTimestamp(),
+        parentId: null
+      });
+    } catch (err) {
+      setError(err);
+      throw err;
+    }
   };
 
-  // 댓글 수정 함수
-  const editComment = (commentId, newContent) => {
-    setComments(prev => prev.map(comment =>
-      comment.id === commentId
-        ? { ...comment, content: newContent }
-        : comment
-    ));
+  const addReply = async (parentId, content) => {
+    try {
+      const commentsRef = collection(db, `${collectionName}_comments`);
+      await addDoc(commentsRef, {
+        postId,
+        content,
+        author: {
+          id: currentUser.uid,
+          name: currentUser.displayName || '익명',
+          photoURL: currentUser.photoURL
+        },
+        timestamp: serverTimestamp(),
+        parentId
+      });
+    } catch (err) {
+      setError(err);
+      throw err;
+    }
   };
 
-  const deleteComment = (commentId) => {
-    setComments(prev => prev.filter(comment => comment.id !== commentId));
+  const editComment = async (commentId, newContent) => {
+    try {
+      const commentRef = doc(db, `${collectionName}_comments`, commentId);
+      await updateDoc(commentRef, {
+        content: newContent,
+        editedAt: serverTimestamp()
+      });
+    } catch (err) {
+      setError(err);
+      throw err;
+    }
   };
 
-  const addReply = (parentId, content) => {
-    const newComment = {
-      id: comments.length + 1,
-      author: { id: 1, name: '현재 사용자' },
-      content,
-      timestamp: new Date().toISOString(),
-      parentId
-    };
-    setComments(prev => [...prev, newComment]);
+  const deleteComment = async (commentId) => {
+    try {
+      const commentRef = doc(db, `${collectionName}_comments`, commentId);
+      await deleteDoc(commentRef);
+    } catch (err) {
+      setError(err);
+      throw err;
+    }
   };
 
   return {
