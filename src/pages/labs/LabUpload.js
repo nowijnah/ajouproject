@@ -1,10 +1,10 @@
 import BasePostUpload from '../../components/posts/BasePostUpload';
 
-function CompanyUpload() {
+function LabUpload() {
   
   return <BasePostUpload 
-    collection="companies"
+    collection="labs"
   />;
 }
 
-export default CompanyUpload;
+export default LabUpload;

@@ -1,4 +1,4 @@
-import BasePostUpload from '../../components/post/BasePostUpload';
+import BasePostUpload from '../../components/posts/BasePostUpload';
 
 function PortfolioUpload() {
     

@@ -5,7 +5,6 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../auth/AuthContext';
-import BaseView from './BaseView';
 import { 
     Container, Paper, Typography, Box, Grid, TextField,
     Button, IconButton, List, ListItem,
