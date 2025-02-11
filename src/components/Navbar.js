@@ -58,13 +58,13 @@ export default function Navbar() {
       <Toolbar sx={styles.toolbar}>
         <LogoComponent />
         <div style={styles.rightGroup}>
-          <RouterLink to="/portfolio" style={styles.link}>
+          <RouterLink to="/portfolios" style={styles.link}>
             <Typography variant='body2' color="#000000" sx={styles.text}>포트폴리오</Typography>
           </RouterLink>
-          <RouterLink to="/company" style={styles.link}>
+          <RouterLink to="/companies" style={styles.link}>
           <Typography variant='body2' color="#000000" sx={styles.text}>기업</Typography>
           </RouterLink>
-          <RouterLink to="/lab" style={styles.link}>
+          <RouterLink to="/labs" style={styles.link}>
           <Typography variant='body2' color="#000000" sx={styles.text}>연구실</Typography>
           </RouterLink>
           <RouterLink to="/mypage" style={styles.link}>

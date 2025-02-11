@@ -26,8 +26,11 @@ export const AuthProvider = ({ children }) => {
           if (userDoc.exists()) {
             // Firestore에 사용자 정보가 있으면 합쳐서 저장
             setCurrentUser({
-              ...user,
-              ...userDoc.data()
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName || userData.displayName,
+              photoURL: user.photoURL || userData.photoURL,
+              ...userData
             });
           } else {
             // Firestore에 정보가 없어도 기본 사용자 정보는 설정
