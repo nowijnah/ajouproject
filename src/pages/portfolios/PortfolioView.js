@@ -1,7 +1,8 @@
+import React from 'react';
 import BasePostView from '../../components/posts/BasePostView';
 
 function PortfolioView() {
-    return <BasePostView collection="portfolios" />;
+    return <BasePostView collectionName="portfolios" />;
 }
 
 export default PortfolioView;

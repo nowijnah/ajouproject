@@ -44,22 +44,22 @@ export default function App() {
             <Route path="/signin" element={<SignIn />} />        
 
             {/* 포트폴리오 */}
-            <Route path="/portfolio" element={<PortfolioPage />} />
-            <Route path="/portfolio/:postId" element={<PortfolioView />} />
-            <Route path="/portfolio/:postId/edit" element={<PortfolioUpload />} />
-            <Route path="/portfolio/new" element={<PortfolioUpload />} />
+            <Route path="/portfolios" element={<PortfolioPage />} />
+            <Route path="/portfolios/:postId" element={<PortfolioView />} />
+            <Route path="/portfolios/:postId/edit" element={<PortfolioUpload />} />
+            <Route path="/portfolios/new" element={<PortfolioUpload />} />
 
             {/* 연구실 */}
-            <Route path="/lab" element={<LabPage />} /> 
-            <Route path="/lab/:postId" element={<LabView />} />
-            <Route path="/lab/:postId/edit" element={<LabUpload />} />
-            <Route path="/lab/new" element={<LabUpload />} />
+            <Route path="/labs" element={<LabPage />} /> 
+            <Route path="/labs/:postId" element={<LabView />} />
+            <Route path="/labs/:postId/edit" element={<LabUpload />} />
+            <Route path="/labs/new" element={<LabUpload />} />
 
             {/* 회사 */}
-            <Route path="/company" element={<CompanyPage />} />
-            <Route path="/company/:postId" element={<CompanyView />} />
-            <Route path="/company/:postId/edit" element={<CompanyUpload />} />
-            <Route path="/company/new" element={<CompanyUpload />} />    
+            <Route path="/companies" element={<CompanyPage />} />
+            <Route path="/companies/:postId" element={<CompanyView />} />
+            <Route path="/companies/:postId/edit" element={<CompanyUpload />} />
+            <Route path="/companies/new" element={<CompanyUpload />} />    
           </Routes>
         </Box>
         <Footer />
