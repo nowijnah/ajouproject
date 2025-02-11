@@ -85,7 +85,6 @@ function UploadPost({ onSave }) {
 
 
   // 썸네일 핸들러
-
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
@@ -208,7 +207,7 @@ function UploadPost({ onSave }) {
     
     try {
       let thumbnailUrl = thumbnail;
-      // 새로운 썸네일이 파일 객체인 경우에만 업로드
+      // 새로운 썸네일일 경우에만 업로드
       if (thumbnail instanceof File) {
         const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${thumbnail.name}`);
         const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnail);

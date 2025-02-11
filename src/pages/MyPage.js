@@ -15,15 +15,31 @@ import {
   Edit as EditIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../components/auth/AuthContext';
 
 const MyPage = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
   const fontStyle = {
     fontFamily: 'Quicksand, sans-serif'
   };
 
   const handleUploadClick = () => {
-    navigate('/upload');
+    switch(currentUser?.role) {
+      case 'STUDENT':
+        navigate('/portfolios/new');
+        break;
+      case 'PROFESSOR':
+        navigate('/labs/new'); 
+        break;
+      case 'COMPANY':
+        navigate('/companies/new');
+        break;
+      default:
+        alert('업로드 권한이 없습니다.');
+        break;
+    }
   };
 
   const portfolios = [
@@ -105,6 +121,7 @@ const MyPage = () => {
             <Typography variant="h6" sx={{ ...fontStyle, color: 'white' }}>
               포트폴리오
             </Typography>
+            {currentUser && (
             <Button
               startIcon={<EditIcon />}
               onClick={handleUploadClick}
@@ -120,6 +137,7 @@ const MyPage = () => {
             >
               Upload
             </Button>
+    )}
           </Box>
 
           <Grid container spacing={3}>
