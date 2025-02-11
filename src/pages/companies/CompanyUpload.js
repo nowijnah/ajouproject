@@ -1,9 +1,10 @@
+import React from 'react';
 import BasePostUpload from '../../components/posts/BasePostUpload';
 
 function CompanyUpload() {
   
   return <BasePostUpload 
-    collection="companies"
+    collectionName="companies"
   />;
 }
 

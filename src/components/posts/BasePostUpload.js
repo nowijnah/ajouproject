@@ -17,8 +17,9 @@ import {
     Visibility as EyeIcon,
     Image as ImageIcon
 } from '@mui/icons-material';
+import BasePostView from './BasePostView';
 
-function BasePostUpload({ collection }) {
+function BasePostUpload({ collectionName }) {
     const { postId } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
@@ -41,44 +42,41 @@ function BasePostUpload({ collection }) {
     const [newLinkDescription, setNewLinkDescription] = useState('');
   
   
-    // 기존 state들 유지
-
     useEffect(() => {
-        const fetchPost = async () => {
-        if (postId) {
-            try {
-            const postDoc = await getDoc(doc(db, collection, postId));
+      const fetchPost = async () => {
+        if (postId && postId !== 'preview-id') {  // 수정 모드일 때만
+          try {
+            const postDoc = await getDoc(doc(db, collectionName, postId));
             if (postDoc.exists()) {
-                const data = postDoc.data();
-                setTitle(data.title);
-                setSubtitle(data.subtitle || '');
-                setMarkdownContent(data.content);
-                setThumbnail(data.thumbnail || null);
-                // 기존 파일 데이터 설정
-                if (data.files) {
-                    setFiles(data.files.map(file => ({
-                    ...file,
-                    fileId: file.fileId || `file-${Date.now()}-${Math.random()}`
-                    })));
-                }
+              const data = postDoc.data();
+              setTitle(data.title);
+              setSubtitle(data.subtitle || '');
+              setMarkdownContent(data.content);
+              setThumbnail(data.thumbnail || null);
               
-                // 기존 링크 데이터 설정
-                if (data.links) {
-                    setLinks(data.links.map(link => ({
-                    ...link,
-                    linkId: link.linkId || `link-${Date.now()}-${Math.random()}`
-                    })));
-                }
-
+              // 기존 파일 데이터 설정
+              if (data.files) {
+                setFiles(data.files.map(file => ({
+                  ...file,
+                  fileId: file.fileId || `file-${Date.now()}-${Math.random()}`
+                })));
+              }
+              
+              // 기존 링크 데이터 설정
+              if (data.links) {
+                setLinks(data.links.map(link => ({
+                  ...link,
+                  linkId: link.linkId || `link-${Date.now()}-${Math.random()}`
+                })));
+              }
             }
-            } catch (error) {
-                console.error('Error loading post:', error);
-                alert('게시글을 불러오는데 실패했습니다.');
-            }
+          } catch (error) {
+            console.error('Error loading post:', error);
+          }
         }
-        };
-
-        fetchPost();
+      };
+    
+      fetchPost();
     }, [postId, collection]);
 
     // 썸네일
@@ -245,24 +243,24 @@ function BasePostUpload({ collection }) {
         };
 
         if (postId) {
-            await updateDoc(doc(db, collection, postId), updatedData);
+          await updateDoc(doc(db, collectionName, postId), updatedData);
+          alert('게시글이 수정되었습니다.');
+          navigate(`/${collectionName}/${postId}`);
         } else {
             updatedData.authorId = currentUser.uid;
             updatedData.likeCount = 0;
             updatedData.commentCount = 0;
             updatedData.createdAt = serverTimestamp();
             
-            const docRef = await addDoc(collection(db, collection), updatedData);
-            postId = docRef.id;
+            const docRef = await addDoc(collection(db, collectionName), updatedData);
+            alert('게시글이 작성되었습니다.');
+            navigate(`/${collectionName}/${docRef.id}`);
         }
 
-        alert(postId ? '게시글이 수정되었습니다.' : '게시글이 작성되었습니다.');
-        navigate(`/${collection}/${postId}`);
-
-        } catch (error) {
-            console.error('Error:', error);
-            alert(`업로드 중 오류 발생: ${error.message}`);
-        }
+      } catch (error) {
+          console.error('Error:', error);
+          alert(`업로드 중 오류 발생: ${error.message}`);
+      }
     };
 
     if (isPreview) {
@@ -289,9 +287,10 @@ function BasePostUpload({ collection }) {
         };
     
         return (
-          <ViewPost
-            postData={previewData}
-            authorData={{
+          <BasePostView
+            collectionName={collectionName}
+            previewData={previewData}
+            previewAuthor={{
               userId: currentUser.uid,
               displayName: currentUser.displayName,
               profileImage: currentUser.photoURL,

@@ -1,3 +1,4 @@
+import React from 'react';
 import BasePostUpload from '../../components/posts/BasePostUpload';
 
 function PortfolioUpload() {
@@ -15,7 +16,7 @@ function PortfolioUpload() {
     */
   
     return <BasePostUpload 
-      collection="portfolios"
+      collectionName="portfolios"
     //   onDataTransform={handleExtraFields}
     />;
 }

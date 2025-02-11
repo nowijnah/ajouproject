@@ -24,42 +24,62 @@ import {
     Link as LinkIcon
 } from '@mui/icons-material';
 
-function BasePostView({ collection }) {
+function BasePostView({
+    collectionName,
+    previewData,     
+    previewAuthor, 
+    currentUser,  
+    onLike,
+    onEdit
+   }) {
     const theme = useTheme();
     const { postId } = useParams();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
-    const [postData, setPostData] = useState(null);
-    const [authorData, setAuthorData] = useState(null);
+   
+    const [postData, setPostData] = useState(previewData || null);
+    const [authorData, setAuthorData] = useState(previewAuthor || null);
     const [likeData, setLikeData] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isLiked, setIsLiked] = useState(
-        likeData?.some(like => like.userId === currentUser?.userId) || false
+      likeData?.some(like => like.userId === currentUser?.userId) || false
     );
       
     useEffect(() => {
         const fetchPost = async () => {
-        try {
-            const postDoc = await getDoc(doc(db, collection, postId));
-            if (postDoc.exists()) {
-            setPostData({ id: postDoc.id, ...postDoc.data() });
-            
-            // 작성자 정보 가져오기
-            const authorDoc = await getDoc(doc(db, 'users', postDoc.data().authorId));
-            if (authorDoc.exists()) {
-                setAuthorData({ id: authorDoc.id, ...authorDoc.data() });
+          // preview 모드 체크
+          if (previewData) {
+            setPostData(previewData);
+            setAuthorData(previewAuthor);
+            return;
+          }
+      
+          // 실제 데이터 fetch
+          if (collectionName && postId) {
+            try {
+              const postDoc = await getDoc(doc(db, collectionName, postId));
+              if (postDoc.exists()) {
+                const data = postDoc.data();
+                setPostData({ id: postDoc.id, ...data });
+                
+                // 작성자 정보 가져오기
+                if (data.authorId) {
+                  const authorDoc = await getDoc(doc(db, 'users', data.authorId));
+                  if (authorDoc.exists()) {
+                    setAuthorData({ id: authorDoc.id, ...authorDoc.data() });
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching post:', error);
             }
-            }
-        } catch (error) {
-            console.error('Error fetching post:', error);
-        }
+          }
         };
-
+      
         fetchPost();
-    }, [postId, collection]);
-
+    }, [collectionName, postId, previewData, previewAuthor]);
+    
     const handleEdit = () => {
-        navigate(`/${collection}/${postId}/edit`);
+        navigate(`/${collectionName}/${postId}/edit`);
     };                                                                
 
     // 파일 미리보기
