@@ -1,6 +1,6 @@
 import React from 'react';
-import ContentList from '../components/common/ContentList';
-import { filters } from '../components/common/ContentList';
+import ContentList from '../../components/common/ContentList';
+import { filters } from '../../components/common/ContentList';
 
 const companyData = [
   {
