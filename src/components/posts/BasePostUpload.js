@@ -327,14 +327,12 @@ function BasePostUpload({ collectionName }) {
               profileImage: currentUser.photoURL,
               role: currentUser.role || 'STUDENT'
             }}
-            currentUser={currentUser}
             likeData={[]}
             onLike={() => {}}
             onEdit={() => setIsPreview(false)}
           />
         );
       }
-    
       
       return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
