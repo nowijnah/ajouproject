@@ -6,6 +6,7 @@ import ContentCard from './ContentCard';
 import SearchHeader from './SearchHeader';
 import CompanyCard  from '../../pages/companies/CompanyCard';
 import PortfolioCard from '../../pages/portfolios/PortfolioCard';
+import LabCard from '../../pages/labs/LabCard';
 
 // 컨텐츠 타입별 설정
 const contentConfig = {
@@ -124,8 +125,6 @@ export default function ContentList({ type, data, filters, renderContent }) {
     />
   );
 
-  // ContentList.js의 renderContentGrid 함수 수정
-
   const renderContentGrid = () => (
     <Box sx={{ flexGrow: 1 }}>
       <Grid container spacing={{ xs: 2, md: 3 }}>
@@ -142,6 +141,15 @@ export default function ContentList({ type, data, filters, renderContent }) {
               />
             ) : type === 'portfolio' ? (
               <PortfolioCard 
+                id={item.id}
+                title={item.title}
+                description={item.description}
+                image={item.image}
+                likeCount={item.likeCount}
+                commentCount={item.commentCount}
+              />
+            ) : type === 'lab' ? (
+              <LabCard 
                 id={item.id}
                 title={item.title}
                 description={item.description}
