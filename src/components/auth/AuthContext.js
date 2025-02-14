@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }) => {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           
           if (userDoc.exists()) {
+            const userData = userDoc.data();
             // Firestore에 사용자 정보가 있으면 합쳐서 저장
             setCurrentUser({
               uid: user.uid,
