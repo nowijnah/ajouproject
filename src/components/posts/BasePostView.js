@@ -232,7 +232,7 @@ function BasePostView({
                 </Typography>
                 )}
     
-            {currentUser?.userId === authorData?.userId && (
+            {currentUser?.uid === authorData?.authorId && (
                 <IconButton
                 onClick={handleEdit}
                 sx={{ 
