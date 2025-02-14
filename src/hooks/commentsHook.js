@@ -9,8 +9,11 @@ import {
   deleteDoc,
   doc,
   limit,
+  startAfter,
+  getDocs,
+  writeBatch,
   serverTimestamp,
-  onSnapshot
+  getDoc
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../components/auth/AuthContext';
@@ -20,98 +23,229 @@ const commentsHook = (postId, collectionName) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { currentUser } = useAuth();
+  const [lastDoc, setLastDoc] = useState(null);  
+  const [hasMore, setHasMore] = useState(true); 
 
-  // 댓글 실시간 업데이트
+  // 사용자 정보 가져오기
+  const fetchUserData = async (authorId) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', authorId));
+      if (userDoc.exists()) {
+        return {
+          id: userDoc.id,
+          ...userDoc.data()
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+      return null;
+    }
+  };
+
+  // 댓글 불러오기
   useEffect(() => {
-    if (!postId || !collectionName) return;
-
-    const commentsRef = collection(db, `${collectionName}_comments`);
-    const q = query(
-      commentsRef,
-      where("postId", "==", postId),
-      orderBy("timestamp", "desc")
-      ,limit(10)
-    );
-
-    const unsubscribe = onSnapshot(q, 
-      (snapshot) => {
-        const commentsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setComments(commentsData);
+    const fetchComments = async () => {
+      if (!postId || !collectionName) {
         setLoading(false);
-      },
-      (err) => {
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const commentsRef = collection(db, `${collectionName}_comments`);
+        const q = query(
+          commentsRef,
+          where("postId", "==", postId),
+          where("parentId", "==", null),
+          orderBy("createdAt", "desc"),
+          limit(10)
+        );
+
+        const snapshot = await getDocs(q);
+
+        // 각 댓글에 대한 작성자 정보 가져오기
+        const commentsData = await Promise.all(
+          snapshot.docs.map(async (doc) => {
+            const data = doc.data();
+            const author = await fetchUserData(data.authorId);
+            
+            return {
+              id: doc.id,
+              ...data,
+              author,
+              createdAt: data.createdAt?.toDate?.() || new Date(),
+              updatedAt: data.updatedAt?.toDate?.() || new Date()
+            };
+          })
+        );
+
+        setComments(commentsData);
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === 10);
+        setLoading(false);
+      } catch (err) {
         console.error("Error fetching comments:", err);
         setError(err);
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchComments();
   }, [postId, collectionName]);
 
-  const addComment = async (content) => {
+  // 댓글 작성
+  const addComment = async (content, isPrivate = false) => {
+    if (!currentUser) throw new Error("로그인이 필요합니다.");
+    
     try {
       const commentsRef = collection(db, `${collectionName}_comments`);
-      await addDoc(commentsRef, {
+      const newComment = {
         postId,
         content,
-        author: {
-          id: currentUser.uid,
-          name: currentUser.displayName || '익명',
-          photoURL: currentUser.photoURL
-        },
-        timestamp: serverTimestamp(),
-        parentId: null
-      });
+        isPrivate,
+        authorId: currentUser.uid,
+        parentId: null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      
+      const docRef = await addDoc(commentsRef, newComment);
+      const author = await fetchUserData(currentUser.uid);
+
+      // 댓글 추가 후 바로 목록 업데이트
+      setComments(prev => [{
+        id: docRef.id,
+        ...newComment,
+        author,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }, ...prev]);
+
     } catch (err) {
+      console.error("Error adding comment:", err);
       setError(err);
       throw err;
     }
   };
 
-  const addReply = async (parentId, content) => {
+  // 답글 작성
+  const addReply = async (parentId, content, parentIsPrivate) => {
+    if (!currentUser) throw new Error("로그인이 필요합니다.");
+    
     try {
       const commentsRef = collection(db, `${collectionName}_comments`);
       await addDoc(commentsRef, {
         postId,
         content,
-        author: {
-          id: currentUser.uid,
-          name: currentUser.displayName || '익명',
-          photoURL: currentUser.photoURL
-        },
-        timestamp: serverTimestamp(),
-        parentId
+        isPrivate: parentIsPrivate, // 부모 댓글의 비공개 여부를 따름
+        authorId: currentUser.uid,
+        parentId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
     } catch (err) {
+      console.error("Error adding reply:", err);
       setError(err);
       throw err;
     }
   };
 
+  // 댓글 수정
   const editComment = async (commentId, newContent) => {
+    if (!currentUser) throw new Error("로그인이 필요합니다.");
+    
     try {
       const commentRef = doc(db, `${collectionName}_comments`, commentId);
       await updateDoc(commentRef, {
         content: newContent,
-        editedAt: serverTimestamp()
+        updatedAt: serverTimestamp()
       });
+
+      setComments(prev => prev.map(comment => 
+        comment.id === commentId 
+          ? { ...comment, content: newContent, updatedAt: new Date() }
+          : comment
+      ));
     } catch (err) {
+      console.error("Error editing comment:", err);
       setError(err);
       throw err;
     }
   };
 
+  // 댓글 삭제
   const deleteComment = async (commentId) => {
+    if (!currentUser) throw new Error("로그인이 필요합니다.");
+    
     try {
-      const commentRef = doc(db, `${collectionName}_comments`, commentId);
-      await deleteDoc(commentRef);
+      const commentsRef = collection(db, `${collectionName}_comments`);
+      const batch = writeBatch(db);
+      
+      // 답글 삭제
+      const repliesQuery = query(
+        commentsRef,
+        where("parentId", "==", commentId)
+      );
+      const repliesSnapshot = await getDocs(repliesQuery);
+      
+      repliesSnapshot.docs.forEach(replyDoc => {
+        batch.delete(doc(db, `${collectionName}_comments`, replyDoc.id));
+      });
+      
+      // 원본 댓글 삭제
+      batch.delete(doc(db, `${collectionName}_comments`, commentId));
+      
+      await batch.commit();
+
+      setComments(prev => prev.filter(comment => comment.id !== commentId));
     } catch (err) {
+      console.error("Error deleting comment:", err);
       setError(err);
       throw err;
+    }
+  };
+
+  // 댓글 더보기
+  const loadMoreComments = async () => {
+    if (!lastDoc || !hasMore) return;
+
+    try {
+      const commentsRef = collection(db, `${collectionName}_comments`);
+      const q = query(
+        commentsRef,
+        where("postId", "==", postId),
+        where("parentId", "==", null),
+        orderBy("createdAt", "desc"),
+        startAfter(lastDoc),
+        limit(10)
+      );
+
+      const snapshot = await getDocs(q);
+      
+      // 각 댓글에 대한 작성자 정보 가져오기
+      const newComments = await Promise.all(
+        snapshot.docs.map(async (doc) => {
+          const data = doc.data();
+          const author = await fetchUserData(data.authorId);
+          
+          return {
+            id: doc.id,
+            ...data,
+            author,
+            createdAt: data.createdAt?.toDate?.() || new Date(),
+            updatedAt: data.updatedAt?.toDate?.() || new Date()
+          };
+        })
+      );
+
+      setComments(prev => [...prev, ...newComments]);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      setHasMore(snapshot.docs.length === 10);
+    } catch (err) {
+      console.error("Error loading more comments:", err);
+      setError(err);
     }
   };
 
@@ -119,6 +253,8 @@ const commentsHook = (postId, collectionName) => {
     comments,
     loading,
     error,
+    hasMore,
+    loadMoreComments,
     addComment,
     addReply,
     editComment,

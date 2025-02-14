@@ -44,7 +44,7 @@ export const SignUp = () => {
 
   const handleEmailSignUp = async (e) => {
     e.preventDefault();
-    if (role !== 2) {
+    if (role !== 1) {
       setError('기업 회원만 이메일 회원가입이 가능합니다.');
       return;
     }
@@ -70,12 +70,12 @@ export const SignUp = () => {
 
       navigate('/');
     } catch (error) {
-      setError('회원가입에 실패했습니다.');
+      setError('회원가입에 실패했습니다.', error);
     }
   };
 
   const handleGoogleSignUp = async () => {
-    if (role === 2) {
+    if (role === 1) {
       setError('기업 회원은 이메일로 가입해주세요.');
       return;
     }
@@ -190,7 +190,7 @@ export const SignUp = () => {
           <Tab label="기업" />
         </Tabs>
 
-        {role === 2 ? (
+        {role === 1 ? (
           <form onSubmit={handleEmailSignUp}>
             <TextField
               fullWidth
