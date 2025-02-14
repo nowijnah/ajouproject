@@ -504,8 +504,9 @@ function BasePostView({
                     댓글
                     </Typography>
                     <Comments
-                    postId={postId}
-                    collectionName={collectionName}
+                        postId={postId}
+                        collectionName={collectionName}
+                        postAuthorId={postData?.authorId}
                     />
                 </Box>
                 )}
