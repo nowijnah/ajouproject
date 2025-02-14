@@ -128,15 +128,20 @@ function BasePostUpload({ collectionName }) {
     const handleLinkAdd = (e) => {
         e.preventDefault();
         if (newLink.trim()) {
+        let formattedUrl = newLink.trim();
+        if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+          formattedUrl = `https://${formattedUrl}`;
+        } // https 추가
+
         const type = newLink.includes('github.com') ? 'GITHUB'
                     : newLink.includes('youtube.com') ? 'YOUTUBE'
                     : 'WEBSITE';
         
         setLinks(prev => [...prev, {
-            linkId: `link-${Date.now()}-${Math.random()}`,
-            url: newLink.trim(),
-            title: newLinkDescription.trim() || newLink.trim(),
-            type
+          linkId: `link-${Date.now()}-${Math.random()}`,
+          url: formattedUrl,
+          title: newLinkDescription.trim() || formattedUrl,
+          type
         }]);
         setNewLink('');
         setNewLinkDescription('');
