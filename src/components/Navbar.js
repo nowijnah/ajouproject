@@ -1,6 +1,7 @@
 import React from 'react';
 import { Typography, AppBar, Toolbar, Button } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useAuth } from './auth/AuthContext';
 
 const styles = {
   logo: {
@@ -53,6 +54,18 @@ function LogoComponent() {
 }
 
 export default function Navbar() {
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   return (
     <AppBar position="fixed" color="inherit">
       <Toolbar sx={styles.toolbar}>
@@ -70,12 +83,20 @@ export default function Navbar() {
           <RouterLink to="/mypage" style={styles.link}>
           <Typography variant='body2' color="#000000" sx={styles.text}>MyPage</Typography>
           </RouterLink>
-          <RouterLink to="/signin" style={{ textDecoration: 'none' }}>
-            <button style={styles.button}>Sign in</button>
-          </RouterLink>
-          <RouterLink to="/signup" style={{ textDecoration: 'none' }}>
-            <button style={styles.button}>Register</button>
-          </RouterLink>
+          {currentUser ? (
+            <RouterLink onClick={handleSignOut} style={{ textDecoration: 'none' }}>
+              <button style={styles.button}>Sign out</button>
+            </RouterLink>
+          ) : (
+            <>
+              <RouterLink to="/signin" style={{ textDecoration: 'none' }}>
+                <button style={styles.button}>Sign in</button>
+              </RouterLink>
+              <RouterLink to="/signup" style={{ textDecoration: 'none' }}>
+                <button style={styles.button}>Register</button>
+              </RouterLink>
+            </>
+          )}
         </div>
       </Toolbar>
     </AppBar>
