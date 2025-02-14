@@ -29,15 +29,15 @@ import Comments from '../comments/Comments';
 function BasePostView({
     collectionName,
     previewData,     
-    previewAuthor, 
-    currentUser,  
+    previewAuthor,
     onLike,
     onEdit
    }) {
     const theme = useTheme();
     const { postId } = useParams();
     const navigate = useNavigate();
-   
+    const { currentUser } = useAuth();
+
     const [postData, setPostData] = useState(previewData || null);
     const [authorData, setAuthorData] = useState(previewAuthor || null);
     const [likeData, setLikeData] = useState([]);
@@ -110,7 +110,13 @@ function BasePostView({
   
     // 작성자 프로필로 이동
     const handleAuthorClick = () => {
-      window.location.href = `/profile/${authorData.userId}`;
+        if (!authorData?.id) return;
+    
+        if (currentUser?.uid === authorData.id) {
+            navigate('/mypage');
+        } else {
+            navigate(`/profile/${authorData.id}`);
+        }
     };
   
     // 링크 아이콘 선택
@@ -232,7 +238,7 @@ function BasePostView({
                 </Typography>
                 )}
     
-            {currentUser?.userId === authorData?.userId && (
+            {currentUser?.uid === authorData?.id && (
                 <IconButton
                 onClick={handleEdit}
                 sx={{ 
@@ -453,6 +459,10 @@ function BasePostView({
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            window.open(link.url, '_blank');
+                        }}
                         sx={{
                             p: 2,
                             display: 'flex',

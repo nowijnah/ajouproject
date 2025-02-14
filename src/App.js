@@ -15,6 +15,7 @@ import PortfolioUpload from './pages/portfolios/PortfolioUpload';
 import CompanyUpload from './pages/companies/CompanyUpload';
 import LabUpload from './pages/labs/LabUpload';
 import MyPage from './pages/MyPage';
+import ProfilePage from './pages/ProfilePage';
 import {SignIn} from './components/auth/SignIn';
 import {SignUp} from './components/auth/SignUp';
 import { AuthProvider } from './components/auth/AuthContext';
@@ -41,7 +42,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path='/mypage' element={<MyPage />} />
             <Route path="/signup" element={<SignUp />} /> 
-            <Route path="/signin" element={<SignIn />} />        
+            <Route path="/signin" element={<SignIn />} />   
+            <Route path="/profile/:userId" element={<ProfilePage />} />     
 
             {/* 포트폴리오 */}
             <Route path="/portfolios" element={<PortfolioPage />} />
