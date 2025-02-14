@@ -7,20 +7,90 @@ import {
   Box, 
   Avatar,
   TextField,
-  Button
+  Button,
+  CircularProgress,
+  Tooltip,
+  Chip
 } from '@mui/material';
 import { 
   Edit as EditIcon, 
   Delete as DeleteIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon 
+  Cancel as CancelIcon,
+  Lock as LockIcon
 } from '@mui/icons-material';
+import useReplies from '../../hooks/useReplies';
 
-const Comment = ({ author, content, timestamp, onEdit, onDelete, onReply, isEditable, isReply }) => {
+const roleConfig = {
+  STUDENT: { label: '학생', color: 'primary' },
+  PROFESSOR: { label: '교수', color: 'secondary' },
+  COMPANY: { label: '기업', color: 'success' },
+  ADMIN: { label: '관리자', color: 'error' }
+};
+
+const Comment = ({ 
+  id,
+  author, 
+  content, 
+  timestamp, 
+  onEdit, 
+  onDelete, 
+  onReply, 
+  isEditable, 
+  isReply,
+  isPrivate,
+  currentUser,
+  postAuthorId,
+  postId,
+  collectionName
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const [replyContent, setReplyContent] = useState('');
+
+  const {
+    replyList,
+    replyCount,
+    loadingReplies,
+    hasMoreReplies,
+    error,
+    loadInitialReplies,
+    loadMoreReplies
+  } = useReplies(id, postId, collectionName);
+
+  // 권한 체크
+  const canViewComment = !isPrivate || 
+    currentUser?.uid === author.id || 
+    currentUser?.uid === postAuthorId;
+
+  const canReply = currentUser && (
+    (!isPrivate && !isReply) ||
+    (isPrivate && (
+      currentUser.uid === postAuthorId || 
+      currentUser.uid === author.id 
+    ))
+  );
+
+  // 권한이 없으면 비공개 메시지 표시
+  if (!canViewComment) {
+    return (
+      <Card sx={{ 
+        mb: 1.5, 
+        boxShadow: isReply ? 0 : 1,
+        bgcolor: 'grey.50',
+        borderRadius: '8px'
+      }}>
+        <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
+            <LockIcon sx={{ mr: 1, fontSize: 20 }} />
+            <Typography variant="body2">비공개 댓글입니다.</Typography>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -39,36 +109,68 @@ const Comment = ({ author, content, timestamp, onEdit, onDelete, onReply, isEdit
     }
   };
 
-  const handleReplySubmit = () => {
+  const handleShowReplies = async () => {
+    if (!showReplies) {
+      await loadInitialReplies();
+    }
+    setShowReplies(!showReplies);
+  };
+
+  const handleReply = async () => {
+    if (!currentUser) {
+      alert('답글을 작성하려면 로그인이 필요합니다.');
+      return;
+    }
+    
     if (replyContent.trim()) {
-      onReply(replyContent);
+      await onReply(id, replyContent, isPrivate);
       setReplyContent('');
       setIsReplying(false);
+      
+      // 답글 작성하고 새로고침
+      if (!showReplies) {
+        setShowReplies(true);
+      }
+      await loadInitialReplies();
     }
   };
 
   return (
     <Card sx={{ 
-      mb: 2, 
+      mb: 1.5, 
       boxShadow: isReply ? 0 : 1,
-      bgcolor: isReply ? 'rgba(0, 0, 0, 0.02)' : 'white'  
+      bgcolor: isReply ? 'grey.50' : 'white',
+      borderRadius: '8px'
     }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Avatar sx={{ 
-            bgcolor: isReply ? 'secondary.main' : 'primary.main', 
-            width: isReply ? 28 : 32, 
-            height: isReply ? 28 : 32,
-            mr: 2 
-          }}>
-            {author?.name?.[0] || '?'}
+      <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+          <Avatar 
+            sx={{ width: 28, height: 28, mr: 1.5 }}
+            src={author?.profileImage || null}
+          >
+            {(author?.displayName?.[0] || '?').toUpperCase()}
           </Avatar>
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="subtitle2" component="span" sx={{ fontWeight: 'bold' }}>
-              {author?.name || '익명'}
-            </Typography>
-            <Typography variant="caption" sx={{ ml: 2, color: 'text.secondary' }}>
-              {new Date(timestamp).toLocaleString()}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                {author?.displayName || '익명'}
+              </Typography>
+              {author?.role && (
+                <Chip
+                  label={roleConfig[author.role]?.label || author.role}
+                  color={roleConfig[author.role]?.color || 'default'}
+                  size="small"
+                  sx={{ height: 20 }}
+                />
+              )}
+              {isPrivate && (
+                <Tooltip title="비공개 댓글">
+                  <LockIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                </Tooltip>
+              )}
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              {timestamp instanceof Date ? timestamp.toLocaleString() : '날짜 없음'}
             </Typography>
           </Box>
           {isEditable && !isEditing && (
@@ -92,56 +194,138 @@ const Comment = ({ author, content, timestamp, onEdit, onDelete, onReply, isEdit
             </Box>
           )}
         </Box>
+
         {!isEditing ? (
-          <Typography variant="body2" sx={{ ml: 6 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              ml: 5,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word'
+            }}
+          >
             {content}
           </Typography>
         ) : (
-          <Box sx={{ ml: 6 }}>
+          <Box sx={{ ml: 5 }}>
             <TextField
               fullWidth
               multiline
+              size="small"
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              size="small"
-              variant="outlined"
               sx={{ mt: 1 }}
             />
           </Box>
         )}
+
+        {/* 댓글에 답글 아이콘 */}
         {!isReply && (
-          <Button 
-            size="small" 
-            onClick={() => setIsReplying(true)}
-            sx={{ ml: 6, mt: 1 }}
-          >
-            답글 달기
-          </Button>
+          <Box sx={{ ml: 5, mt: 1, display: 'flex', gap: 1 }}>
+            {canReply && (
+              <Button 
+                size="small" 
+                onClick={() => setIsReplying(true)}
+                sx={{ 
+                  minWidth: 0, 
+                  px: 1,
+                  color: 'text.secondary',
+                  '&:hover': { bgcolor: 'grey.100' }
+                }}
+              >
+                답글
+              </Button>
+            )}
+            {(replyCount > 0 || !showReplies) && (
+              <Button
+                size="small"
+                onClick={handleShowReplies}
+                sx={{ 
+                  minWidth: 0, 
+                  px: 1,
+                  color: 'text.secondary',
+                  '&:hover': { bgcolor: 'grey.100' }
+                }}
+              >
+                {showReplies ? '답글 숨기기' : `답글 ${replyCount}개`}
+              </Button>
+            )}
+          </Box>
         )}
+
+        {error && (
+          <Typography color="error" variant="caption" sx={{ ml: 5 }}>
+            답글을 불러오는데 실패했습니다.
+          </Typography>
+        )}
+
+        {/* 답글 목록 */}
+        {showReplies && (
+          <Box sx={{ ml: 5, mt: 1.5 }}>
+            {loadingReplies ? (
+              <CircularProgress size={20} sx={{ ml: 2 }} />
+            ) : (
+              <>
+                {replyList.map(reply => (
+                  <Comment
+                    key={reply.id}
+                    {...reply}
+                    isReply={true}
+                    currentUser={currentUser}
+                    postAuthorId={postAuthorId}
+                    postId={postId}
+                    collectionName={collectionName}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                ))}
+                {hasMoreReplies && (
+                  <Button
+                    size="small"
+                    onClick={loadMoreReplies}
+                    sx={{ 
+                      mt: 1,
+                      color: 'text.secondary',
+                      '&:hover': { bgcolor: 'grey.100' }
+                    }}
+                  >
+                    이전 답글 더보기
+                  </Button>
+                )}
+              </>
+            )}
+          </Box>
+        )}
+
+        {/* 답글 작성 폼 */}
         {isReplying && (
-          <Box sx={{ ml: 6, mt: 2, pl: 2, borderLeft: '2px solid #e0e0e0' }}>
+          <Box sx={{ ml: 5, mt: 1.5 }}>
             <TextField
               fullWidth
               size="small"
+              placeholder="답글을 입력하세요..."
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
-              placeholder="답글을 입력하세요..."
               sx={{ mb: 1 }}
             />
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
               <Button 
-                variant="contained" 
                 size="small" 
-                onClick={handleReplySubmit}
-              >
-                답글 달기
-              </Button>
-              <Button 
                 variant="outlined" 
-                size="small" 
-                onClick={() => setIsReplying(false)}
+                onClick={() => {
+                  setIsReplying(false);
+                  setReplyContent('');
+                }}
               >
                 취소
+              </Button>
+              <Button 
+                size="small" 
+                variant="contained"
+                onClick={handleReply}
+                disabled={!replyContent.trim()}
+              >
+                답글 달기
               </Button>
             </Box>
           </Box>

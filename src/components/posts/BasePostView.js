@@ -23,6 +23,7 @@ import {
     YouTube as YouTubeIcon,
     Link as LinkIcon
 } from '@mui/icons-material';
+import Comments from '../comments/Comments';
 
 function BasePostView({
     collectionName,
@@ -491,6 +492,24 @@ function BasePostView({
                 </Button>
                 </DialogActions>
             </Dialog>
+
+            {!previewData && (  // 미리보기가 아닐 때만 댓글 표시
+                <Box sx={{ 
+                    px: 4, 
+                    py: 4,
+                    borderTop: '1px solid',
+                    borderColor: 'divider'
+                }}>
+                    <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                    댓글
+                    </Typography>
+                    <Comments
+                        postId={postId}
+                        collectionName={collectionName}
+                        postAuthorId={postData?.authorId}
+                    />
+                </Box>
+                )}
             </Paper>
         </Container>
     );
