@@ -23,6 +23,7 @@ import {
 import { db } from '../firebase';
 import CompanyCard from '../pages/companies/CompanyCard';
 import PortfolioCard from '../pages/portfolios/PortfolioCard';
+import LabCard from '../pages/labs/LabCard';  // LabCard import 추가
 
 const MyPage = () => {
   const navigate = useNavigate();
@@ -81,7 +82,9 @@ const MyPage = () => {
         const querySnapshot = await getDocs(q);
         const posts = querySnapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          // 서버 타임스탬프를 Date 객체로 변환
+          createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt) || new Date()
         }));
 
         setUserPosts(posts);
@@ -117,7 +120,7 @@ const MyPage = () => {
       case 'STUDENT':
         return '포트폴리오';
       case 'PROFESSOR':
-        return '연구실';
+        return '연구실 정보';
       case 'COMPANY':
         return '기업 게시물';
       default:
@@ -128,7 +131,7 @@ const MyPage = () => {
   const renderCard = (post) => {
     const commonProps = {
       id: post.id,
-      title: post.title,
+      title: post.title || '',
       description: post.description || post.subtitle || '',
       image: post.thumbnail || '',
       likeCount: post.likeCount || 0,
@@ -138,6 +141,8 @@ const MyPage = () => {
     switch(userRole) {
       case 'STUDENT':
         return <PortfolioCard {...commonProps} />;
+      case 'PROFESSOR':
+        return <LabCard {...commonProps} />;  // 교수 역할일 때 LabCard 사용
       case 'COMPANY':
         return <CompanyCard {...commonProps} />;
       default:
@@ -169,13 +174,15 @@ const MyPage = () => {
           }}>
             {currentUser?.displayName || '사용자'}
           </Typography>
-          <Typography variant="h5" sx={{ 
-            fontWeight: 400,
-            color: 'rgb(0, 51, 161)',
-            mb: 2
-          }}>
-            아주대학교
-          </Typography>
+          {userRole === 'STUDENT' && (
+            <Typography variant="h5" sx={{ 
+              fontWeight: 400,
+              color: 'rgb(0, 51, 161)',
+              mb: 2
+            }}>
+              아주대학교
+            </Typography>
+          )}
         </Box>
       </Box>
 
