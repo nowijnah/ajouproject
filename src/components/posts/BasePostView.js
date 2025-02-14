@@ -453,6 +453,10 @@ function BasePostView({
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            window.open(link.url, '_blank');
+                        }}
                         sx={{
                             p: 2,
                             display: 'flex',
