@@ -8,7 +8,7 @@ import {
     Container, Paper, Typography, Box, Button, 
     Grid, Dialog, DialogContent, DialogTitle, 
     DialogActions, IconButton, Avatar, Tooltip,
-    useTheme 
+    useTheme, Chip
 } from '@mui/material';
 import {
     Edit as EditIcon,
@@ -21,7 +21,8 @@ import {
     Image as ImageIcon,
     GitHub as GitHubIcon,
     YouTube as YouTubeIcon,
-    Link as LinkIcon
+    Link as LinkIcon,
+    Code as CodeIcon
 } from '@mui/icons-material';
 import Comments from '../comments/Comments';
 
@@ -47,7 +48,6 @@ function BasePostView({
       
     useEffect(() => {
         const fetchPost = async () => {
-          // preview 모드 체크
           if (previewData) {
             setPostData(previewData);
             setAuthorData(previewAuthor);
@@ -269,35 +269,109 @@ function BasePostView({
     
             {/* Content */}
             <Box sx={{ px: 4, py: 6 }}>
-                <Box sx={{ 
-                maxWidth: '800px', 
-                margin: '0 auto',
-                '& img': {
-                    maxWidth: '100%',
-                    height: 'auto',
-                    borderRadius: theme.shape.borderRadius,
-                    my: 2
-                },
-                '& h1, & h2, & h3, & h4, & h5, & h6': {
-                    color: theme.palette.text.primary,
-                    mt: 4,
-                    mb: 2
-                },
-                '& p': {
-                    mb: 2,
-                    lineHeight: 1.7
-                },
-                '& a': {
-                    color: theme.palette.primary.main,
-                    textDecoration: 'none',
-                    '&:hover': {
-                    textDecoration: 'underline'
-                    }
-                }
-                }}>
-                <ReactMarkdown>{postData.content}</ReactMarkdown>
-                </Box>
+                    <Box sx={{ 
+                        maxWidth: '800px', 
+                        margin: '0 auto',
+                        '& img': {
+                            maxWidth: '100%',
+                            height: 'auto',
+                            borderRadius: theme.shape.borderRadius,
+                            my: 2
+                        },
+                        '& h1, & h2, & h3, & h4, & h5, & h6': {
+                            color: theme.palette.text.primary,
+                            mt: 4,
+                            mb: 2
+                        },
+                        '& p': {
+                            mb: 2,
+                            lineHeight: 1.7
+                        },
+                        '& a': {
+                            color: theme.palette.primary.main,
+                            textDecoration: 'none',
+                            '&:hover': {
+                                textDecoration: 'underline'
+                            }
+                        }
+                    }}>
+                        <ReactMarkdown>{postData.content}</ReactMarkdown>
+                    </Box>
             </Box>
+
+            {/* Keywords */}
+            {postData.keywords && postData.keywords.length > 0 && (
+                    <Box sx={{ 
+                        px: 4, 
+                        py: 5,
+                        borderTop: '1px solid',
+                        borderColor: 'divider',
+                        background: 'linear-gradient(to right, #f8f9fa, #ffffff)'
+                    }}>
+                        <Box sx={{ 
+                            maxWidth: '800px', 
+                            margin: '0 auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 3
+                        }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.5,
+                                mb: 1
+                            }}>
+                                <CodeIcon 
+                                    sx={{ 
+                                        color: '#0066CC',
+                                        fontSize: '1.5rem'
+                                    }} 
+                                />
+                                <Typography 
+                                    variant="h6"
+                                    sx={{
+                                        fontWeight: 600,
+                                        color: '#1a1a1a',
+                                        fontSize: '1.1rem',
+                                        letterSpacing: '0.3px'
+                                    }}
+                                >
+                                    Keywords
+                                </Typography>
+                            </Box>
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: 1.2,
+                                px: 0.5
+                            }}>
+                                {postData.keywords.map((keyword, index) => (
+                                    <Chip
+                                        key={`${keyword}-${index}`}
+                                        label={keyword}
+                                        sx={{
+                                            bgcolor: 'rgba(0, 102, 204, 0.08)',
+                                            color: '#0066CC',
+                                            border: '1px solid rgba(0, 102, 204, 0.2)',
+                                            borderRadius: '8px',
+                                            '& .MuiChip-label': {
+                                                px: 1.5,
+                                                py: 0.8,
+                                                fontSize: '0.875rem',
+                                                fontWeight: 500
+                                            },
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(0, 102, 204, 0.12)',
+                                                transform: 'translateY(-1px)'
+                                            }
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+                    </Box>
+            )}
     
             {/* Files Section */}
             {postData.files && postData.files.length > 0 && (

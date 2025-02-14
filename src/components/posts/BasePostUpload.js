@@ -8,7 +8,7 @@ import { useAuth } from '../auth/AuthContext';
 import { 
     Container, Paper, Typography, Box, Grid, TextField,
     Button, IconButton, List, ListItem,
-    useTheme 
+    Chip, TextField as MuiTextFields 
 } from '@mui/material';
 import {
     CloudUpload as UploadIcon,
@@ -41,6 +41,9 @@ function BasePostUpload({ collectionName }) {
     const [newLink, setNewLink] = useState('');
     const [newLinkDescription, setNewLinkDescription] = useState('');
   
+    // 키워드 관련
+    const [keywords, setKeywords] = useState([]);
+    const [newKeyword, setNewKeyword] = useState('');
   
     useEffect(() => {
       const fetchPost = async () => {
@@ -53,6 +56,7 @@ function BasePostUpload({ collectionName }) {
               setSubtitle(data.subtitle || '');
               setMarkdownContent(data.content);
               setThumbnail(data.thumbnail || null);
+              setKeywords(data.keywords || []);
               
               // 기존 파일 데이터 설정
               if (data.files) {
@@ -197,6 +201,27 @@ function BasePostUpload({ collectionName }) {
         e.stopPropagation();
     };
 
+    // 키워드
+    const handleKeywordAdd = (e) => {
+      if (e.type === 'keydown' && e.nativeEvent.isComposing) {
+        return;
+      }
+      if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+        e.preventDefault();
+      if (newKeyword.trim()) {
+        const trimmedKeyword = newKeyword.trim().toLowerCase();
+        if (!keywords.includes(trimmedKeyword)) {
+          setKeywords([...keywords, trimmedKeyword]);
+          setNewKeyword('');
+        }
+      }
+    }
+    };
+
+    const handleKeywordDelete = (keyword) => {
+      setKeywords(keywords.filter(kw => kw !== keyword));
+    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -239,6 +264,7 @@ function BasePostUpload({ collectionName }) {
             files: uploadedFiles,
             links,
             thumbnail: thumbnailUrl,
+            keywords,
             updatedAt: serverTimestamp()
         };
 
@@ -617,6 +643,40 @@ function BasePostUpload({ collectionName }) {
                 )}
               </Box>
     
+              {/* 키워드 */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                    키워드
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    사용한 기술 스택이나 주요 키워드를 입력해주세요. (Enter로 추가)
+                </Typography>
+                <TextField
+                  fullWidth
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onKeyDown={handleKeywordAdd}
+                  placeholder="키워드 입력 후 Enter"
+                  variant="outlined"
+                  sx={{ mb: 2 }}
+              />
+              <Box sx={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: 1 
+              }}>
+                  {keywords.map((keyword) => (
+                      <Chip
+                          key={keyword}
+                          label={keyword}
+                          onDelete={() => handleKeywordDelete(keyword)}
+                          color="primary"
+                        variant="outlined"
+                    />
+                  ))}
+                </Box>
+              </Box>
+              
               {/* 등록 */}
               <Button
                 type="submit"
