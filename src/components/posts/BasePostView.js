@@ -1,19 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-    doc, 
-    getDoc, 
-    collection, 
-    addDoc, 
-    query, 
-    where, 
-    getDocs,
-    deleteDoc,
-    updateDoc
-  } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ReactMarkdown from 'react-markdown';
-import useLike from '../../hooks/useLike'; 
 import {useAuth} from '../auth/AuthContext';
 import { 
     Container, Paper, Typography, Box, Button, 
@@ -41,67 +30,56 @@ import Comments from '../comments/Comments';
 function BasePostView({
     collectionName,
     previewData,     
-    previewAuthor, 
+    previewAuthor,
     onLike,
     onEdit
    }) {
     const theme = useTheme();
     const { postId } = useParams();
-    const { currentUser } = useAuth();
     const navigate = useNavigate();
-   
+    const { currentUser } = useAuth();
+
     const [postData, setPostData] = useState(previewData || null);
     const [authorData, setAuthorData] = useState(previewAuthor || null);
+    const [likeData, setLikeData] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
-    // currentUser.uid를 useLike 훅에 전달
-    const { isLiked, likeCount, toggleLike } = useLike(
-        postId, 
-        collectionName,
-        currentUser?.uid || null
+    const [isLiked, setIsLiked] = useState(
+      likeData?.some(like => like.userId === currentUser?.userId) || false
     );
       
     useEffect(() => {
         const fetchPost = async () => {
-            if (previewData) {
-                setPostData(previewData);
-                setAuthorData(previewAuthor);
-                // preview 모드에서도 좋아요 상태 초기화
-                if (currentUser) {
-                    await initializeLikeStatus(currentUser.uid);
+          if (previewData) {
+            setPostData(previewData);
+            setAuthorData(previewAuthor);
+            return;
+          }
+      
+          // 실제 데이터 fetch
+          if (collectionName && postId) {
+            try {
+              const postDoc = await getDoc(doc(db, collectionName, postId));
+              if (postDoc.exists()) {
+                const data = postDoc.data();
+                setPostData({ id: postDoc.id, ...data });
+                
+                // 작성자 정보 가져오기
+                if (data.authorId) {
+                  const authorDoc = await getDoc(doc(db, 'users', data.authorId));
+                  if (authorDoc.exists()) {
+                    setAuthorData({ id: authorDoc.id, ...authorDoc.data() });
+                  }
                 }
-                return;
+              }
+            } catch (error) {
+              console.error('Error fetching post:', error);
             }
-        
-            // 실제 데이터 fetch
-            if (collectionName && postId) {
-                try {
-                    const postDoc = await getDoc(doc(db, collectionName, postId));
-                    if (postDoc.exists()) {
-                        const data = postDoc.data();
-                        setPostData({ id: postDoc.id, ...data });
-                        
-                        // 작성자 정보 가져오기
-                        if (data.authorId) {
-                            const authorDoc = await getDoc(doc(db, 'users', data.authorId));
-                            if (authorDoc.exists()) {
-                                setAuthorData({ id: authorDoc.id, ...authorDoc.data() });
-                            }
-                        }
-    
-                        // 좋아요 상태 초기화 (작성자 정보 가져온 후)
-                        if (currentUser) {
-                            await initializeLikeStatus(currentUser.uid);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching post:', error);
-                }
-            }
+          }
         };
-        
+      
         fetchPost();
-    }, [collectionName, postId, previewData, previewAuthor, currentUser]); // currentUser 의존성 추가
-
+    }, [collectionName, postId, previewData, previewAuthor]);
+    
     const handleEdit = () => {
         navigate(`/${collectionName}/${postId}/edit`);
     };                                                                
@@ -121,16 +99,14 @@ function BasePostView({
       };
   
     // 좋아요
-    const handleLike = async () => {
-        if (!currentUser) {
-            alert('로그인이 필요합니다.');
-            return;
-        }
-        try {
-            await toggleLike();
-        } catch (error) {
-            alert(error.message);
-        }
+    const handleLike = () => {
+      if (!currentUser) return;
+      setIsLiked(!isLiked);
+      onLike && onLike({
+        postId: postData.postId,
+        userId: currentUser.userId,
+        isLiked: !isLiked
+      });
     };
   
     // 작성자 프로필로 이동
@@ -205,8 +181,8 @@ function BasePostView({
                     <IconButton 
                         onClick={handleLike}
                         sx={{ 
-                        color: isLiked ? 'rgb(0, 51, 161)' : 'grey.500',
-                        '&:hover': { color: 'rgb(0, 51, 161)' }
+                        color: isLiked ? 'primary.main' : 'grey.500',
+                        '&:hover': { color: 'primary.main' }
                         }}
                     >
                         {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
@@ -222,7 +198,7 @@ function BasePostView({
                     </Tooltip>
                 )}
                 <Typography variant="body2" color="text.secondary">
-                    {likeCount}
+                    {postData.likeCount}
                 </Typography>
                 </Box>
             </Box>
@@ -261,7 +237,7 @@ function BasePostView({
                 </Typography>
                 )}
     
-            {currentUser?.userId === authorData?.userId && (
+            {currentUser?.uid === authorData?.id && (
                 <IconButton
                 onClick={handleEdit}
                 sx={{ 
