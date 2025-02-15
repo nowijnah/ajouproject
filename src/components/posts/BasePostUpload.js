@@ -8,14 +8,15 @@ import { useAuth } from '../auth/AuthContext';
 import { 
     Container, Paper, Typography, Box, Grid, TextField,
     Button, IconButton, List, ListItem,
-    Chip, TextField as MuiTextFields 
+    Chip, TextField as MuiTextFields
 } from '@mui/material';
 import {
     CloudUpload as UploadIcon,
     Close as CloseIcon,
     Add as AddIcon,
     Visibility as EyeIcon,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Edit as EditIcon
 } from '@mui/icons-material';
 import BasePostView from './BasePostView';
 
@@ -295,46 +296,51 @@ function BasePostUpload({ collectionName }) {
     };
 
     if (isPreview) {
-        const previewData = {
-          postId: postId || 'preview-id',
-          authorId: currentUser.uid,
-          type: 'PORTFOLIO',
-          title,
-          subtitle,
-          content: markdownContent,
-          files: files.map(file => ({
-            fileId: file.fileId,
-            url: file.url || URL.createObjectURL(file.file),
-            filename: file.file.name || file.filename,
-            type: file.type,
-            description: file.description
-          })),
-          links,
-          likeCount: 0,
-          commentCount: 0,
-          thumbnail: thumbnail instanceof File ? URL.createObjectURL(thumbnail) : thumbnail,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-    
-        return (
-          <BasePostView
-            collectionName={collectionName}
-            previewData={previewData}
-            previewAuthor={{
-              userId: currentUser.uid,
-              displayName: currentUser.displayName,
-              profileImage: currentUser.photoURL,
-              role: currentUser.role || 'STUDENT'
-            }}
-            likeData={[]}
-            onLike={() => {}}
-            onEdit={() => setIsPreview(false)}
-          />
-        );
-      }
-      
       return (
+          <>
+              <Button
+                  variant="contained"
+                  onClick={() => setIsPreview(false)}
+                  sx={{ 
+                      position: 'fixed',
+                      top: 80,
+                      right: 20,
+                      zIndex: 9999
+                  }}
+              >
+                  수정 페이지로 돌아가기
+              </Button>
+              
+              <BasePostView
+                  collectionName={collectionName}
+                  previewData={{
+                      postId: postId || 'preview-id',
+                      authorId: currentUser.uid,
+                      type: 'PORTFOLIO',
+                      title,
+                      subtitle,
+                      content: markdownContent,
+                      files,
+                      links,
+                      likeCount: 0,
+                      commentCount: 0,
+                      thumbnail,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                      keywords
+                  }}
+                  previewAuthor={{
+                      userId: currentUser.uid,
+                      displayName: currentUser.displayName,
+                      profileImage: currentUser.photoURL,
+                      role: currentUser.role || 'STUDENT'
+                  }}
+              />
+          </>
+      );
+  }
+      
+    return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
           <Paper elevation={3} sx={{ p: 4 }}>
             {/* 헤더 */}
