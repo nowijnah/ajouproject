@@ -14,8 +14,7 @@ import {
   writeBatch,
   serverTimestamp,
   getDoc,
-  increment, 
-  doc 
+  increment
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../components/auth/AuthContext';
@@ -154,16 +153,28 @@ const commentsHook = (postId, collectionName) => {
     if (!currentUser) throw new Error("로그인이 필요합니다.");
     
     try {
+      const batch = writeBatch(db);
+
       const commentsRef = collection(db, `${collectionName}_comments`);
-      await addDoc(commentsRef, {
+      const newReplyRef = doc(commentsRef);
+      const newReply = {
         postId,
         content,
-        isPrivate: parentIsPrivate, // 부모 댓글의 비공개 여부를 따름
+        isPrivate: parentIsPrivate,
         authorId: currentUser.uid,
         parentId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
+      };
+
+      batch.set(newReplyRef, newReply);
+    
+      const postRef = doc(db, collectionName, postId);
+      batch.update(postRef, {
+        commentCount: increment(1)
       });
+      
+      await batch.commit();
     } catch (err) {
       console.error("Error adding reply:", err);
       setError(err);
@@ -202,19 +213,25 @@ const commentsHook = (postId, collectionName) => {
       const commentsRef = collection(db, `${collectionName}_comments`);
       const batch = writeBatch(db);
       
-      // 답글 삭제
       const repliesQuery = query(
         commentsRef,
         where("parentId", "==", commentId)
       );
       const repliesSnapshot = await getDocs(repliesQuery);
       
+      const replyCount = repliesSnapshot.docs.length;
+
       repliesSnapshot.docs.forEach(replyDoc => {
         batch.delete(doc(db, `${collectionName}_comments`, replyDoc.id));
       });
       
       // 원본 댓글 삭제
       batch.delete(doc(db, `${collectionName}_comments`, commentId));
+
+      const postRef = doc(db, collectionName, postId);
+      batch.update(postRef, {
+        commentCount: increment(-(1 + replyCount))
+      });
       
       await batch.commit();
 
