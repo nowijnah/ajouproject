@@ -19,54 +19,89 @@ import ProfilePage from './pages/ProfilePage';
 import {SignIn} from './components/auth/SignIn';
 import {SignUp} from './components/auth/SignUp';
 import { AuthProvider } from './components/auth/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 export default function App() {
   return (
     <AuthProvider>
-    <Router>
-      <CssBaseline />
-      <Box sx={{ 
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh'
-      }}>
-        <Navbar />
-        <Box component="main" sx={{ 
-          flex: 1,
+      <Router>
+        <CssBaseline />
+        <Box sx={{ 
           display: 'flex',
           flexDirection: 'column',
-          marginTop: '64px',
-          marginBottom: '64px'
+          minHeight: '100vh'
         }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path='/mypage' element={<MyPage />} />
-            <Route path="/signup" element={<SignUp />} /> 
-            <Route path="/signin" element={<SignIn />} />   
-            <Route path="/profile/:userId" element={<ProfilePage />} />     
+          <Navbar />
+          <Box component="main" sx={{ 
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            marginTop: '64px',
+            marginBottom: '64px'
+          }}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/signup" element={<SignUp />} /> 
+              <Route path="/signin" element={<SignIn />} />
 
-            {/* 포트폴리오 */}
-            <Route path="/portfolios" element={<PortfolioPage />} />
-            <Route path="/portfolios/:postId" element={<PortfolioView />} />
-            <Route path="/portfolios/:postId/edit" element={<PortfolioUpload />} />
-            <Route path="/portfolios/new" element={<PortfolioUpload />} />
+              {/* Protected Routes */}
+              <Route path="/mypage" element={
+                <ProtectedRoute>
+                  <MyPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile/:userId" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              
+              {/* Protected Upload Routes */}
+              <Route path="/portfolios/new" element={
+                <ProtectedRoute>
+                  <PortfolioUpload />
+                </ProtectedRoute>
+              } />
+              <Route path="/portfolios/:postId/edit" element={
+                <ProtectedRoute>
+                  <PortfolioUpload />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/labs/new" element={
+                <ProtectedRoute>
+                  <LabUpload />
+                </ProtectedRoute>
+              } />
+              <Route path="/labs/:postId/edit" element={
+                <ProtectedRoute>
+                  <LabUpload />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/companies/new" element={
+                <ProtectedRoute>
+                  <CompanyUpload />
+                </ProtectedRoute>
+              } />
+              <Route path="/companies/:postId/edit" element={
+                <ProtectedRoute>
+                  <CompanyUpload />
+                </ProtectedRoute>
+              } />
 
-            {/* 연구실 */}
-            <Route path="/labs" element={<LabPage />} /> 
-            <Route path="/labs/:postId" element={<LabView />} />
-            <Route path="/labs/:postId/edit" element={<LabUpload />} />
-            <Route path="/labs/new" element={<LabUpload />} />
-
-            {/* 회사 */}
-            <Route path="/companies" element={<CompanyPage />} />
-            <Route path="/companies/:postId" element={<CompanyView />} />
-            <Route path="/companies/:postId/edit" element={<CompanyUpload />} />
-            <Route path="/companies/new" element={<CompanyUpload />} />    
-          </Routes>
+              {/* Public Routes */}
+              <Route path="/portfolios" element={<PortfolioPage />} />
+              <Route path="/portfolios/:postId" element={<PortfolioView />} />
+              <Route path="/labs" element={<LabPage />} /> 
+              <Route path="/labs/:postId" element={<LabView />} />
+              <Route path="/companies" element={<CompanyPage />} />
+              <Route path="/companies/:postId" element={<CompanyView />} />
+            </Routes>
+          </Box>
+          <Footer />
         </Box>
-        <Footer />
-      </Box>
-    </Router>
+      </Router>
     </AuthProvider>
   );
 }
