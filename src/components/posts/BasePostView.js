@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { 
+    doc, 
+    getDoc, 
+    collection, 
+    addDoc, 
+    query, 
+    where, 
+    getDocs,
+    deleteDoc,
+    updateDoc
+  } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ReactMarkdown from 'react-markdown';
+import useLike from '../../hooks/useLike'; 
 import {useAuth} from '../auth/AuthContext';
 import { 
     Container, Paper, Typography, Box, Button, 
     Grid, Dialog, DialogContent, DialogTitle, 
     DialogActions, IconButton, Avatar, Tooltip,
-    useTheme, Chip
+    useTheme 
 } from '@mui/material';
 import {
     Edit as EditIcon,
@@ -21,64 +32,74 @@ import {
     Image as ImageIcon,
     GitHub as GitHubIcon,
     YouTube as YouTubeIcon,
-    Link as LinkIcon,
-    Code as CodeIcon
+    Link as LinkIcon
 } from '@mui/icons-material';
-import Comments from '../comments/Comments';
+
 
 function BasePostView({
     collectionName,
     previewData,     
-    previewAuthor,
+    previewAuthor, 
     onLike,
     onEdit
    }) {
     const theme = useTheme();
     const { postId } = useParams();
-    const navigate = useNavigate();
     const { currentUser } = useAuth();
-
+    const navigate = useNavigate();
+   
     const [postData, setPostData] = useState(previewData || null);
     const [authorData, setAuthorData] = useState(previewAuthor || null);
-    const [likeData, setLikeData] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [isLiked, setIsLiked] = useState(
-      likeData?.some(like => like.userId === currentUser?.userId) || false
+    // currentUser.uid를 useLike 훅에 전달
+    const { isLiked, likeCount, toggleLike } = useLike(
+        postId, 
+        collectionName,
+        currentUser?.uid || null
     );
       
     useEffect(() => {
         const fetchPost = async () => {
-          if (previewData) {
-            setPostData(previewData);
-            setAuthorData(previewAuthor);
-            return;
-          }
-      
-          // 실제 데이터 fetch
-          if (collectionName && postId) {
-            try {
-              const postDoc = await getDoc(doc(db, collectionName, postId));
-              if (postDoc.exists()) {
-                const data = postDoc.data();
-                setPostData({ id: postDoc.id, ...data });
-                
-                // 작성자 정보 가져오기
-                if (data.authorId) {
-                  const authorDoc = await getDoc(doc(db, 'users', data.authorId));
-                  if (authorDoc.exists()) {
-                    setAuthorData({ id: authorDoc.id, ...authorDoc.data() });
-                  }
+            if (previewData) {
+                setPostData(previewData);
+                setAuthorData(previewAuthor);
+                // preview 모드에서도 좋아요 상태 초기화
+                if (currentUser) {
+                    await initializeLikeStatus(currentUser.uid);
                 }
-              }
-            } catch (error) {
-              console.error('Error fetching post:', error);
+                return;
             }
-          }
-        };
-      
-        fetchPost();
-    }, [collectionName, postId, previewData, previewAuthor]);
+        
+            // 실제 데이터 fetch
+            if (collectionName && postId) {
+                try {
+                    const postDoc = await getDoc(doc(db, collectionName, postId));
+                    if (postDoc.exists()) {
+                        const data = postDoc.data();
+                        setPostData({ id: postDoc.id, ...data });
+                        
+                        // 작성자 정보 가져오기
+                        if (data.authorId) {
+                            const authorDoc = await getDoc(doc(db, 'users', data.authorId));
+                            if (authorDoc.exists()) {
+                                setAuthorData({ id: authorDoc.id, ...authorDoc.data() });
+                            }
+                        }
     
+                        // 좋아요 상태 초기화 (작성자 정보 가져온 후)
+                        if (currentUser) {
+                            await initializeLikeStatus(currentUser.uid);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching post:', error);
+                }
+            }
+        };
+        
+        fetchPost();
+    }, [collectionName, postId, previewData, previewAuthor, currentUser]); // currentUser 의존성 추가
+
     const handleEdit = () => {
         navigate(`/${collectionName}/${postId}/edit`);
     };                                                                
@@ -98,25 +119,21 @@ function BasePostView({
       };
   
     // 좋아요
-    const handleLike = () => {
-      if (!currentUser) return;
-      setIsLiked(!isLiked);
-      onLike && onLike({
-        postId: postData.postId,
-        userId: currentUser.userId,
-        isLiked: !isLiked
-      });
+    const handleLike = async () => {
+        if (!currentUser) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+        try {
+            await toggleLike();
+        } catch (error) {
+            alert(error.message);
+        }
     };
   
     // 작성자 프로필로 이동
     const handleAuthorClick = () => {
-        if (!authorData?.id) return;
-    
-        if (currentUser?.uid === authorData.id) {
-            navigate('/mypage');
-        } else {
-            navigate(`/profile/${authorData.id}`);
-        }
+      window.location.href = `/profile/${authorData.userId}`;
     };
   
     // 링크 아이콘 선택
@@ -182,8 +199,8 @@ function BasePostView({
                     <IconButton 
                         onClick={handleLike}
                         sx={{ 
-                        color: isLiked ? 'primary.main' : 'grey.500',
-                        '&:hover': { color: 'primary.main' }
+                        color: isLiked ? 'rgb(0, 51, 161)' : 'grey.500',
+                        '&:hover': { color: 'rgb(0, 51, 161)' }
                         }}
                     >
                         {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
@@ -199,7 +216,7 @@ function BasePostView({
                     </Tooltip>
                 )}
                 <Typography variant="body2" color="text.secondary">
-                    {postData.likeCount}
+                    {likeCount}
                 </Typography>
                 </Box>
             </Box>
@@ -238,7 +255,7 @@ function BasePostView({
                 </Typography>
                 )}
     
-            {currentUser?.uid === authorData?.id && (
+            {currentUser?.userId === authorData?.userId && (
                 <IconButton
                 onClick={handleEdit}
                 sx={{ 
@@ -275,109 +292,35 @@ function BasePostView({
     
             {/* Content */}
             <Box sx={{ px: 4, py: 6 }}>
-                    <Box sx={{ 
-                        maxWidth: '800px', 
-                        margin: '0 auto',
-                        '& img': {
-                            maxWidth: '100%',
-                            height: 'auto',
-                            borderRadius: theme.shape.borderRadius,
-                            my: 2
-                        },
-                        '& h1, & h2, & h3, & h4, & h5, & h6': {
-                            color: theme.palette.text.primary,
-                            mt: 4,
-                            mb: 2
-                        },
-                        '& p': {
-                            mb: 2,
-                            lineHeight: 1.7
-                        },
-                        '& a': {
-                            color: theme.palette.primary.main,
-                            textDecoration: 'none',
-                            '&:hover': {
-                                textDecoration: 'underline'
-                            }
-                        }
-                    }}>
-                        <ReactMarkdown>{postData.content}</ReactMarkdown>
-                    </Box>
+                <Box sx={{ 
+                maxWidth: '800px', 
+                margin: '0 auto',
+                '& img': {
+                    maxWidth: '100%',
+                    height: 'auto',
+                    borderRadius: theme.shape.borderRadius,
+                    my: 2
+                },
+                '& h1, & h2, & h3, & h4, & h5, & h6': {
+                    color: theme.palette.text.primary,
+                    mt: 4,
+                    mb: 2
+                },
+                '& p': {
+                    mb: 2,
+                    lineHeight: 1.7
+                },
+                '& a': {
+                    color: theme.palette.primary.main,
+                    textDecoration: 'none',
+                    '&:hover': {
+                    textDecoration: 'underline'
+                    }
+                }
+                }}>
+                <ReactMarkdown>{postData.content}</ReactMarkdown>
+                </Box>
             </Box>
-
-            {/* Keywords */}
-            {postData.keywords && postData.keywords.length > 0 && (
-                    <Box sx={{ 
-                        px: 4, 
-                        py: 5,
-                        borderTop: '1px solid',
-                        borderColor: 'divider',
-                        background: 'linear-gradient(to right, #f8f9fa, #ffffff)'
-                    }}>
-                        <Box sx={{ 
-                            maxWidth: '800px', 
-                            margin: '0 auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 3
-                        }}>
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1.5,
-                                mb: 1
-                            }}>
-                                <CodeIcon 
-                                    sx={{ 
-                                        color: '#0066CC',
-                                        fontSize: '1.5rem'
-                                    }} 
-                                />
-                                <Typography 
-                                    variant="h6"
-                                    sx={{
-                                        fontWeight: 600,
-                                        color: '#1a1a1a',
-                                        fontSize: '1.1rem',
-                                        letterSpacing: '0.3px'
-                                    }}
-                                >
-                                    Keywords
-                                </Typography>
-                            </Box>
-                            <Box sx={{ 
-                                display: 'flex', 
-                                flexWrap: 'wrap', 
-                                gap: 1.2,
-                                px: 0.5
-                            }}>
-                                {postData.keywords.map((keyword, index) => (
-                                    <Chip
-                                        key={`${keyword}-${index}`}
-                                        label={keyword}
-                                        sx={{
-                                            bgcolor: 'rgba(0, 102, 204, 0.08)',
-                                            color: '#0066CC',
-                                            border: '1px solid rgba(0, 102, 204, 0.2)',
-                                            borderRadius: '8px',
-                                            '& .MuiChip-label': {
-                                                px: 1.5,
-                                                py: 0.8,
-                                                fontSize: '0.875rem',
-                                                fontWeight: 500
-                                            },
-                                            transition: 'all 0.2s ease',
-                                            '&:hover': {
-                                                bgcolor: 'rgba(0, 102, 204, 0.12)',
-                                                transform: 'translateY(-1px)'
-                                            }
-                                        }}
-                                    />
-                                ))}
-                            </Box>
-                        </Box>
-                    </Box>
-            )}
     
             {/* Files Section */}
             {postData.files && postData.files.length > 0 && (
@@ -459,10 +402,6 @@ function BasePostView({
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            window.open(link.url, '_blank');
-                        }}
                         sx={{
                             p: 2,
                             display: 'flex',
@@ -576,27 +515,6 @@ function BasePostView({
                 </Button>
                 </DialogActions>
             </Dialog>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
-                    댓글 {postData.commentCount || 0}
-            </Typography>
-            </Box>
-            
-            {!previewData && (  // 미리보기가 아닐 때만 댓글 표시
-                <Box sx={{ 
-                    px: 4, 
-                    py: 4,
-                    borderTop: '1px solid',
-                    borderColor: 'divider'
-                }}>
-                    <Comments
-                        postId={postId}
-                        collectionName={collectionName}
-                        postAuthorId={postData?.authorId}
-                    />
-                </Box>
-                )}
             </Paper>
         </Container>
     );
