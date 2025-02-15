@@ -578,8 +578,8 @@ function BasePostView({
             </Dialog>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-                댓글 {postData.commentCount || 0}
+            <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
+                    댓글 {postData.commentCount || 0}
             </Typography>
             </Box>
             
@@ -590,9 +590,6 @@ function BasePostView({
                     borderTop: '1px solid',
                     borderColor: 'divider'
                 }}>
-                    <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-                    댓글
-                    </Typography>
                     <Comments
                         postId={postId}
                         collectionName={collectionName}
