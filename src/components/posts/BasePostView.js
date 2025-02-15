@@ -577,6 +577,12 @@ function BasePostView({
                 </DialogActions>
             </Dialog>
 
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+                댓글 {postData.commentCount || 0}
+            </Typography>
+            </Box>
+            
             {!previewData && (  // 미리보기가 아닐 때만 댓글 표시
                 <Box sx={{ 
                     px: 4, 
