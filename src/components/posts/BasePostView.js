@@ -577,6 +577,12 @@ function BasePostView({
                 </DialogActions>
             </Dialog>
 
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
+                    댓글 {postData.commentCount || 0}
+            </Typography>
+            </Box>
+            
             {!previewData && (  // 미리보기가 아닐 때만 댓글 표시
                 <Box sx={{ 
                     px: 4, 
@@ -584,9 +590,6 @@ function BasePostView({
                     borderTop: '1px solid',
                     borderColor: 'divider'
                 }}>
-                    <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-                    댓글
-                    </Typography>
                     <Comments
                         postId={postId}
                         collectionName={collectionName}
