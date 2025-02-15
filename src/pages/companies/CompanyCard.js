@@ -1,21 +1,44 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardMedia, Typography, Box } from '@mui/material';
-import { ThumbUp as ThumbUpIcon, ChatBubbleOutline as CommentIcon } from '@mui/icons-material';
+import { Card, CardContent, CardMedia, Typography, Box, IconButton, Tooltip } from '@mui/material';
+import { ThumbUp as ThumbUpIcon, ThumbUpOutlined as ThumbUpOutlinedIcon, ChatBubbleOutline as CommentIcon } from '@mui/icons-material';
+import { useAuth } from '../../components/auth/AuthContext';
 import { contentCardStyles } from '../../components/common/styles';
+import useLike from '../../hooks/useLike';
 
 const CompanyCard = ({ 
   id,
   title, 
   description, 
   image, 
-  likeCount = 0, 
+  likeCount: initialLikeCount = 0, 
   commentCount = 0 
 }) => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const { isLiked, likeCount, loading, toggleLike } = useLike(
+    id, 
+    'companies',
+    currentUser?.uid || null
+  );
 
   const handleClick = () => {
     navigate(`/companies/${id}`);
+  };
+
+  const handleLikeClick = async (e) => {
+    e.stopPropagation();
+    
+    if (!currentUser) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    try {
+      await toggleLike();
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   return (
@@ -63,9 +86,53 @@ const CompanyCard = ({
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <ThumbUpIcon sx={{ fontSize: 16, color: 'rgb(0, 51, 161)' }} />
-            <Typography variant="caption" sx={{ color: 'rgb(0, 51, 161)' }}>
-              {likeCount}
+            {currentUser ? (
+              <IconButton
+                onClick={handleLikeClick}
+                size="small"
+                disabled={loading}
+                sx={{ 
+                  p: 0.5,
+                  color: isLiked ? 'rgb(0, 51, 161)' : 'text.secondary',
+                  '&:hover': { bgcolor: 'rgba(0, 51, 161, 0.1)' }
+                }}
+              >
+                {isLiked ? (
+                  <ThumbUpIcon 
+                    sx={{ 
+                      fontSize: 16,
+                      color: 'rgb(0, 51, 161)'
+                    }} 
+                  />
+                ) : (
+                  <ThumbUpOutlinedIcon 
+                    sx={{ 
+                      fontSize: 16,
+                      color: 'rgb(0, 51, 161)'
+                    }} 
+                  />
+                )}
+              </IconButton>
+            ) : (
+              <Tooltip title="로그인이 필요합니다">
+                <span>
+                  <ThumbUpOutlinedIcon 
+                    sx={{ 
+                      fontSize: 16, 
+                      color: 'text.secondary'
+                    }} 
+                  />
+                </span>
+              </Tooltip>
+            )}
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'rgb(0, 51, 161)',
+                minWidth: '20px'
+              }}
+            >
+              {loading ? initialLikeCount : likeCount}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
