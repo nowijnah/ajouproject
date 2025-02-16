@@ -55,15 +55,15 @@ export const commonStyles = {
     fontWeight: 300,
     letterSpacing: 1.2,
   },
-  filterBox: {
-    borderRadius: '5px',
-    margin: '148px 20px 0px -40px',
-    padding: '30px 0px 0px 10px',
-    border: '1px solid #e0e0e0',
-    width: 190,
-    height: 400,
-    flexShrink: 0,
-  },
+  // filterBox: {
+  //   borderRadius: '5px',
+  //   margin: '148px 20px 0px -40px',
+  //   padding: '30px 0px 0px 10px',
+  //   border: '1px solid #e0e0e0',
+  //   width: 190,
+  //   height: 400,
+  //   flexShrink: 0,
+  // },
   searchField: {
     '& .MuiOutlinedInput-root': {
       borderRadius: '20px',
@@ -85,17 +85,17 @@ export const contentListStyles = {
     px: { xs: 2, sm: 4, md: 6 },
     py: { xs: 2, md: 4 },
     width: '100%',
-    padding: '32px 110px 48px 100px !important',
+    padding: '32px 120px 48px 130px !important',
   },
   mainContent: {
     display: 'flex',
     flexDirection: { xs: 'column', lg: 'row' },
     gap: { xs: 3, md: 10 }
   },
-  filterSection: {
-    minWidth: '190px',
-    order: -1
-  }
+  // filterSection: {
+  //   minWidth: '190px',
+  //   order: -1
+  // }
 };
 
 export const searchHeaderStyles = {
@@ -161,13 +161,10 @@ export const contentCardStyles = {
   },
   media: {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    maxWidth: '100%',
-    maxHeight: '100%',
-    width: 'auto',
-    height: 'auto',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
     objectFit: 'cover'
   },
   title: {
@@ -196,49 +193,49 @@ export const contentCardStyles = {
   }
 };
 
-export const filterSectionStyles = {
-  box: {
-    borderRadius: '5px',
-    border: '1px solid #e0e0e0',
-    width: { xs: '100%', sm: '100%', md: '100%' },
-    margin: { 
-      xs: '0',
-      sm: '0px 0px 0px 0px',
-      md: '0px 13px 0px 13px'
-    },
-    padding: { 
-      xs: '30px 30px 0px 30px',
-      sm: '30px 30px 0px 30px',
-      md: '30px 30px 0px 30px'
-    },
-    backgroundColor: '#fff',
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  expandButton: {
-    width: '100%',
-    justifyContent: 'center',
-    color: 'primary.main',
-    marginTop: 1,
-    marginBottom: 3,
-    '&:hover': {
-      backgroundColor: 'transparent',
-    }
-  },
-  filterItem: {
-    checkbox: {
-      color: 'rgb(0, 51, 161)',
-      '&.Mui-checked': {
-        color: 'rgb(0, 51, 161)',
-      },
-      '& .MuiSvgIcon-root': {
-        fontSize: 20,
-      }
-    },
-    label: {
-      fontSize: '0.95rem',
-      fontWeight: 350,
-      color: '#333'
-    }
-  }
-};
+// export const filterSectionStyles = {
+//   box: {
+//     borderRadius: '5px',
+//     border: '1px solid #e0e0e0',
+//     width: { xs: '100%', sm: '100%', md: '100%' },
+//     margin: { 
+//       xs: '0',
+//       sm: '0px 0px 0px 0px',
+//       md: '0px 13px 0px 13px'
+//     },
+//     padding: { 
+//       xs: '30px 30px 0px 30px',
+//       sm: '30px 30px 0px 30px',
+//       md: '30px 30px 0px 30px'
+//     },
+//     backgroundColor: '#fff',
+//     display: 'flex',
+//     flexDirection: 'column'
+//   },
+//   expandButton: {
+//     width: '100%',
+//     justifyContent: 'center',
+//     color: 'primary.main',
+//     marginTop: 1,
+//     marginBottom: 3,
+//     '&:hover': {
+//       backgroundColor: 'transparent',
+//     }
+//   },
+  // filterItem: {
+  //   checkbox: {
+  //     color: 'rgb(0, 51, 161)',
+  //     '&.Mui-checked': {
+  //       color: 'rgb(0, 51, 161)',
+  //     },
+  //     '& .MuiSvgIcon-root': {
+  //       fontSize: 20,
+  //     }
+  //   },
+  //   label: {
+  //     fontSize: '0.95rem',
+  //     fontWeight: 350,
+  //     color: '#333'
+  //   }
+  // }
+//};
