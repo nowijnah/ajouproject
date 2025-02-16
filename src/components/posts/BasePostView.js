@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { 
+    doc, 
+    getDoc, 
+    collection, 
+    addDoc, 
+    query, 
+    where, 
+    getDocs,
+    deleteDoc,
+    updateDoc
+  } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ReactMarkdown from 'react-markdown';
+import useLike from '../../hooks/useLike'; 
 import {useAuth} from '../auth/AuthContext';
 import { 
     Container, Paper, Typography, Box, Button, 
@@ -41,10 +52,12 @@ function BasePostView({
 
     const [postData, setPostData] = useState(previewData || null);
     const [authorData, setAuthorData] = useState(previewAuthor || null);
-    const [likeData, setLikeData] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [isLiked, setIsLiked] = useState(
-      likeData?.some(like => like.userId === currentUser?.userId) || false
+    // currentUser.uid를 useLike 훅에 전달
+    const { isLiked, likeCount, toggleLike } = useLike(
+        postId, 
+        collectionName,
+        currentUser?.uid || null
     );
       
     useEffect(() => {
@@ -70,6 +83,11 @@ function BasePostView({
                     setAuthorData({ id: authorDoc.id, ...authorDoc.data() });
                   }
                 }
+
+                // 좋아요 상태 초기화 (작성자 정보 가져온 후)
+                if (currentUser) {
+                    await initializeLikeStatus(currentUser.uid);
+                }
               }
             } catch (error) {
               console.error('Error fetching post:', error);
@@ -78,7 +96,7 @@ function BasePostView({
         };
       
         fetchPost();
-    }, [collectionName, postId, previewData, previewAuthor]);
+    }, [collectionName, postId, previewData, previewAuthor, currentUser]);
     
     const handleEdit = () => {
         navigate(`/${collectionName}/${postId}/edit`);
@@ -99,14 +117,16 @@ function BasePostView({
       };
   
     // 좋아요
-    const handleLike = () => {
-      if (!currentUser) return;
-      setIsLiked(!isLiked);
-      onLike && onLike({
-        postId: postData.postId,
-        userId: currentUser.userId,
-        isLiked: !isLiked
-      });
+    const handleLike = async () => {
+        if (!currentUser) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+        try {
+            await toggleLike();
+        } catch (error) {
+            alert(error.message);
+        }
     };
   
     // 작성자 프로필로 이동
@@ -172,35 +192,37 @@ function BasePostView({
                     </Typography>
                 </Box>
                 </Box>
-    
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {currentUser ? (
-                    <Tooltip title={
-                     isLiked ? '좋아요 취소' : '좋아요'
-                    }>
-                    <IconButton 
-                        onClick={handleLike}
-                        sx={{ 
-                        color: isLiked ? 'primary.main' : 'grey.500',
-                        '&:hover': { color: 'primary.main' }
-                        }}
-                    >
-                        {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
-                    </IconButton>
-                    </Tooltip>
-                ) : (
-                    <Tooltip title="로그인이 필요합니다">
-                    <span>
-                        <IconButton disabled>
-                        <ThumbUpOutlinedIcon />
-                        </IconButton>
-                    </span>
-                    </Tooltip>
+                
+                {!previewData && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {currentUser ? (
+                            <Tooltip title={
+                            isLiked ? '좋아요 취소' : '좋아요'
+                            }>
+                            <IconButton 
+                                onClick={handleLike}
+                                sx={{ 
+                                color: isLiked ? 'rgb(0, 51, 161)' : 'grey.500',
+                                '&:hover': { color: 'rgb(0, 51, 161)' }
+                                }}
+                            >
+                                {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
+                            </IconButton>
+                            </Tooltip>
+                        ) : (
+                            <Tooltip title="로그인이 필요합니다">
+                            <span>
+                                <IconButton disabled>
+                                <ThumbUpOutlinedIcon />
+                                </IconButton>
+                            </span>
+                            </Tooltip>
+                        )}
+                        <Typography variant="body2" color="text.secondary">
+                            {likeCount}
+                        </Typography>
+                    </Box>
                 )}
-                <Typography variant="body2" color="text.secondary">
-                    {postData.likeCount}
-                </Typography>
-                </Box>
             </Box>
     
             {/* Title Section */}
@@ -576,26 +598,28 @@ function BasePostView({
                 </DialogActions>
             </Dialog>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
-                    댓글 {postData.commentCount || 0}
-            </Typography>
-            </Box>
-            
-            {!previewData && (  // 미리보기가 아닐 때만 댓글 표시
-                <Box sx={{ 
-                    px: 4, 
-                    py: 4,
-                    borderTop: '1px solid',
-                    borderColor: 'divider'
-                }}>
-                    <Comments
-                        postId={postId}
-                        collectionName={collectionName}
-                        postAuthorId={postData?.authorId}
-                    />
-                </Box>
-                )}
+            {!previewData && (
+                <>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
+                            댓글 {postData.commentCount || 0}
+                        </Typography>
+                    </Box>
+                    
+                    <Box sx={{ 
+                        px: 4, 
+                        py: 4,
+                        borderTop: '1px solid',
+                        borderColor: 'divider'
+                    }}>
+                        <Comments
+                            postId={postId}
+                            collectionName={collectionName}
+                            postAuthorId={postData?.authorId}
+                        />
+                    </Box>
+                </>
+            )}
             </Paper>
         </Container>
     );
