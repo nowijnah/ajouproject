@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Grid, Box, Container, useMediaQuery, ThemeProvider } from '@mui/material';
 import { theme, contentListStyles } from './styles';
-import FilterSection from '../portfolio/FilterSection';
+//import FilterSection from '../portfolio/FilterSection';
 import ContentCard from './ContentCard';
 import SearchHeader from './SearchHeader';
 import CompanyCard  from '../../pages/companies/CompanyCard';
@@ -30,36 +30,36 @@ const styles = {
     flexDirection: { xs: 'column', lg: 'row' },
     gap: { xs: 3, md: 10 }
   },
-  filterSection: {
-    minWidth: '190px',
-    order: -1
-  }
+  // filterSection: {
+  //   minWidth: '190px',
+  //   order: -1
+  // }
 };
 
 // 단순화된 필터 구조
-export const filters = [
-  {
-    techStack: '인공지능'
-  },
-  {
-    techStack: '빅데이터'
-  },
-  {
-    techStack: '클라우드'
-  },
-  {
-    techStack: '보안'
-  },
-  {
-    techStack: '임베디드'
-  }
-];
+// export const filters = [
+//   {
+//     techStack: '인공지능'
+//   },
+//   {
+//     techStack: '빅데이터'
+//   },
+//   {
+//     techStack: '클라우드'
+//   },
+//   {
+//     techStack: '보안'
+//   },
+//   {
+//     techStack: '임베디드'
+//   }
+// ];
 
-export default function ContentList({ type, data, filters, renderContent }) {
+export default function ContentList({ type, data, renderContent }) {
   const config = contentConfig;
   const [activeSort, setActiveSort] = useState('latest'); 
   const [searchText, setSearchText] = useState('');
-  const [activeFilters, setActiveFilters] = useState({});
+  //const [activeFilters, setActiveFilters] = useState({});
   const isMobile = useMediaQuery('(max-width:900px)');
 
   const handleSortChange = (sortType) => {
@@ -70,10 +70,10 @@ export default function ContentList({ type, data, filters, renderContent }) {
     console.log('Searching for:', searchText);
   };
 
-  const handleFiltersChange = (filters) => {
-    setActiveFilters(filters);
-    console.log('Active filters:', filters);
-  };
+  // const handleFiltersChange = (filters) => {
+  //   setActiveFilters(filters);
+  //   console.log('Active filters:', filters);
+  // };
 
   const getFilteredContent = () => {
     let filteredData = [...data];
@@ -87,13 +87,13 @@ export default function ContentList({ type, data, filters, renderContent }) {
     }
 
     // 필터 적용
-    if (Object.keys(activeFilters).length > 0) {
-      filteredData = filteredData.filter(item => {
-        return Object.entries(activeFilters).some(([key, value]) => 
-          value && item[key] === key
-        );
-      });
-    }
+    // if (Object.keys(activeFilters).length > 0) {
+    //   filteredData = filteredData.filter(item => {
+    //     return Object.entries(activeFilters).some(([key, value]) => 
+    //       value && item[key] === key
+    //     );
+    //   });
+    // }
 
     // 정렬 적용
     switch (activeSort) {
@@ -116,14 +116,14 @@ export default function ContentList({ type, data, filters, renderContent }) {
     return filteredData;
   };
 
-  const renderFilterSection = () => (
-    <FilterSection 
-      title={config.title}
-      filters={filters}
-      onFiltersChange={handleFiltersChange}
-      isMobile={isMobile}
-    />
-  );
+  // const renderFilterSection = () => (
+  //   <FilterSection 
+  //     title={config.title}
+  //     filters={filters}
+  //     onFiltersChange={handleFiltersChange}
+  //     isMobile={isMobile}
+  //   />
+  // );
 
   const renderContentGrid = () => (
     <Box sx={{ flexGrow: 1 }}>
@@ -186,16 +186,16 @@ export default function ContentList({ type, data, filters, renderContent }) {
           />
 
           <Box sx={styles.mainContent}>
-            {isMobile && (
+            {/* {isMobile && (
               <FilterSection 
                 title={config.title}
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
                 isMobile={isMobile}
               />
-            )}
+            )} */}
             {renderContentGrid()}
-            {!isMobile && (
+            {/* {!isMobile && (
               <Box sx={styles.filterSection}>
                 <FilterSection 
                   title={config.title}
@@ -204,7 +204,7 @@ export default function ContentList({ type, data, filters, renderContent }) {
                   isMobile={isMobile}
                 />
               </Box>
-            )}
+            )} */}
           </Box>
         </Box>
       </Container>

@@ -67,12 +67,23 @@ const ContentCard = ({
         }
       }}
     >
-      <Box sx={contentCardStyles.mediaBox}>
+      <Box sx={{ 
+        position: 'relative',
+        paddingTop: '56.25%', // 16:9 비율
+        backgroundColor: '#f5f5f5'
+      }}>
         <CardMedia
           component="img"
           image={image || getDefaultImage()}
           alt={title}
-          sx={contentCardStyles.media}
+          sx={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
         />
       </Box>
       <CardContent sx={{ p: 2, flexGrow: 1 }}>
@@ -123,8 +134,13 @@ const ContentCard = ({
                 </span>
               </Tooltip>
             )}
-            <Typography variant="caption" sx={{ color: 'rgb(0, 51, 161)' }}>
-              {loading ? initialLikeCount : likeCount}
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'rgb(0, 51, 161)',
+                  minWidth: '20px'
+                }}
+              >              {loading ? initialLikeCount : likeCount}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

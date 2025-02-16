@@ -33,6 +33,19 @@ const styles = {
     textDecoration: 'none',
     color: 'inherit',
     cursor: 'pointer'
+  },
+  logoContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',  // 로고와 텍스트 사이 간격
+  },
+  siteTitle: {
+    color: '#0A2B5D',
+    fontWeight: 800,
+    fontSize: '2rem',
+    padding: '5px 0 0 0',
+    transform: 'scaleY(0.9)',
+    fontFamily: 'Quicksand, sans-serif',
   }
 };
 
@@ -47,8 +60,11 @@ const navItems = [
 
 function LogoComponent() {
   return (
-    <RouterLink to="/" style={styles.link}>
+    <RouterLink to="/" style={{ ...styles.link, ...styles.logoContainer }}>
       <img src="/logo.png" alt="로고" style={styles.logo} />
+      <Typography sx={styles.siteTitle}>
+        AIM AJOU
+      </Typography>
     </RouterLink>
   );
 }
