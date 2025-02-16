@@ -564,7 +564,7 @@ function BasePostView({
                         style={{
                         maxWidth: '100%',
                         maxHeight: '70vh',
-                        objectFit: 'contain'
+                        objectFit: 'cover'
                         }}
                     />
                     </Box>

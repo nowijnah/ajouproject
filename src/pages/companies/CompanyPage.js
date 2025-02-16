@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ContentList from '../../components/common/ContentList';
-import { filters } from '../../components/common/ContentList';
+//import { filters } from '../../components/common/ContentList';
 
 export default function CompanyPage() {
   const [posts, setPosts] = useState([]);
@@ -65,7 +65,7 @@ export default function CompanyPage() {
     <ContentList 
       type="company"
       data={posts}
-      filters={filters}
+      //filters={filters}
     />
   );
 }
