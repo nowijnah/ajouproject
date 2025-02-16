@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import Comments from '../comments/Comments';
 
+
 function BasePostView({
     collectionName,
     previewData,     
@@ -175,9 +176,7 @@ function BasePostView({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {currentUser ? (
                     <Tooltip title={
-                    authorData?.userId === currentUser?.userId 
-                        ? `좋아요 ${postData.likeCount}개`
-                        : isLiked ? '좋아요 취소' : '좋아요'
+                     isLiked ? '좋아요 취소' : '좋아요'
                     }>
                     <IconButton 
                         onClick={handleLike}
