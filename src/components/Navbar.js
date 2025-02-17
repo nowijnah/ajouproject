@@ -101,6 +101,7 @@ export default function Navbar() {
           </RouterLink>
           <RouterLink to="/mypage" style={styles.link}>
             <Typography variant='body2' color="#000000" sx={styles.text}>MyPage</Typography>
+
           </RouterLink>
           {currentUser ? (
             <RouterLink onClick={handleSignOut} style={{ textDecoration: 'none' }}>
