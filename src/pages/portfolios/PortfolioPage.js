@@ -34,6 +34,7 @@ export default function PortfolioPage() {
             return {
               id: postDoc.id,
               title: postData.title,
+              subtitle: postData.subtitle,
               description: authorName, // 부제목 대신 작성자 이름 표시
               image: postData.thumbnail || '',
               content: postData.content,
@@ -42,7 +43,8 @@ export default function PortfolioPage() {
               likeCount: postData.likeCount,
               commentCount: postData.commentCount,
               files: postData.files || [],
-              links: postData.links || []
+              links: postData.links || [],
+              keywords: postData.keywords || []
             };
           })
         );
