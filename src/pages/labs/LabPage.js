@@ -36,6 +36,7 @@ export default function LabPage() {
             return {
               id: postDoc.id,
               title: postData.title || '',
+              subtitle: postData.subtitle,
               description: `${authorName} 교수님`,
               image: postData.thumbnail || '',
               content: postData.content || '',
@@ -46,7 +47,8 @@ export default function LabPage() {
               files: postData.files || [],
               links: postData.links || [],
               techStack: postData.techStack || [],
-              researchAreas: postData.researchAreas || []
+              researchAreas: postData.researchAreas || [],
+              keywords: postData.keywords || []
             };
           })
         );
