@@ -4,7 +4,9 @@ import {
   Typography,
   Grid,
   Button,
-  Container
+  Container,
+  Tabs,
+  Tab
 } from '@mui/material';
 import {
   Edit as EditIcon
@@ -23,14 +25,16 @@ import {
 import { db } from '../firebase';
 import CompanyCard from '../pages/companies/CompanyCard';
 import PortfolioCard from '../pages/portfolios/PortfolioCard';
-import LabCard from '../pages/labs/LabCard';  // LabCard import 추가
+import LabCard from '../pages/labs/LabCard';
 
 const MyPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [userPosts, setUserPosts] = useState([]);
+  const [likedPosts, setLikedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState(null);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -52,6 +56,7 @@ const MyPage = () => {
     fetchUserRole();
   }, [currentUser]);
 
+  // 내 게시글 가져오기
   useEffect(() => {
     const fetchUserPosts = async () => {
       if (!currentUser?.uid || !userRole) return;
@@ -83,7 +88,7 @@ const MyPage = () => {
         const posts = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          // 서버 타임스탬프를 Date 객체로 변환
+          type: collectionName,
           createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt) || new Date()
         }));
 
@@ -98,13 +103,66 @@ const MyPage = () => {
     fetchUserPosts();
   }, [currentUser, userRole]);
 
+  // 좋아요한 게시글 가져오기
+  useEffect(() => {
+    const fetchLikedPosts = async () => {
+      if (!currentUser?.uid) return;
+
+      try {
+        setLoading(true);
+        // 1. 사용자가 좋아요한 문서들 가져오기
+        const likesRef = collection(db, 'likes');
+        const likesQuery = query(
+          likesRef,
+          where('userId', '==', currentUser.uid)
+        );
+        const likesSnapshot = await getDocs(likesQuery);
+
+        // 2. 각 좋아요한 게시글의 실제 데이터 가져오기
+        const likedPostsPromises = likesSnapshot.docs.map(async (likeDoc) => {
+          const likeData = likeDoc.data();
+          const postRef = doc(db, likeData.collectionName, likeData.postId);
+          const postDoc = await getDoc(postRef);
+          
+          if (postDoc.exists()) {
+            // 작성자 정보 가져오기
+            const authorRef = doc(db, 'users', postDoc.data().authorId);
+            const authorDoc = await getDoc(authorRef);
+            const authorName = authorDoc.exists() ? authorDoc.data().displayName : '알 수 없음';
+
+            return {
+              id: postDoc.id,
+              ...postDoc.data(),
+              type: likeData.collectionName,
+              description: authorName,
+              createdAt: postDoc.data().createdAt?.toDate?.() || new Date(postDoc.data().createdAt) || new Date()
+            };
+          }
+          return null;
+        });
+
+        const likedPosts = (await Promise.all(likedPostsPromises))
+          .filter(post => post !== null)
+          .sort((a, b) => b.createdAt - a.createdAt);
+
+        setLikedPosts(likedPosts);
+      } catch (error) {
+        console.error('Error fetching liked posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLikedPosts();
+  }, [currentUser]);
+
   const handleUploadClick = () => {
     switch(userRole) {
       case 'STUDENT':
         navigate('/portfolios/new');
         break;
       case 'PROFESSOR':
-        navigate('/labs/new'); 
+        navigate('/labs/new');
         break;
       case 'COMPANY':
         navigate('/companies/new');
@@ -113,6 +171,10 @@ const MyPage = () => {
         alert('업로드 권한이 없습니다.');
         break;
     }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
   };
 
   const getContentTitle = () => {
@@ -129,21 +191,21 @@ const MyPage = () => {
   };
 
   const renderCard = (post) => {
-    const commonProps = {
+          const commonProps = {
       id: post.id,
       title: post.title || '',
-      description: post.description || post.subtitle || '',
+      description: post.type === 'labs' ? `${post.description || post.subtitle || ''} 교수님` : (post.description || post.subtitle || ''),
       image: post.thumbnail || '',
       likeCount: post.likeCount || 0,
       commentCount: post.commentCount || 0
     };
 
-    switch(userRole) {
-      case 'STUDENT':
+    switch(post.type) {
+      case 'portfolios':
         return <PortfolioCard {...commonProps} />;
-      case 'PROFESSOR':
-        return <LabCard {...commonProps} />;  // 교수 역할일 때 LabCard 사용
-      case 'COMPANY':
+      case 'labs':
+        return <LabCard {...commonProps} />;
+      case 'companies':
         return <CompanyCard {...commonProps} />;
       default:
         return <CompanyCard {...commonProps} />;
@@ -198,10 +260,28 @@ const MyPage = () => {
             alignItems: 'center',
             mb: 3
           }}>
-            <Typography variant="h6" sx={{ color: 'white' }}>
-              {getContentTitle()}
-            </Typography>
-            {currentUser && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Typography variant="h6" sx={{ color: 'white' }}>
+                {getContentTitle()}
+              </Typography>
+              <Tabs 
+                value={activeTab} 
+                onChange={handleTabChange}
+                sx={{
+                  '& .MuiTab-root': { 
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&.Mui-selected': { color: 'white' }
+                  },
+                  '& .MuiTabs-indicator': { 
+                    backgroundColor: 'white' 
+                  }
+                }}
+              >
+                <Tab label="내 게시글" />
+                <Tab label="좋아요한 게시글" />
+              </Tabs>
+            </Box>
+            {currentUser && activeTab === 0 && (
               <Button
                 startIcon={<EditIcon />}
                 onClick={handleUploadClick}
@@ -224,15 +304,17 @@ const MyPage = () => {
             <Typography sx={{ color: 'white' }}>Loading...</Typography>
           ) : (
             <Grid container spacing={3}>
-              {userPosts.map((post) => (
+              {(activeTab === 0 ? userPosts : likedPosts).map((post) => (
                 <Grid item xs={12} sm={6} md={4} key={post.id}>
                   {renderCard(post)}
                 </Grid>
               ))}
-              {userPosts.length === 0 && (
+              {(activeTab === 0 ? userPosts : likedPosts).length === 0 && (
                 <Grid item xs={12}>
                   <Typography sx={{ color: 'white', textAlign: 'center' }}>
-                    아직 등록된 {getContentTitle()}가 없습니다.
+                    {activeTab === 0 
+                      ? `아직 등록된 ${getContentTitle()}가 없습니다.`
+                      : '좋아요한 게시글이 없습니다.'}
                   </Typography>
                 </Grid>
               )}

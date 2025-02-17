@@ -17,9 +17,10 @@ import useLike from '../../hooks/useLike';
 import {useAuth} from '../auth/AuthContext';
 import { 
     Container, Paper, Typography, Box, Button, 
-    Grid, Dialog, DialogContent, DialogTitle, 
-    DialogActions, IconButton, Avatar, Tooltip,
-    useTheme, Chip
+    Grid, Popover, IconButton, Avatar, Tooltip,
+    useTheme, Chip, List, ListItem, ListItemAvatar, 
+    ListItemText, Dialog, DialogContent, DialogTitle, 
+    DialogActions
 } from '@mui/material';
 import {
     Edit as EditIcon,
@@ -33,7 +34,8 @@ import {
     GitHub as GitHubIcon,
     YouTube as YouTubeIcon,
     Link as LinkIcon,
-    Code as CodeIcon
+    Code as CodeIcon,
+    Person as PersonIcon
 } from '@mui/icons-material';
 import Comments from '../comments/Comments';
 
@@ -53,6 +55,10 @@ function BasePostView({
     const [postData, setPostData] = useState(previewData || null);
     const [authorData, setAuthorData] = useState(previewAuthor || null);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [showLikesDialog, setShowLikesDialog] = useState(false);
+    const [likedUsers, setLikedUsers] = useState([]);
+    const [loadingLikes, setLoadingLikes] = useState(false);
+
     // currentUser.uid를 useLike 훅에 전달
     const { isLiked, likeCount, toggleLike } = useLike(
         postId, 
@@ -98,6 +104,56 @@ function BasePostView({
         fetchPost();
     }, [collectionName, postId, previewData, previewAuthor, currentUser]);
     
+    const fetchLikedUsers = async () => {
+        if (!postId || previewData) return;
+        
+        try {
+            setLoadingLikes(true);
+            const likesRef = collection(db, 'likes');
+            const q = query(likesRef, where('postId', '==', postId));
+            const likesSnapshot = await getDocs(q);
+            
+            const usersPromises = likesSnapshot.docs.map(async (likeDoc) => {
+                const userData = likeDoc.data();
+                const userDoc = await getDoc(doc(db, 'users', userData.userId));
+                if (userDoc.exists()) {
+                    return {
+                        id: userDoc.id,
+                        ...userDoc.data()
+                    };
+                }
+                return null;
+            });
+            
+            const users = (await Promise.all(usersPromises)).filter(user => user !== null);
+            setLikedUsers(users);
+        } catch (error) {
+            console.error('Error fetching liked users:', error);
+        } finally {
+            setLoadingLikes(false);
+        }
+    };
+
+    const handleOpenLikes = () => {
+        if (likeCount > 0) {  // 좋아요가 있을 때만 팝업 열기
+            setShowLikesDialog(true);
+            fetchLikedUsers();
+        }
+    };
+
+    const handleCloseLikes = () => {
+        setShowLikesDialog(false);
+    };
+
+    const handleUserClick = (userId) => {
+        handleCloseLikes();
+        if (currentUser?.uid === userId) {
+            navigate('/mypage');
+        } else {
+            navigate(`/profile/${userId}`);
+        }
+    };
+
     const handleEdit = () => {
         navigate(`/${collectionName}/${postId}/edit`);
     };                                                                
@@ -139,6 +195,8 @@ function BasePostView({
             navigate(`/profile/${authorData.id}`);
         }
     };
+
+    
   
     // 링크 아이콘 선택
     const getLinkIcon = (type) => {
@@ -218,13 +276,104 @@ function BasePostView({
                             </span>
                             </Tooltip>
                         )}
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            onClick={handleOpenLikes}
+                            className="likes-trigger"
+                            sx={{ 
+                                cursor: 'pointer',
+                                '&:hover': { 
+                                    color: 'rgb(0, 51, 161)',
+                                    textDecoration: 'underline'
+                                }
+                            }}
+                        >
                             {likeCount}
                         </Typography>
                     </Box>
                 )}
             </Box>
     
+            {/* 좋아요 유저 목록 팝업 */}
+            <Popover
+                open={showLikesDialog}
+                onClose={handleCloseLikes}
+                anchorEl={document.querySelector('.likes-trigger')}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                }}
+                PaperProps={{
+                    sx: {
+                        width: 250,
+                        maxHeight: 300,
+                        overflow: 'auto',
+                        mt: 1,
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+                        borderRadius: '12px',
+                        '&::-webkit-scrollbar': {
+                            width: '6px',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                            borderRadius: '3px',
+                        },
+                    }
+                }}
+            >
+                {loadingLikes ? (
+                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Loading...
+                        </Typography>
+                    </Box>
+                ) : likedUsers.length === 0 ? (
+                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                            아직 좋아요한 사용자가 없습니다.
+                        </Typography>
+                    </Box>
+                ) : (
+                    <List sx={{ pt: 1, pb: 1 }}>
+                        {likedUsers.map((user) => (
+                            <ListItem 
+                                button 
+                                onClick={() => handleUserClick(user.id)}
+                                key={user.id}
+                                sx={{ 
+                                    px: 2,
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(0, 51, 161, 0.04)'
+                                    }
+                                }}
+                            >
+                                <ListItemAvatar>
+                                    <Avatar 
+                                        src={user.profileImage}
+                                        alt={user.displayName}
+                                        sx={{ width: 32, height: 32 }}
+                                    >
+                                        {!user.profileImage && <PersonIcon sx={{ fontSize: 20 }} />}
+                                    </Avatar>
+                                </ListItemAvatar>
+                                <ListItemText 
+                                    primary={user.displayName}
+                                    primaryTypographyProps={{
+                                        variant: 'body2',
+                                        sx: { fontWeight: 500 }
+                                    }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                )}
+            </Popover>
+
             {/* Title Section */}
             <Box sx={{
                 position: 'relative',
