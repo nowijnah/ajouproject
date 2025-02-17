@@ -40,7 +40,13 @@ const Comments = ({ postId, collectionName, postAuthorId }) => {
   return (
     <div>
       {currentUser ? (
-        <CommentInput onSubmit={addComment} />
+        currentUser.role === 'default' ? (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            승인된 회사 계정만 댓글을 작성할 수 있습니다.
+          </Alert>
+        ) : (
+          <CommentInput onSubmit={addComment} />
+        )
       ) : (
         <Alert severity="info" sx={{ mb: 2 }}>
           댓글을 작성하려면 로그인이 필요합니다.
