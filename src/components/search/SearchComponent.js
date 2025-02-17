@@ -135,7 +135,8 @@ const SearchComponent = ({ data, onSearchResults }) => {
       }}>
         <FormControl 
           size="small"
-          sx={{ width: 120 }}
+          sx={{ width: 120,
+           }}
         >
           <Select
             value={searchCategory}
