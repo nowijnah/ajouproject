@@ -12,6 +12,7 @@ import {
   Tooltip
 } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
+import { useAuth } from '../auth/AuthContext';
 
 const roleConfig = {
   STUDENT: { label: '학생', color: 'primary' },
@@ -23,9 +24,9 @@ const roleConfig = {
 const CommentInput = ({ 
   onSubmit, 
   isReply, 
-  parentIsPrivate,
-  currentUser
+  parentIsPrivate
 }) => {
+  const { currentUser } = useAuth();
   const [content, setContent] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
 
@@ -54,7 +55,7 @@ const CommentInput = ({
           {(currentUser?.displayName?.[0] || '?').toUpperCase()}
         </Avatar>
         <Typography variant="subtitle2">
-          {currentUser?.displayName || '익명'}
+          {currentUser ? (currentUser.displayName || '사용자') : '익명'}
         </Typography>
         {currentUser?.role && (
           <Chip
