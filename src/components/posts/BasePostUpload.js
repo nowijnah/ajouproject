@@ -31,6 +31,7 @@ function BasePostUpload({ collectionName }) {
     const [subtitle, setSubtitle] = useState('');
     const [markdownContent, setMarkdownContent] = useState('');
     const [isPreview, setIsPreview] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
   
     // 파일 관련
     const [thumbnail, setThumbnail] = useState(null);
@@ -231,6 +232,10 @@ function BasePostUpload({ collectionName }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (isSubmitting) {
+            return; // 제출중일 때
+        }
         
         try {
             let thumbnailUrl = thumbnail;
@@ -292,6 +297,8 @@ function BasePostUpload({ collectionName }) {
       } catch (error) {
           console.error('Error:', error);
           alert(`업로드 중 오류 발생: ${error.message}`);
+      } finally {
+        setIsSubmitting(false);
       }
     };
 
@@ -691,6 +698,7 @@ function BasePostUpload({ collectionName }) {
                 type="submit"
                 fullWidth
                 variant="contained"
+                disabled={isSubmitting}
                 sx={{
                   mt: 4,
                   bgcolor: '#0066CC',
@@ -699,7 +707,7 @@ function BasePostUpload({ collectionName }) {
                   },
                 }}
               >
-                {postId ? '수정 완료' : '작성 완료'}
+                {isSubmitting ? '처리중...' : (postId ? '수정 완료' : '작성 완료')}
               </Button>
             </form>
           </Paper>
