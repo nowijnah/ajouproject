@@ -238,6 +238,8 @@ function BasePostUpload({ collectionName }) {
         }
         
         try {
+            setIsSubmitting(true);
+            
             let thumbnailUrl = thumbnail;
             // 새로운 썸네일일 경우에만 업로드
             if (thumbnail instanceof File) {
