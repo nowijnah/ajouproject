@@ -7,6 +7,16 @@
 
 # firebase
 /src/firebase.js
+/.firebase/
+/firestore.indexes.json
+/storage.rules
+/firestore.rules
+/.firebaserc
+/.firebaserc.json
+/.firebaserc.yaml
+/.firebaserc.yml
+/.firebaserc.js
+/firebase.json
 
 # testing
 /coverage
