@@ -108,7 +108,6 @@ const SearchComponent = ({ data, onSearchResults }) => {
       flexDirection: 'column',
       alignItems: 'center',
       p: 3, 
-      borderBottom: '1px solid',
       borderColor: 'divider',
       bgcolor: 'background.paper',
       gap: 3
