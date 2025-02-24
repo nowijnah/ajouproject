@@ -9,8 +9,10 @@ import {
     where, 
     getDocs,
     deleteDoc,
-    updateDoc
-  } from 'firebase/firestore';
+    updateDoc,
+    writeBatch
+} from 'firebase/firestore';
+import { ref, deleteObject } from 'firebase/storage';
 import { db } from '../../firebase';
 import ReactMarkdown from 'react-markdown';
 import useLike from '../../hooks/useLike'; 
@@ -20,11 +22,12 @@ import {
     Grid, Popover, IconButton, Avatar, Tooltip,
     useTheme, Chip, List, ListItem, ListItemAvatar, 
     ListItemText, Dialog, DialogContent, DialogTitle, 
-    DialogActions
+    DialogActions, DialogContentText
 } from '@mui/material';
 import {
     Edit as EditIcon,
     Close as CloseIcon,
+    Delete as DeleteIcon,
     ThumbUp as ThumbUpIcon,
     ThumbUpOutlined as ThumbUpOutlinedIcon,
     FilePresent as FileIcon,
@@ -58,6 +61,8 @@ function BasePostView({
     const [showLikesDialog, setShowLikesDialog] = useState(false);
     const [likedUsers, setLikedUsers] = useState([]);
     const [loadingLikes, setLoadingLikes] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     // currentUser.uid를 useLike 훅에 전달
     const { isLiked, likeCount, toggleLike } = useLike(
@@ -210,10 +215,115 @@ function BasePostView({
       }
     };
 
+    const handleDelete = async () => {
+        if (!currentUser || !postData || deleting) return;
+        
+        try {
+            setDeleting(true);
+
+            const batch = writeBatch(db);
+            
+            // 1. 댓글 삭제
+            const commentsRef = collection(db, `${collectionName}_comments`);
+            const commentsQuery = query(commentsRef, where("postId", "==", postId));
+            const commentsSnapshot = await getDocs(commentsQuery);
+            commentsSnapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+
+            // 2. 좋아요 삭제
+            const likesRef = collection(db, 'likes');
+            const likesQuery = query(likesRef, where("postId", "==", postId));
+            const likesSnapshot = await getDocs(likesQuery);
+            likesSnapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+
+            // 3. 파일 삭제 (스토리지)
+            if (postData.files) {
+                for (const file of postData.files) {
+                    if (file.url) {
+                        try {
+                            const fileRef = ref(storage, file.url);
+                            await deleteObject(fileRef);
+                        } catch (error) {
+                            console.error('Error deleting file:', error);
+                        }
+                    }
+                }
+            }
+
+            // 4. 썸네일 삭제 (스토리지)
+            if (postData.thumbnail) {
+                try {
+                    const thumbnailRef = ref(storage, postData.thumbnail);
+                    await deleteObject(thumbnailRef);
+                } catch (error) {
+                    console.error('Error deleting thumbnail:', error);
+                }
+            }
+
+            // 5. 게시글 문서 삭제
+            const postRef = doc(db, collectionName, postId);
+            batch.delete(postRef);
+
+            // 일괄 처리 실행
+            await batch.commit();
+
+            // 성공 메시지 표시 후 목록 페이지로 이동
+            alert('게시글이 삭제되었습니다.');
+            navigate(`/${collectionName}`);
+
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            alert('게시글 삭제 중 오류가 발생했습니다.');
+        } finally {
+            setDeleting(false);
+            setDeleteDialogOpen(false);
+        }
+    };
+
+    const handleDeleteClick = () => {
+        setDeleteDialogOpen(true);
+    };
+
     if (!postData || !authorData) return <div>Loading...</div>;
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                aria-labelledby="delete-dialog-title"
+                aria-describedby="delete-dialog-description"
+            >
+                <DialogTitle id="delete-dialog-title">
+                    게시글 삭제
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="delete-dialog-description">
+                        정말로 이 게시글을 삭제하시겠습니까?
+                        삭제된 게시글은 복구할 수 없습니다.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button 
+                        onClick={() => setDeleteDialogOpen(false)}
+                        disabled={deleting}
+                    >
+                        취소
+                    </Button>
+                    <Button 
+                        onClick={handleDelete} 
+                        color="error"
+                        disabled={deleting}
+                        autoFocus
+                    >
+                        삭제
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            
             <Paper elevation={0} sx={{ borderRadius: 2, overflow: 'hidden' }}>
             {/* Author Info and Likes Section */}
             <Box sx={{ 
@@ -234,6 +344,16 @@ function BasePostView({
                     '&:hover': { opacity: 0.8 }
                 }}
                 >
+                    <Box 
+                        onClick={handleAuthorClick}
+                        sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 2,
+                            cursor: 'pointer',
+                            '&:hover': { opacity: 0.8 }
+                        }}
+                    >
                 <Avatar 
                     src={authorData?.profileImage} 
                     alt={authorData?.displayName}
@@ -250,50 +370,83 @@ function BasePostView({
                     </Typography>
                 </Box>
                 </Box>
-                
+                </Box>
                 {!previewData && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {currentUser ? (
-                            <Tooltip title={
-                            isLiked ? '좋아요 취소' : '좋아요'
-                            }>
-                            <IconButton 
-                                onClick={handleLike}
-                                sx={{ 
-                                color: isLiked ? 'rgb(0, 51, 161)' : 'grey.500',
-                                '&:hover': { color: 'rgb(0, 51, 161)' }
-                                }}
-                            >
-                                {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
-                            </IconButton>
-                            </Tooltip>
-                        ) : (
-                            <Tooltip title="로그인이 필요합니다">
-                            <span>
-                                <IconButton disabled>
-                                <ThumbUpOutlinedIcon />
-                                </IconButton>
-                            </span>
-                            </Tooltip>
-                        )}
-                        <Typography 
-                            variant="body2" 
-                            color="text.secondary"
-                            onClick={handleOpenLikes}
-                            className="likes-trigger"
-                            sx={{ 
-                                cursor: 'pointer',
-                                '&:hover': { 
-                                    color: 'rgb(0, 51, 161)',
-                                    textDecoration: 'underline'
-                                }
-                            }}
-                        >
-                            {likeCount}
-                        </Typography>
-                    </Box>
-                )}
-            </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {/* 작성자일 경우 수정/삭제 버튼 */}
+                            {currentUser?.uid === authorData?.id && (
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Tooltip title="수정">
+                                        <IconButton
+                                            onClick={handleEdit}
+                                            sx={{ 
+                                                color: 'rgb(0, 51, 161)',
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(0, 51, 161, 0.04)'
+                                                }
+                                            }}
+                                        >
+                                            <EditIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="삭제">
+                                        <IconButton
+                                            onClick={handleDeleteClick}
+                                            sx={{ 
+                                                color: '#d32f2f',
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(211, 47, 47, 0.04)'
+                                                }
+                                            }}
+                                        >
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            )}
+                            
+                            {/* 좋아요 버튼과 카운트 */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {currentUser ? (
+                                    <Tooltip title={isLiked ? '좋아요 취소' : '좋아요'}>
+                                        <IconButton 
+                                            onClick={handleLike}
+                                            sx={{ 
+                                                color: isLiked ? 'rgb(0, 51, 161)' : 'grey.500',
+                                                '&:hover': { bgcolor: 'rgba(0, 51, 161, 0.04)' }
+                                            }}
+                                        >
+                                            {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
+                                        </IconButton>
+                                    </Tooltip>
+                                ) : (
+                                    <Tooltip title="로그인이 필요합니다">
+                                        <span>
+                                            <IconButton disabled>
+                                                <ThumbUpOutlinedIcon />
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
+                                )}
+                                <Typography 
+                                    variant="body2" 
+                                    color="text.secondary"
+                                    onClick={handleOpenLikes}
+                                    className="likes-trigger"
+                                    sx={{ 
+                                        cursor: 'pointer',
+                                        '&:hover': { 
+                                            color: 'rgb(0, 51, 161)',
+                                            textDecoration: 'underline'
+                                        }
+                                    }}
+                                >
+                                    {likeCount}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    )}
+                </Box>
     
             {/* 좋아요 유저 목록 팝업 */}
             <Popover
