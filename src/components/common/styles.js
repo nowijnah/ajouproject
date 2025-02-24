@@ -82,10 +82,12 @@ export const commonStyles = {
 
 export const contentListStyles = {
   container: {
-    px: { xs: 2, sm: 4, md: 6 },
-    py: { xs: 2, md: 4 },
     width: '100%',
-    padding: '32px 120px 48px 130px !important',
+    padding: {
+      xs: '16px',              // 모바일
+      sm: '24px',              // 태블릿
+      md: '32px 120px 48px 130px'  // 데스크톱
+    }  
   },
   mainContent: {
     display: 'flex',

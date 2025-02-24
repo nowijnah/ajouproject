@@ -7,7 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../auth/AuthContext';
 import { 
     Container, Paper, Typography, Box, Grid, TextField,
-    Button, IconButton, List, ListItem,
+    Button, IconButton, List, ListItem,Divider,
     Chip, TextField as MuiTextFields
 } from '@mui/material';
 import {
@@ -302,6 +302,71 @@ function BasePostUpload({ collectionName }) {
       }
     };
 
+    const insertMarkdownSyntax = (syntax, placeholder = '') => {
+      const textArea = document.querySelector('textarea');
+      if (!textArea) return;
+    
+      const start = textArea.selectionStart;
+      const end = textArea.selectionEnd;
+      const selectedText = markdownContent.substring(start, end);
+      let insertText = '';
+    
+      switch(syntax) {
+        case 'bold':
+          insertText = `**${selectedText || '굵은 텍스트'}**`;
+          break;
+        case 'italic':
+          insertText = `*${selectedText || '기울임 텍스트'}*`;
+          break;
+        case 'strikethrough':
+          insertText = `~~${selectedText || '취소선 텍스트'}~~`;
+          break;
+        case 'code':
+          insertText = selectedText.includes('\n') 
+            ? `\`\`\`\n${selectedText || '코드 블록'}\n\`\`\``
+            : `\`${selectedText || '인라인 코드'}\``;
+          break;
+        case 'link':
+          insertText = `[${selectedText || '링크 텍스트'}](url)`;
+          break;
+        case 'image':
+          insertText = `![${selectedText || '이미지 설명'}](이미지 URL)`;
+          break;
+        case 'heading':
+          insertText = `# ${selectedText || '제목'}`;
+          break;
+        case 'quote':
+          insertText = `> ${selectedText || '인용문'}`;
+          break;
+        case 'bullet':
+          insertText = selectedText
+            ? selectedText.split('\n').map(line => `- ${line}`).join('\n')
+            : '- 목록 항목';
+          break;
+        case 'number':
+          insertText = selectedText
+            ? selectedText.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n')
+            : '1. 목록 항목';
+          break;
+        default:
+          insertText = selectedText;
+      }
+    
+      const newContent = 
+        markdownContent.substring(0, start) +
+        insertText +
+        markdownContent.substring(end);
+    
+      setMarkdownContent(newContent);
+    
+      // 커서 위치 조정
+      setTimeout(() => {
+        textArea.focus();
+        const newCursorPos = start + insertText.length;
+        textArea.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    };
+
     if (isPreview) {
       return (
           <>
@@ -477,6 +542,101 @@ function BasePostUpload({ collectionName }) {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                   >
+                    <Box sx={{ 
+                    mb: 2,
+                    p: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    bgcolor: 'background.paper',
+                    display: 'flex',
+                    gap: 1,
+                    flexWrap: 'wrap'
+                  }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('bold')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      <strong>B</strong>
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('italic')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      <em>I</em>
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('strikethrough')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      <span style={{ textDecoration: 'line-through' }}>S</span>
+                    </Button>
+                    <Divider orientation="vertical" flexItem />
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('heading')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      H
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('quote')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      "
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('code')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      {'</>'}
+                    </Button>
+                    <Divider orientation="vertical" flexItem />
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('bullet')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      •
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('number')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      1.
+                    </Button>
+                    <Divider orientation="vertical" flexItem />
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('link')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      🔗
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => insertMarkdownSyntax('image')}
+                      sx={{ minWidth: 'auto', px: 1 }}
+                    >
+                      🖼
+                    </Button>
+                  </Box>
                     {isDragging && (
                       <Box
                         sx={{
