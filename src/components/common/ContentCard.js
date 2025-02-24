@@ -1,3 +1,4 @@
+// ContentCard.js
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardMedia, Typography, Box, IconButton, Tooltip } from '@mui/material';
@@ -13,19 +14,32 @@ const ContentCard = ({
   image, 
   likeCount: initialLikeCount = 0, 
   commentCount = 0,
-  collectionName,
-  type
+  type = 'portfolio', // 'portfolio', 'company', 'lab'
+  customStyles = {} // 추가적인 스타일 오버라이드를 위한 props
 }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { isLiked, likeCount, loading, toggleLike } = useLike(
     id, 
-    collectionName,
+    `${type}s`, // portfolios, companies, labs
     currentUser?.uid || null
   );
 
+  const getDefaultImage = () => {
+    switch(type) {
+      case 'portfolio':
+        return '/default-portfolio-thumbnail.jpg';
+      case 'company':
+        return '/default-company-thumbnail.jpg';
+      case 'lab':
+        return '/default-lab-thumbnail.jpg';
+      default:
+        return '/default-thumbnail.jpg';
+    }
+  };
+
   const handleClick = () => {
-    navigate(`/${collectionName}/${id}`);
+    navigate(`/${type}s/${id}`);
   };
 
   const handleLikeClick = async (e) => {
@@ -43,22 +57,12 @@ const ContentCard = ({
     }
   };
 
-  const getDefaultImage = () => {
-    switch(type) {
-      case 'portfolio':
-        return '/default-portfolio-thumbnail.jpg';
-      case 'company':
-        return '/default-company-thumbnail.jpg';
-      default:
-        return '/default-thumbnail.jpg';
-    }
-  };
-
   return (
     <Card 
       onClick={handleClick}
       sx={{
         ...contentCardStyles.card,
+        ...customStyles,
         cursor: 'pointer',
         transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
         '&:hover': {
@@ -67,23 +71,12 @@ const ContentCard = ({
         }
       }}
     >
-      <Box sx={{ 
-        position: 'relative',
-        paddingTop: '56.25%', // 16:9 비율
-        backgroundColor: '#f5f5f5'
-      }}>
+      <Box sx={contentCardStyles.mediaBox}>
         <CardMedia
           component="img"
           image={image || getDefaultImage()}
           alt={title}
-          sx={{ 
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
+          sx={contentCardStyles.media}
         />
       </Box>
       <CardContent sx={{ p: 2, flexGrow: 1 }}>
@@ -117,7 +110,7 @@ const ContentCard = ({
                 disabled={loading}
                 sx={{ 
                   p: 0.5,
-                  color: isLiked ? 'rgb(0, 51, 161)' : 'text.secondary',
+                  color: 'rgb(0, 51, 161)',
                   '&:hover': { bgcolor: 'rgba(0, 51, 161, 0.1)' }
                 }}
               >
@@ -130,17 +123,18 @@ const ContentCard = ({
             ) : (
               <Tooltip title="로그인이 필요합니다">
                 <span>
-                  <ThumbUpOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <ThumbUpOutlinedIcon sx={{ fontSize: 16, color: 'rgb(0, 51, 161)' }} />
                 </span>
               </Tooltip>
             )}
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: 'rgb(0, 51, 161)',
-                  minWidth: '20px'
-                }}
-              >              {loading ? initialLikeCount : likeCount}
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'rgb(0, 51, 161)',
+                minWidth: '20px'
+              }}
+            >
+              {loading ? initialLikeCount : likeCount}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
