@@ -1,7 +1,7 @@
 // Navbar.js
 
 import React from 'react';
-import { Typography, AppBar, Toolbar, useMediaQuery, Box, Avatar } from '@mui/material';
+import { Typography, AppBar, Toolbar, useMediaQuery, Box, Avatar, Chip } from '@mui/material';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 
@@ -37,7 +37,7 @@ const styles = {
     letterSpacing: 1.2,
     marginLeft: '5px',
     whiteSpace: 'nowrap',
-    transition: 'all'
+    transition: 'all 0.3s ease'
   },
   toolbar: {
     display: 'flex',
@@ -66,10 +66,22 @@ const styles = {
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     fontWeight: 300,
-    transition: 'all'  // 모든 속성 변화에 부드러운 전환 효과 적용
+    transition: 'all 0.3s ease'  // 모든 속성 변화에 부드러운 전환 효과 적용
   },
   activeLink: {
-    fontWeight: 500
+    fontWeight: 500,
+    position: 'relative'
+  },
+  activeLinkIndicator: {
+    position: 'absolute',
+    bottom: -12,
+    left: '50%',
+    width: '70%',
+    height: '4px',
+    backgroundColor: AJOU_BLUE,
+    borderRadius: '4px',
+    transform: 'translateX(-50%)',
+    boxShadow: '0 1px 3px rgba(0, 51, 161, 0.3)'
   },
   logoContainer: {
     display: 'flex',
@@ -85,6 +97,15 @@ const styles = {
     transform: 'scaleY(0.9)',
     fontFamily: 'Quicksand, sans-serif',
     whiteSpace: 'nowrap'
+  },
+  roleChip: {
+    marginLeft: '8px',
+    height: '22px',
+    fontSize: '0.7rem',
+    fontWeight: 500,
+    backgroundColor: 'rgba(0, 51, 161, 0.08)',
+    color: AJOU_BLUE,
+    border: '1px solid rgba(0, 51, 161, 0.2)'
   }
 };
 
@@ -101,6 +122,17 @@ function LogoComponent() {
     </RouterLink>
   );
 }
+
+// 사용자 역할 변환 함수
+const getRoleText = (role) => {
+  switch(role) {
+    case 'STUDENT': return '학생';
+    case 'COMPANY': return '기업';
+    case 'PROFESSOR': return '교수';
+    case 'ADMIN': return '관리자';
+    default: return '일반';
+  }
+};
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -130,60 +162,87 @@ export default function Navbar() {
   const getLinkStyle = (path) => ({
     ...styles.link,
     ...(isActivePage(path) && styles.activeLink),
+    position: 'relative'
   });
 
   return (
     <AppBar position="fixed" color="inherit">
-    <Toolbar sx={styles.toolbar}>
-      <LogoComponent />
-      <div style={styles.rightGroup}>
-        <RouterLink to="/portfolios" style={getLinkStyle('/portfolios')}>
-          <Typography 
-            variant='body2' 
-            sx={{ 
-              ...styles.text,
-              fontWeight: isActivePage('/portfolios') ? 500 : 300
-            }}
-          >
-            포트폴리오
-          </Typography>
-        </RouterLink>
-        <RouterLink to="/companies" style={getLinkStyle('/companies')}>
-          <Typography 
-            variant='body2' 
-            sx={{ 
-              ...styles.text,
-              fontWeight: isActivePage('/companies') ? 500 : 300
-            }}
-          >
-            기업
-          </Typography>
-        </RouterLink>
-        <RouterLink to="/labs" style={getLinkStyle('/labs')}>
-          <Typography 
-            variant='body2' 
-            sx={{ 
-              ...styles.text,
-              fontWeight: isActivePage('/labs') ? 500 : 300
-            }}
-          >
-            연구실
-          </Typography>
-        </RouterLink>
-        {currentUser ? (
+      <Toolbar sx={styles.toolbar}>
+        <LogoComponent />
+        <div style={styles.rightGroup}>
+          <Box sx={{ position: 'relative' }}>
+            <RouterLink to="/portfolios" style={getLinkStyle('/portfolios')}>
+              <Typography 
+                variant='body2' 
+                sx={{ 
+                  ...styles.text,
+                  fontWeight: isActivePage('/portfolios') ? 600 : 400,
+                  color: isActivePage('/portfolios') ? AJOU_BLUE : 'inherit',
+                  transform: isActivePage('/portfolios') ? 'scale(1.05)' : 'scale(1)',
+                  textShadow: isActivePage('/portfolios') ? '0 0 0.5px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                포트폴리오
+              </Typography>
+              {isActivePage('/portfolios') && <div style={styles.activeLinkIndicator}></div>}
+            </RouterLink>
+          </Box>
+          
+          <Box sx={{ position: 'relative' }}>
+            <RouterLink to="/companies" style={getLinkStyle('/companies')}>
+              <Typography 
+                variant='body2' 
+                sx={{ 
+                  ...styles.text,
+                  fontWeight: isActivePage('/companies') ? 600 : 400,
+                  color: isActivePage('/companies') ? AJOU_BLUE : 'inherit',
+                  transform: isActivePage('/companies') ? 'scale(1.05)' : 'scale(1)',
+                  textShadow: isActivePage('/companies') ? '0 0 0.5px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                기업
+              </Typography>
+              {isActivePage('/companies') && <div style={styles.activeLinkIndicator}></div>}
+            </RouterLink>
+          </Box>
+          
+          <Box sx={{ position: 'relative' }}>
+            <RouterLink to="/labs" style={getLinkStyle('/labs')}>
+              <Typography 
+                variant='body2' 
+                sx={{ 
+                  ...styles.text,
+                  fontWeight: isActivePage('/labs') ? 600 : 400,
+                  color: isActivePage('/labs') ? AJOU_BLUE : 'inherit',
+                  transform: isActivePage('/labs') ? 'scale(1.05)' : 'scale(1)',
+                  textShadow: isActivePage('/labs') ? '0 0 0.5px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                연구실
+              </Typography>
+              {isActivePage('/labs') && <div style={styles.activeLinkIndicator}></div>}
+            </RouterLink>
+          </Box>
+          
+          {currentUser ? (
             <>
-        <RouterLink to="/mypage" style={getLinkStyle('/mypage')}>
-          <Typography 
-            variant='body2' 
-            sx={{ 
-              ...styles.text,
-              fontWeight: isActivePage('/mypage') ? 500 : 300
-            }}
-          >
-            MyPage
-          </Typography>
-        </RouterLink>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ position: 'relative' }}>
+                <RouterLink to="/mypage" style={getLinkStyle('/mypage')}>
+                  <Typography 
+                    variant='body2' 
+                    sx={{ 
+                      ...styles.text,
+                      fontWeight: isActivePage('/mypage') ? 500 : 300,
+                      color: isActivePage('/mypage') ? AJOU_BLUE : 'inherit'
+                    }}
+                  >
+                    MyPage
+                  </Typography>
+                  {isActivePage('/mypage') && <div style={styles.activeLinkIndicator}></div>}
+                </RouterLink>
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <RouterLink onClick={handleSignOut} style={{ textDecoration: 'none' }}>
                   <button style={styles.button}>Sign out</button>
                 </RouterLink>
@@ -197,9 +256,18 @@ export default function Navbar() {
                     >
                       {!currentUser.photoURL && currentUser.displayName?.[0]}
                     </Avatar>
-                    <Typography sx={styles.userName}>
-                      {currentUser.displayName}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography sx={styles.userName}>
+                        {currentUser.displayName}
+                      </Typography>
+                      {currentUser.role && (
+                        <Chip 
+                          label={getRoleText(currentUser.role)} 
+                          size="small"
+                          sx={styles.roleChip}
+                        />
+                      )}
+                    </Box>
                   </Box>
                 )}
               </Box>
