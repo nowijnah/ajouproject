@@ -201,7 +201,19 @@ function BasePostView({
         }
     };
 
-    
+    // 대표 이미지 가져오기
+    const getDisplayImage = () => {
+        // 1. 기존 썸네일 이미지가 있으면 사용
+        if (postData.thumbnail && postData.thumbnail !== 'undefined') 
+            return postData.thumbnail;
+        
+        // 2. 첨부 파일 중 이미지가 있으면 첫 번째 이미지 사용
+        const imageFile = postData.files?.find(file => file.type === 'IMAGE' && file.url);
+        if (imageFile) return imageFile.url;
+        
+        // 3. 기본 이미지 사용
+        return `/default-img.png`;
+    };
   
     // 링크 아이콘 선택
     const getLinkIcon = (type) => {
@@ -541,6 +553,8 @@ function BasePostView({
                     fontWeight: 700,
                     mb: 2,
                     fontFamily: "'Noto Sans KR', sans-serif",
+                    wordBreak: 'break-word', // 추가: 긴 단어 처리
+                    whiteSpace: 'pre-wrap'    // 추가: 줄바꿈 유지
                 }}
                 >
                 {postData.title}
@@ -555,25 +569,14 @@ function BasePostView({
                     fontWeight: 400,
                     opacity: 0.9,
                     fontFamily: "'Noto Sans KR', sans-serif",
+                    wordBreak: 'break-word', // 추가: 긴 단어 처리
+                    whiteSpace: 'pre-wrap'    // 추가: 줄바꿈 유지
                     }}
                 >
                     {postData.subtitle}
                 </Typography>
                 )}
     
-            {currentUser?.uid === authorData?.id && (
-                <IconButton
-                onClick={handleEdit}
-                sx={{ 
-                    position: 'absolute',
-                    right: 16,
-                    top: 16,
-                    color: '#0066CC',
-                }}
-                >
-                <EditIcon />
-                </IconButton>
-            )}
             </Box>
     
             {/* Thumbnail */}
@@ -585,7 +588,7 @@ function BasePostView({
                 mb: 4
                 }}>
                 <img
-                    src={postData.thumbnail}
+                    src={getDisplayImage()}
                     alt="Post thumbnail"
                     style={{
                     width: '100%',
@@ -610,18 +613,27 @@ function BasePostView({
                         '& h1, & h2, & h3, & h4, & h5, & h6': {
                             color: theme.palette.text.primary,
                             mt: 4,
-                            mb: 2
+                            mb: 2,
+                            wordBreak: 'break-word'  // 추가: 제목의 긴 단어 처리
                         },
                         '& p': {
                             mb: 2,
-                            lineHeight: 1.7
+                            lineHeight: 1.7,
+                            wordBreak: 'break-word',  // 추가: 본문의 긴 단어 처리
+                            whiteSpace: 'pre-wrap'     // 추가: 줄바꿈 유지
                         },
                         '& a': {
                             color: theme.palette.primary.main,
                             textDecoration: 'none',
+                            wordBreak: 'break-all',   // 추가: 링크의 긴 단어 처리
                             '&:hover': {
                                 textDecoration: 'underline'
                             }
+                        },
+                        '& pre, & code': {
+                            whiteSpace: 'pre-wrap',   // 추가: 코드 블록 처리
+                            wordBreak: 'break-word',
+                            overflowX: 'auto'
                         }
                     }}>
                         <ReactMarkdown>{postData.content}</ReactMarkdown>

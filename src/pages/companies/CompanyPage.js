@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import ContentList from '../../components/common/ContentList';
-//import { filters } from '../../components/common/ContentList';
+import ContentList from '../../components/card/ContentList';
+import { Box, Typography, CircularProgress } from '@mui/material';
 
 export default function CompanyPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -67,7 +68,6 @@ export default function CompanyPage() {
     <ContentList 
       type="company"
       data={posts}
-      //filters={filters}
     />
   );
 }
