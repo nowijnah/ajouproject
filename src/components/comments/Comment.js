@@ -62,14 +62,14 @@ const Comment = ({
 
   // 권한 체크
   const canViewComment = !isPrivate || 
-    currentUser?.uid === author.id || 
-    currentUser?.uid === postAuthorId;
+    (currentUser && currentUser.uid === author?.id) || 
+    (currentUser && currentUser.uid === postAuthorId);
 
   const canReply = currentUser && (
     (!isPrivate && !isReply) ||
     (isPrivate && (
       currentUser.uid === postAuthorId || 
-      currentUser.uid === author.id 
+      (author && currentUser.uid === author.id)
     ))
   );
 
