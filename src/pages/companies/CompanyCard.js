@@ -1,6 +1,6 @@
 // CompanyCard.js
 import React from 'react';
-import ContentCard from '../../components/common/ContentCard';
+import ContentCard from '../../components/card/ContentCard';
 
 const CompanyCard = (props) => {
   return <ContentCard {...props} type="company" />;

@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardMedia, Typography, Box, IconButton, Tooltip } from '@mui/material';
 import { ThumbUp as ThumbUpIcon, ThumbUpOutlined as ThumbUpOutlinedIcon, ChatBubbleOutline as CommentIcon } from '@mui/icons-material';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../../components/auth/AuthContext';
 import { contentCardStyles } from '../../components/card/styles';
 import useLike from '../../hooks/useLike';
 
@@ -20,9 +20,20 @@ const ContentCard = ({
 }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  
+  // collectionName을 올바르게 결정
+  const getCollectionName = () => {
+    switch(type) {
+      case 'portfolio': return 'portfolios';
+      case 'company': return 'companies'; // 'companys'가 아닌 'companies'로 수정
+      case 'lab': return 'labs';
+      default: return `${type}s`; // 기본 복수형
+    }
+  };
+  
   const { isLiked, likeCount, loading, toggleLike } = useLike(
     id, 
-    `${type}s`, // portfolios, companies, labs
+    getCollectionName(), // 수정된 함수 사용
     currentUser?.uid || null
   );
 
@@ -40,7 +51,8 @@ const ContentCard = ({
   };
 
   const handleClick = () => {
-    navigate(`/${type}s/${id}`);
+    // 수정된 함수를 사용해 올바른 경로 생성
+    navigate(`/${getCollectionName()}/${id}`);
   };
 
   const handleLikeClick = async (e) => {

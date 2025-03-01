@@ -241,6 +241,22 @@ function BasePostUpload({ collectionName }) {
             setIsSubmitting(true);
             
             let thumbnailUrl = thumbnail;
+
+            if (!thumbnail) {
+              const imageFile = files.find(fileItem => fileItem.type === 'IMAGE' && fileItem.file);
+              if (imageFile) {
+                const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${imageFile.file.name}`);
+                const thumbnailSnapshot = await uploadBytes(thumbnailRef, imageFile.file);
+                thumbnailUrl = await getDownloadURL(thumbnailSnapshot.ref);
+              }
+            } 
+            // 새로운 썸네일일 경우에만 업로드
+            else if (thumbnail instanceof File) {
+              const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${thumbnail.name}`);
+              const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnail);
+              thumbnailUrl = await getDownloadURL(thumbnailSnapshot.ref);
+            }
+            
             // 새로운 썸네일일 경우에만 업로드
             if (thumbnail instanceof File) {
             const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${thumbnail.name}`);
