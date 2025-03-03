@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../firebase';
+import { db, storage } from '../../../firebase';
 import ReactMarkdown from 'react-markdown';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../../auth/AuthContext';
 import { 
     Container, Paper, Typography, Box, Grid, TextField,
     Button, IconButton, List, ListItem,Divider,
@@ -18,7 +18,7 @@ import {
     Image as ImageIcon,
     Edit as EditIcon
 } from '@mui/icons-material';
-import BasePostView from './BasePostView';
+import BasePostView from '../view/BasePostView';
 
 function BasePostUpload({ collectionName }) {
     const { postId } = useParams();
@@ -387,48 +387,48 @@ function BasePostUpload({ collectionName }) {
 
     if (isPreview) {
       return (
-          <>
-              <Button
-                  variant="contained"
-                  onClick={() => setIsPreview(false)}
-                  sx={{ 
-                      position: 'fixed',
-                      top: 80,
-                      right: 20,
-                      zIndex: 9999
-                  }}
-              >
-                  수정 페이지로 돌아가기
-              </Button>
-              
-              <BasePostView
-                  collectionName={collectionName}
-                  previewData={{
-                      postId: postId || 'preview-id',
-                      authorId: currentUser.uid,
-                      type: 'PORTFOLIO',
-                      title,
-                      subtitle,
-                      content: markdownContent,
-                      files,
-                      links,
-                      likeCount: 0,
-                      commentCount: 0,
-                      thumbnail,
-                      createdAt: new Date(),
-                      updatedAt: new Date(),
-                      keywords
-                  }}
-                  previewAuthor={{
-                      userId: currentUser.uid,
-                      displayName: currentUser.displayName,
-                      profileImage: currentUser.photoURL,
-                      role: currentUser.role || 'STUDENT'
-                  }}
-              />
-          </>
+        <>
+          <Button
+            variant="contained"
+            onClick={() => setIsPreview(false)}
+            sx={{ 
+              position: 'fixed',
+              top: 80,
+              right: 20,
+              zIndex: 9999
+            }}
+          >
+            수정 페이지로 돌아가기
+          </Button>
+          
+          <BasePostView
+            collectionName={collectionName}
+            previewData={{
+              postId: postId || 'preview-id',
+              authorId: currentUser.uid,
+              type: 'PORTFOLIO',
+              title,
+              subtitle,
+              content: markdownContent,
+              files,
+              links,
+              likeCount: 0,
+              commentCount: 0,
+              thumbnail,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              keywords
+            }}
+            previewAuthor={{
+              userId: currentUser.uid,
+              displayName: currentUser.displayName,
+              profileImage: currentUser.photoURL,
+              role: currentUser.role || 'STUDENT'
+            }}
+          />
+        </>
       );
-  }
+    }
       
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
