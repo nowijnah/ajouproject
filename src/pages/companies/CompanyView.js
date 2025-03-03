@@ -1,5 +1,5 @@
 import React from 'react';
-import BasePostView from '../../components/posts/BasePostView';
+import BasePostView from '../../components/posts/view/BasePostView';
 
 function CompanyView() {
     return <BasePostView collectionName="companies" />;
