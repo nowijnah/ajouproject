@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ContentList from '../../components/card/ContentList';
-import { Box, Typography, CircularProgress } from '@mui/material';
+import AnimatedLoading from '../../components/common/AnimatedLoading';
 
 export default function CompanyPage() {
   const [posts, setPosts] = useState([]);
@@ -52,6 +52,7 @@ export default function CompanyPage() {
         setPosts(postsWithAuthors);
       } catch (error) {
         console.error('Error fetching posts:', error);
+        setError(error);
       } finally {
         setLoading(false);
       }
@@ -61,7 +62,17 @@ export default function CompanyPage() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <AnimatedLoading message="기업 정보를 불러오는 중입니다" />;
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography color="error">
+          데이터를 불러오는 중 오류가 발생했습니다.
+        </Typography>
+      </Box>
+    );
   }
 
   return (

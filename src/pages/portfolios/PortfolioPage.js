@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ContentList from '../../components/card/ContentList';
+import AnimatedLoading from '../../components/common/AnimatedLoading';
 
 export default function PortfolioPage() {
   const [posts, setPosts] = useState([]);
@@ -60,7 +61,7 @@ export default function PortfolioPage() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <AnimatedLoading message="포트폴리오를 불러오는 중입니다" />;
   }
 
   return (
