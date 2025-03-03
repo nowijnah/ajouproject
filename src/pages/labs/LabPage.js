@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ContentList from '../../components/card/ContentList';
+import AnimatedLoading from '../../components/common/AnimatedLoading';
 
 export default function LabPage() {
   const [posts, setPosts] = useState([]);
@@ -64,7 +65,7 @@ export default function LabPage() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <AnimatedLoading message="연구실 정보를 불러오는 중입니다" />;
   }
 
   return (
