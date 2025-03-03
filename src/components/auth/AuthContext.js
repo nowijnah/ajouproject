@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
+import AnimatedLoading from '../common/AnimatedLoading';
 
 const AuthContext = createContext(null);
 
@@ -19,7 +20,7 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Firestore에서 추가 사용자 정보 가져오ㅁ
+          // Firestore에서 추가 사용자 정보 가져오기
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           
           if (userDoc.exists()) {
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   if (loading) {
-    return null; // 또는 로딩 스피너 표시
+    return <AnimatedLoading message="사용자 정보를 불러오는 중입니다" fullPage={true} />;
   }
 
   return (
