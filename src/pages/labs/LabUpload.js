@@ -1,5 +1,5 @@
 import React from 'react';
-import BasePostUpload from '../../components/posts/BasePostUpload';
+import BasePostUpload from '../../components/posts/upload/BasePostUpload';
 
 function LabUpload() {
   
