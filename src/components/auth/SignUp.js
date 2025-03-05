@@ -25,6 +25,8 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '../../firebase'; 
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import AnimatedLoading from '../common/AnimatedLoading';
+
 const AJOU_BLUE = '#0A2B5D';
 
 export const SignUp = () => {
@@ -36,6 +38,7 @@ export const SignUp = () => {
   const [role, setRole] = useState(0);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false); // 로딩 상태 추가
 
   const handleRoleChange = (event, newValue) => {
     setRole(newValue);
@@ -50,12 +53,12 @@ export const SignUp = () => {
     }
 
     try {
-
       if (!email || !password || !displayName || !description) {
         setError('모든 필드를 입력해주세요.');
         return;
       }
 
+      setLoading(true); // 로딩 시작
       const result = await createUserWithEmailAndPassword(auth, email, password);
 
       await setDoc(doc(db, 'users', result.user.uid), {
@@ -70,7 +73,9 @@ export const SignUp = () => {
 
       navigate('/');
     } catch (error) {
-      setError('회원가입에 실패했습니다.', error);
+      setError('회원가입에 실패했습니다.' + error.message);
+    } finally {
+      setLoading(false); // 로딩 완료
     }
   };
 
@@ -81,6 +86,7 @@ export const SignUp = () => {
     }
 
     try {
+      setLoading(true); // 로딩 시작
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
@@ -88,14 +94,17 @@ export const SignUp = () => {
       if (!email.endsWith('@ajou.ac.kr')) {
         setError('아주대학교 계정으로만 가입이 가능합니다.');
         await auth.signOut();
+        setLoading(false); // 로딩 완료
         return;
       }
 
       // 추가 정보 입력을 위한 상태 업데이트
       setShowDescriptionForm(true);
       setTempUserData(result.user);
+      setLoading(false); // 로딩 완료
     } catch (error) {
       setError('Google 회원가입에 실패했습니다.');
+      setLoading(false); // 로딩 완료
     }
   };
 
@@ -106,6 +115,7 @@ export const SignUp = () => {
   const handleDescriptionSubmit = async (e) => {
     e.preventDefault();
     try {
+      setLoading(true); // 로딩 시작
       await setDoc(doc(db, 'users', tempUserData.uid), {
         userId: tempUserData.uid,
         email: tempUserData.email,
@@ -119,8 +129,15 @@ export const SignUp = () => {
       navigate('/');
     } catch (error) {
       setError('추가 정보 저장에 실패했습니다.');
+    } finally {
+      setLoading(false); // 로딩 완료
     }
   };
+
+  // 로딩 중일 때 표시될 UI
+  if (loading) {
+    return <AnimatedLoading message="회원가입 처리 중입니다" fullPage={true} />;
+  }
 
   if (showDescriptionForm) {
     return (
