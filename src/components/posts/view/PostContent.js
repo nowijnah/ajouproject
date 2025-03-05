@@ -56,20 +56,23 @@ const PostContent = ({
       </Box>
 
       {/* Thumbnail */}
-      {thumbnailUrl && (
+      {thumbnailUrl && thumbnailUrl !== 'markdown-image' && (
         <Box sx={{ 
           width: '100%',
-          height: '400px',
-          position: 'relative',
-          mb: 4
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          mb: 4,
+          padding: '20px 0'
         }}>
           <img
-            src={getDisplayImage ? getDisplayImage() : thumbnailUrl}
+            src={thumbnailUrl}
             alt="Post thumbnail"
             style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
+              maxWidth: '100%',
+              maxHeight: '600px',
+              objectFit: 'contain',
+              display: 'block'
             }}
           />
         </Box>
