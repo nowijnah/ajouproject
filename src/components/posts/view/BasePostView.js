@@ -125,7 +125,7 @@ const BasePostView = ({
           title={postData.title}
           subtitle={postData.subtitle}
           content={postData.content}
-          thumbnailUrl={postData.thumbnail}
+          thumbnailUrl={postData.thumbnail === 'markdown-image' ? null : postData.thumbnail}
           getDisplayImage={getDisplayImage}
         />
         

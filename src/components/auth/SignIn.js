@@ -13,11 +13,13 @@ import {
   IconButton,
   InputAdornment,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  CircularProgress
 } from '@mui/material';
 import { Chrome, EyeOff, Eye, Mail, Lock } from 'lucide-react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import AnimatedLoading from '../common/AnimatedLoading'; // 추가된 import
 
 const AJOU_BLUE = '#0A2B5D';
 
@@ -27,6 +29,7 @@ export const SignIn = () => {
   const [error, setError] = useState('');
   const [role, setRole] = useState(0); // 0: 학생,교수, 1: 기업
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false); // 로딩 상태 추가
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -43,11 +46,15 @@ export const SignIn = () => {
       setError('기업 회원만 이메일 로그인이 가능합니다.');
       return;
     }
+    
     try {
+      setLoading(true); // 로딩 시작
       await login(email, password);
       navigate('/');  
     } catch (error) {
       setError('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    } finally {
+      setLoading(false); // 로딩 완료
     }
   };
 
@@ -56,13 +63,22 @@ export const SignIn = () => {
       setError('기업 회원은 이메일로 로그인해주세요.');
       return;
     }
+    
     try {
+      setLoading(true); // 로딩 시작
       await loginWithGoogle();
       navigate('/');  
     } catch (error) {
       setError('Google 로그인에 실패했습니다.');
+    } finally {
+      setLoading(false); // 로딩 완료
     }
   };
+
+  // 전체 페이지 로딩 UI 표시
+  if (loading) {
+    return <AnimatedLoading message="로그인 처리 중입니다" fullPage={true} />;
+  }
 
   const renderLoginForm = () => {
     if (role === 1) { // 기업 로그인
