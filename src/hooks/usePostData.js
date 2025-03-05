@@ -109,19 +109,50 @@ const usePostData = (postId, collectionName, previewData = null, previewAuthor =
     }
   };
 
+  // 마크다운 내용에서 첫 번째 이미지 URL 추출
+  const extractFirstImageFromMarkdown = (markdownContent) => {
+    if (!markdownContent) return null;
+    
+    // 마크다운 이미지 형식 ![alt](url) 또는 <img src="url"> 패턴 찾기
+    const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
+    const htmlImageRegex = /<img.*?src=["'](.*?)["']/;
+    
+    const markdownMatch = markdownContent.match(markdownImageRegex);
+    const htmlMatch = markdownContent.match(htmlImageRegex);
+    
+    // 마크다운 형식 이미지 우선, 없으면 HTML 형식 이미지 사용
+    if (markdownMatch && markdownMatch[1]) {
+      return markdownMatch[1];
+    } else if (htmlMatch && htmlMatch[1]) {
+      return htmlMatch[1];
+    }
+    
+    return null;
+  };
+
   // 게시물 이미지 URL 가져오기
   const getDisplayImage = () => {
     if (!postData) return '';
 
     // 1. 기존 썸네일 이미지가 있으면 사용
-    if (postData.thumbnail && postData.thumbnail !== 'undefined') 
+    if (postData.thumbnail && postData.thumbnail !== 'undefined' && postData.thumbnail !== 'markdown-image') 
       return postData.thumbnail;
     
     // 2. 첨부 파일 중 이미지가 있으면 첫 번째 이미지 사용
     const imageFile = postData.files?.find(file => file.type === 'IMAGE' && file.url);
     if (imageFile) return imageFile.url;
     
-    // 3. 기본 이미지 사용
+    // 3. 마크다운 내용에서 이미지를 추출해 사용 (카드 미리보기용)
+    const markdownImage = extractFirstImageFromMarkdown(postData.content);
+    if (markdownImage) {
+      // 본문 표시 방지를 위해 특별한 값 사용
+      if(postData.id && !previewData) {
+        return 'markdown-image';
+      }
+      return markdownImage;
+    }
+    
+    // 4. 기본 이미지 사용
     return `/default-img.png`;
   };
 

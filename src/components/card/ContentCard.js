@@ -12,6 +12,7 @@ const ContentCard = ({
   title, 
   description, 
   image, 
+  content,  // 추가: 마크다운 콘텐츠
   likeCount: initialLikeCount = 0, 
   commentCount = 0,
   type = 'portfolio', // 'portfolio', 'company', 'lab'
@@ -37,16 +38,49 @@ const ContentCard = ({
     currentUser?.uid || null
   );
 
+  // 마크다운 내용에서 첫 번째 이미지 URL 추출
+  const extractFirstImageFromMarkdown = (markdownContent) => {
+    if (!markdownContent) return null;
+    
+    // 마크다운 이미지 형식 ![alt](url) 또는 <img src="url"> 패턴 찾기
+    const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
+    const htmlImageRegex = /<img.*?src=["'](.*?)["']/;
+    
+    const markdownMatch = markdownContent.match(markdownImageRegex);
+    const htmlMatch = markdownContent.match(htmlImageRegex);
+    
+    // 마크다운 형식 이미지 우선, 없으면 HTML 형식 이미지 사용
+    if (markdownMatch && markdownMatch[1]) {
+      return markdownMatch[1];
+    } else if (htmlMatch && htmlMatch[1]) {
+      return htmlMatch[1];
+    }
+    
+    return null;
+  };
+
   // 이미지 처리
   const getDisplayImage = () => {
     // 1. 기존 썸네일 이미지가 있으면 사용
-    if (image) return image;
+    if (image && image !== 'markdown-image') return image;
     
     // 2. 첨부 파일 중 이미지가 있으면 첫 번째 이미지 사용
     const imageFile = files?.find(file => file.type === 'IMAGE' && file.url);
     if (imageFile) return imageFile.url;
     
-    // 3. 기본 이미지 사용
+    // 3. 'markdown-image'인 경우 content에서 이미지 추출
+    if (image === 'markdown-image' && content) {
+      const markdownImage = extractFirstImageFromMarkdown(content);
+      if (markdownImage) return markdownImage;
+    }
+    
+    // 4. 마크다운 내용에서 이미지 추출 (내용이 있는 경우)
+    if (content) {
+      const markdownImage = extractFirstImageFromMarkdown(content);
+      if (markdownImage) return markdownImage;
+    }
+    
+    // 5. 기본 이미지 사용
     return `/default-img.png`;
   };
 
