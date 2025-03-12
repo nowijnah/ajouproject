@@ -90,12 +90,39 @@ const useReplies = (commentId, postId, collectionName) => {
             const data = doc.data();
             const author = await fetchUserData(data.authorId);
             
+            // createdAt과 updatedAt을 명시적으로 변환
+            let createdAt;
+            if (data.createdAt) {
+              if (data.createdAt.toDate) {
+                createdAt = data.createdAt.toDate();
+              } else if (data.createdAt instanceof Date) {
+                createdAt = data.createdAt;
+              } else {
+                createdAt = new Date(data.createdAt);
+              }
+            } else {
+              createdAt = new Date();
+            }
+            
+            let updatedAt;
+            if (data.updatedAt) {
+              if (data.updatedAt.toDate) {
+                updatedAt = data.updatedAt.toDate();
+              } else if (data.updatedAt instanceof Date) {
+                updatedAt = data.updatedAt;
+              } else {
+                updatedAt = new Date(data.updatedAt);
+              }
+            } else {
+              updatedAt = new Date();
+            }
+
             return {
               id: doc.id,
               ...data,
               author,
-              createdAt: data.createdAt?.toDate?.() || new Date(),
-              updatedAt: data.updatedAt?.toDate?.() || new Date()
+              createdAt,
+              updatedAt
             };
           })
         );
