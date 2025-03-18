@@ -1,0 +1,174 @@
+[
+  {
+    "url": "https://softcon.ajou.ac.kr/works/works.asp?uid=1981",
+    "uid": "1981",
+    "term": null,
+    "title": "UNI: 한국 대학생 - 유학생 매칭 플랫폼",
+    "summary": "UNI는 한국 대학생과 유학생간의 상호 교류를 위한 웹 서비스를 제공하는 플랫폼입니다.대학 메일 인증을 통해 신뢰를 보장하며, 번역 기능을 탑재한 채팅으로 언어 장벽 없이 원활한 소통을 지원합니다.한국 대학생은 관심사 기반의 프로필을 작성하고, 유학생은 해시태그를 활용해 자신과 맞는 한국 대학생을 검색할 수 있습니다.이를 통해 사용자들에게 대학생이라는 공통점을 바탕으로, 상호 교류하며 성장할 수 있는 환경을 제공합니다.",
+    "teamInfo": {
+      "registrant": {
+        "department": "소프트웨어학과",
+        "grade": "4",
+        "email": "gbe08**@ajou.ac.kr"
+      },
+      "members": [
+        {
+          "role": "팀장",
+          "name": "송선우",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "gbe08**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "양서진",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "uko8**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "이재용",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "ljy90**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "한경섭",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "han12**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "한성재",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "nicola19**@ajou.ac.kr"
+        }
+      ],
+      "mentor": {
+        "name": "심지수",
+        "affiliation": "발란"
+      }
+    },
+    "gitRepository": "https://github.com/TBD-capstone",
+    "description": "TBD팀의 Github Organization입니다.\r\nUNI-frontend(https://github.com/TBD-capstone/UNI-frontend): frontend 코드를 확인할 수 있습니다.\r\nUNI-backend(https://github.com/TBD-capstone/UNI-backend): backend 코드를 확인할 수 있습니다.",
+    "presentationUrl": "https://softcon.ajou.ac.kr/upload/work/sh_202411285453313.pdf",
+    "videoUrl": "https://drive.google.com/file/d/11OuavIwrrLP11YJ3VNXh6Obf6-yz5phX/preview",
+    "representativeImage": "https://softcon.ajou.ac.kr/upload/member/sh_2024112854624pr.jpg",
+    "likeCount": "848",
+    "commentCount": "55"
+  },
+  {
+    "url": "https://softcon.ajou.ac.kr/works/works.asp?uid=1980",
+    "uid": "1980",
+    "term": null,
+    "title": "음악인들을 잇는 커뮤니티 플랫폼, MOUM:모音",
+    "summary": "음악인들을 잇는 커뮤니티 플랫폼, 'MOUM:모音'밴드 리쿠르팅부터 공연 관리까지 한 번에 해결하는 올인원 솔루션 어플리케이션을 제공하기 위해 기획하였습니다. 리쿠르팅을 위한 커뮤니티, 단체의 소통을 위한 SSE, Webflux 기반의 채팅 시스템, 7가지의 단계로 구성된 공연 라이프사이클에 맞춘 관리 기능까지 제공하는 안드로이드 어플리케이션입니다.",
+    "teamInfo": {
+      "registrant": {
+        "department": "소프트웨어학과",
+        "grade": "4",
+        "email": "sosongh**@ajou.ac.kr"
+      },
+      "members": [
+        {
+          "role": "팀장",
+          "name": "소성하",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "sosongh**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "이승우",
+          "department": "미디어학과",
+          "grade": "4",
+          "email": "swo**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "장재혁",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "cjaehyuk4z**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "진선재",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "jsj71**@ajou.ac.kr"
+        }
+      ],
+      "mentor": {
+        "name": "한지은",
+        "affiliation": "LG전자"
+      }
+    },
+    "gitRepository": "https://github.com/ajou-JSL",
+    "description": "음악인들을 잇는 커뮤니티 플랫폼, 'MOUM:모音'의 android project와 springboot project를 담은 github입니다.",
+    "presentationUrl": "https://softcon.ajou.ac.kr/upload/work/sh_2024112817313cn.pdf",
+    "videoUrl": "https://drive.google.com/file/d/1Q41pzDn4z-6BJMnAakt7RteZHu5g61_8/preview",
+    "representativeImage": "https://softcon.ajou.ac.kr/upload/member/sh_2024112813237pu.png",
+    "likeCount": "187",
+    "commentCount": "0"
+  },
+  {
+    "url": "https://softcon.ajou.ac.kr/works/works.asp?uid=1951",
+    "uid": "1951",
+    "term": null,
+    "title": "TimeToast",
+    "summary": "일회적으로 소비되는 기록. 다시 보고 싶을 때 어디 있는지 찾아본 적 없으신가요?TimeToast는 기존에 일회적으로 소비되는 기록 방식에서 벗어나, 기록의 목적인 \"보존\"과 \"전달\"을 가능하게 합니다. 기록을 담는 공간인 토스트에 기억을 담아 추억으로 만들 수 있습니다.특별한 날에 이벤트 토스트를 만들어 친구들에게 메시지를 받아 더 특별하게 만들어보세요. 공유하기를 통해 친구들에게 전달할 수 있어요.함께한 순간을 캡슐 토스트로 만들어 친구들과 소중한 순간을 담은 타임캡슐을 만들어보세요. 모두 작성해야 열리는 캡슐 토스트로 함께 만드는 기록을 만들 수 있어요.여러분의 일상을 담은 토스트를 만들어보세요.",
+    "teamInfo": {
+      "registrant": {
+        "department": "소프트웨어학과",
+        "grade": "4",
+        "email": "wkddnjs32**@ajou.ac.kr"
+      },
+      "members": [
+        {
+          "role": "팀장",
+          "name": "이장원",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "wkddnjs32**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "이예인",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "dldpdls**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "이채민",
+          "department": "디지털미디어학과",
+          "grade": "4",
+          "email": "dge31**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "정문영",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "skymy**@ajou.ac.kr"
+        }
+      ],
+      "mentor": {
+        "name": "장은주",
+        "affiliation": "LG CNS"
+      }
+    },
+    "gitRepository": "https://github.com/cherrywajelly",
+    "description": "",
+    "presentationUrl": "https://softcon.ajou.ac.kr/upload/work/sh_20241127224234km.pdf",
+    "videoUrl": "https://drive.google.com/file/d/1cz7neNIH2_rIcV6h4xqiH-H4IIXQVacr/preview",
+    "representativeImage": "https://softcon.ajou.ac.kr/upload/member/sh_20241128203134gy.png",
+    "likeCount": "861",
+    "commentCount": "57"
+  }
+]
