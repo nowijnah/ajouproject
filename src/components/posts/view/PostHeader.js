@@ -23,8 +23,10 @@ import {
   Delete as DeleteIcon,
   ThumbUp as ThumbUpIcon,
   ThumbUpOutlined as ThumbUpOutlinedIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  ContentCopy as CloneIcon
 } from '@mui/icons-material';
+import CloneToPortfolioButton from '../CloneToPortfolioButton';
 
 /**
  * 게시물 헤더 컴포넌트 - 작성자 정보, 좋아요, 수정/삭제 버튼 등을 표시
@@ -48,6 +50,9 @@ const PostHeader = ({
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // 소프트콘 프로젝트인지 확인
+  const isSoftconProject = collectionName === 'softcon_projects';
 
   // 좋아요 목록 보기
   const handleOpenLikes = () => {
@@ -154,6 +159,11 @@ const PostHeader = ({
 
         {!isPreview && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* 소프트콘 프로젝트이고 STUDENT 권한이 있을 때 복제 버튼 표시 */}
+            {isSoftconProject && currentUser?.role === 'STUDENT' && (
+              <CloneToPortfolioButton postData={postData} postId={postId} />
+            )}
+            
             {/* 작성자일 경우 수정/삭제 버튼 */}
             {currentUser?.uid === authorData?.id && (
               <Box sx={{ display: 'flex', gap: 1 }}>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Fade } from '@mui/material';
 
-const AnimatedLoading = ({ message = '콘텐츠를 불러오는 중입니다', fullPage = false }) => {
+const AnimatedLoading = ({ message = '콘텐츠를 불러오는 중입니다', fullPage="true"}) => {
   const AJOU_BLUE = 'rgb(0, 51, 161)';
   const [progress, setProgress] = useState(0);
   const [dots, setDots] = useState('');

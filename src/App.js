@@ -20,6 +20,7 @@ import {SignIn} from './components/auth/SignIn';
 import {SignUp} from './components/auth/SignUp';
 import { AuthProvider } from './components/auth/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import SoftconProjectsPage from './pages/SoftconProjectPage';
 
 export default function App() {
   return (
@@ -97,6 +98,7 @@ export default function App() {
               <Route path="/labs/:postId" element={<LabView />} />
               <Route path="/companies" element={<CompanyPage />} />
               <Route path="/companies/:postId" element={<CompanyView />} />
+              <Route path="/softcon" element={<SoftconProjectsPage />} />
             </Routes>
           </Box>
           <Footer />
