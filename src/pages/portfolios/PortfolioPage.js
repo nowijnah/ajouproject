@@ -4,7 +4,6 @@ import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/fires
 import { db } from '../../firebase';
 import ContentList from '../../components/card/ContentList';
 import AnimatedLoading from '../../components/common/AnimatedLoading';
-import softconData from '../../../softcon_data/project_details.json';
 
 export default function PortfolioPage() {
   const [posts, setPosts] = useState([]);
