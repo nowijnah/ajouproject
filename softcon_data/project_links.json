@@ -1,32 +1,50 @@
 [
   {
     "title": "상세보기",
-    "url": "https://softcon.ajou.ac.kr/works/works.asp?uid=1981",
-    "uid": "1981",
-    "term": null
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1803&wTerm=2024-1",
+    "uid": "1803",
+    "term": "2024-1"
   },
   {
     "title": "상세보기",
-    "url": "https://softcon.ajou.ac.kr/works/works.asp?uid=1980",
-    "uid": "1980",
-    "term": null
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1802&wTerm=2024-1",
+    "uid": "1802",
+    "term": "2024-1"
   },
   {
     "title": "상세보기",
-    "url": "https://softcon.ajou.ac.kr/works/works.asp?uid=1951",
-    "uid": "1951",
-    "term": null
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1801&wTerm=2024-1",
+    "uid": "1801",
+    "term": "2024-1"
   },
   {
     "title": "상세보기",
-    "url": "https://softcon.ajou.ac.kr/works/works.asp?uid=1948",
-    "uid": "1948",
-    "term": null
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1797&wTerm=2024-1",
+    "uid": "1797",
+    "term": "2024-1"
   },
   {
     "title": "상세보기",
-    "url": "https://softcon.ajou.ac.kr/works/works.asp?uid=1939",
-    "uid": "1939",
-    "term": null
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1796&wTerm=2024-1",
+    "uid": "1796",
+    "term": "2024-1"
+  },
+  {
+    "title": "상세보기",
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1795&wTerm=2024-1",
+    "uid": "1795",
+    "term": "2024-1"
+  },
+  {
+    "title": "상세보기",
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1794&wTerm=2024-1",
+    "uid": "1794",
+    "term": "2024-1"
+  },
+  {
+    "title": "상세보기",
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1784&wTerm=2024-1",
+    "uid": "1784",
+    "term": "2024-1"
   }
 ]

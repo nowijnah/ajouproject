@@ -195,15 +195,6 @@ def get_project_details(project_url):
                 img_src = BASE_URL + img_src.replace('./', '/')
             details['representativeImage'] = img_src
         
-        # 좋아요 및 댓글 수
-        like_count_elem = soup.select_one('#likeCnt')
-        if like_count_elem:
-            details['likeCount'] = like_count_elem.text.strip()
-        
-        comment_count_elem = soup.select_one('#commentCnt')
-        if comment_count_elem:
-            details['commentCount'] = comment_count_elem.text.strip()
-        
         return details
     
     except Exception as e:
