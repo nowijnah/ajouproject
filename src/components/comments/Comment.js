@@ -170,7 +170,15 @@ const Comment = ({
               )}
             </Box>
             <Typography variant="caption" color="text.secondary">
-              {timestamp instanceof Date ? timestamp.toLocaleString() : '날짜 없음'}
+              {(timestamp instanceof Date) ? 
+                timestamp.toLocaleString('ko-KR', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric', 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                }) : 
+                '날짜 없음'}
             </Typography>
           </Box>
           {isEditable && !isEditing && (
@@ -236,7 +244,7 @@ const Comment = ({
                 답글
               </Button>
             )}
-            {(replyCount > 0 || !showReplies) && (
+            {replyCount > 0 && (
               <Button
                 size="small"
                 onClick={handleShowReplies}
@@ -270,6 +278,7 @@ const Comment = ({
                   <Comment
                     key={reply.id}
                     {...reply}
+                    timestamp={reply.createdAt}
                     isReply={true}
                     currentUser={currentUser}
                     postAuthorId={postAuthorId}
