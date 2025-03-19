@@ -9,55 +9,36 @@ export default function PortfolioPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchFirestoreData = async (collectionName) => {
+    try {
+      const q = query(collection(db, collectionName), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      console.log(`Firestore에서 ${collectionName} 가져오기 완료:`, data);
+      return data;
+    } catch (error) {
+      console.error(`Firestore에서 ${collectionName} 데이터 가져오기 오류:`, error);
+      return [];
+    }
+  };
+  
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        // 1. 게시글 데이터 가져오기
-        const postsRef = collection(db, 'portfolios');
-        const q = query(postsRef, orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        
-        // 2. 각 게시글의 작성자 정보 가져오기
-        const postsWithAuthors = await Promise.all(
-          querySnapshot.docs.map(async (postDoc) => {
-            const postData = postDoc.data();
-            let authorName = '알 수 없음';
-            
-            // 작성자 정보 가져오기
-            if (postData.authorId) {
-              const authorDoc = await getDoc(doc(db, 'users', postData.authorId));
-              if (authorDoc.exists()) {
-                authorName = authorDoc.data().displayName || '알 수 없음';
-              }
-            }
+    const loadData = async () => {
+      setLoading(true);
 
-            return {
-              id: postDoc.id,
-              title: postData.title,
-              subtitle: postData.subtitle,
-              description: authorName, // 부제목 대신 작성자 이름 표시
-              image: postData.thumbnail || '',
-              content: postData.content,
-              authorId: postData.authorId,
-              createdAt: postData.createdAt,
-              likeCount: postData.likeCount,
-              commentCount: postData.commentCount,
-              files: postData.files || [],
-              links: postData.links || [],
-              keywords: postData.keywords || []
-            };
-          })
-        );
+      const portfolioData = await fetchFirestoreData('portfolios');  // 기존 포트폴리오
+      const softconProjects = await fetchFirestoreData('softcon_projects');  // Softcon 데이터
 
-        setPosts(postsWithAuthors);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setLoading(false);
-      }
+      setPosts([...portfolioData, ...softconProjects]); // 합쳐서 상태 업데이트
+      setLoading(false);
     };
 
-    fetchPosts();
+    loadData();
   }, []);
 
   if (loading) {

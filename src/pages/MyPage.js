@@ -121,6 +121,7 @@ const MyPage = () => {
         // 2. 각 좋아요한 게시글의 실제 데이터 가져오기
         const likedPostsPromises = likesSnapshot.docs.map(async (likeDoc) => {
           const likeData = likeDoc.data();
+          
           const postRef = doc(db, likeData.collectionName, likeData.postId);
           const postDoc = await getDoc(postRef);
           
@@ -130,6 +131,10 @@ const MyPage = () => {
             const authorDoc = await getDoc(authorRef);
             const authorName = authorDoc.exists() ? authorDoc.data().displayName : '알 수 없음';
 
+            if(likeData.collectionName === "softcon_projects") {
+              likeData.collectionName = "portfolios";
+            }
+            
             return {
               id: postDoc.id,
               ...postDoc.data(),
