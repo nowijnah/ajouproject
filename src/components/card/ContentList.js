@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { Grid, Box, Container, ThemeProvider, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import { ThemeProvider } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
 import { theme, contentListStyles } from './styles';
 import CompanyCard  from '../../pages/companies/CompanyCard';
 import PortfolioCard from '../../pages/portfolios/PortfolioCard';

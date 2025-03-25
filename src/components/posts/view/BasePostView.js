@@ -1,7 +1,9 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Paper, Box, Typography } from '@mui/material';
-import { useAuth } from '../../auth/AuthContext';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';import { useAuth } from '../../auth/AuthContext';
 import Comments from '../../comments/Comments';
 import PostHeader from './PostHeader';
 import PostContent from './PostContent';

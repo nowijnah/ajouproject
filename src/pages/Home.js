@@ -1,4 +1,5 @@
-import { Typography, Box } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import { Link as RouterLink } from 'react-router-dom';
 import React from 'react';
 

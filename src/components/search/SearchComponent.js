@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  TextField, 
-  InputAdornment,
-  IconButton,
-  Button,
-  FormControl,
-  Select,
-  MenuItem
-} from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import _ from 'lodash';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+
+import SearchIcon from '@mui/icons-material/Search';
+import debounce from 'lodash/debounce';
+import orderBy from 'lodash/orderBy';
+
 
 const SearchComponent = ({ data, onSearchResults }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,12 +28,12 @@ const SearchComponent = ({ data, onSearchResults }) => {
   const sortData = (results) => {
     switch (activeSort) {
       case 'likes':
-        return _.orderBy(results, [(item) => item.likeCount || 0], ['desc']);
+        return orderBy(results, [(item) => item.likeCount || 0], ['desc']);
       case 'comments':
-        return _.orderBy(results, [(item) => item.commentCount || 0], ['desc']);
+        return orderBy(results, [(item) => item.commentCount || 0], ['desc']);
       case 'latest':
       default:
-        return _.orderBy(results, [(item) => {
+        return orderBy(results, [(item) => {
           const date = item.createdAt?.toDate?.() || item.createdAt;
           return new Date(date).getTime();
         }], ['desc']);
@@ -45,7 +46,7 @@ const SearchComponent = ({ data, onSearchResults }) => {
     onSearchResults(sortedResults);
   };
 
-  const debouncedSearch = _.debounce((term, category) => {
+  const debouncedSearch = debounce((term, category) => {
     if (!term.trim()) {
       const sortedData = sortData(data);
       setFilteredData(sortedData);

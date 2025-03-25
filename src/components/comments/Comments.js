@@ -1,5 +1,7 @@
 import React from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 import { useAuth } from '../auth/AuthContext';
 import CommentInput from './CommentInput';
 import CommentList from './CommentList';
