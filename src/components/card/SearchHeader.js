@@ -1,11 +1,9 @@
 import React from 'react';
-import { 
-  TextField,
-  Box,
-  Button,
-  InputAdornment,
-  IconButton
-} from '@mui/material';
+import TextField from '@mui/material/TextField';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import { commonStyles, searchHeaderStyles } from './styles';
 

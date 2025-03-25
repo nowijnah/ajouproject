@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions,
-  Typography,
-  CircularProgress,
-  Tooltip
-} from '@mui/material';
-import { ContentCopy as CloneIcon } from '@mui/icons-material';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import Tooltip from '@mui/material/Tooltip';
+
+import CloneIcon from '@mui/icons-material/ContentCopy';
 import { collection, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../auth/AuthContext';

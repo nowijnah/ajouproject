@@ -1,26 +1,30 @@
 // App.js
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
-import { CssBaseline, Box } from '@mui/material';
+import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import PortfolioPage from './pages/portfolios/PortfolioPage';
-import CompanyPage from './pages/companies/CompanyPage';
-import LabPage from './pages/labs/LabPage';
-import PortfolioView from './pages/portfolios/PortfolioView';
-import CompanyView from './pages/companies/CompanyView';
-import LabView from './pages/labs/LabView';
-import PortfolioUpload from './pages/portfolios/PortfolioUpload';
-import CompanyUpload from './pages/companies/CompanyUpload';
-import LabUpload from './pages/labs/LabUpload';
-import MyPage from './pages/MyPage';
-import ProfilePage from './pages/ProfilePage';
-import {SignIn} from './components/auth/SignIn';
-import {SignUp} from './components/auth/SignUp';
 import { AuthProvider } from './components/auth/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import SoftconProjectsPage from './pages/SoftconProjectPage';
+import LoadingSpinner from './components/common/LoadingSpinner';
+
+// 지연 로딩 적용
+const Home = lazy(() => import('./pages/Home'));
+const PortfolioPage = lazy(() => import('./pages/portfolios/PortfolioPage'));
+const CompanyPage = lazy(() => import('./pages/companies/CompanyPage'));
+const LabPage = lazy(() => import('./pages/labs/LabPage'));
+const PortfolioView = lazy(() => import('./pages/portfolios/PortfolioView'));
+const CompanyView = lazy(() => import('./pages/companies/CompanyView'));
+const LabView = lazy(() => import('./pages/labs/LabView'));
+const PortfolioUpload = lazy(() => import('./pages/portfolios/PortfolioUpload'));
+const CompanyUpload = lazy(() => import('./pages/companies/CompanyUpload'));
+const LabUpload = lazy(() => import('./pages/labs/LabUpload'));
+const MyPage = lazy(() => import('./pages/MyPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const SignIn = lazy(() => import('./components/auth/SignIn').then(module => ({ default: module.SignIn })));
+const SignUp = lazy(() => import('./components/auth/SignUp').then(module => ({ default: module.SignUp })));
+const SoftconProjectsPage = lazy(() => import('./pages/SoftconProjectPage'));
 
 export default function App() {
   return (
@@ -40,66 +44,68 @@ export default function App() {
             marginTop: '64px',
             marginBottom: '64px'
           }}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/signup" element={<SignUp />} /> 
-              <Route path="/signin" element={<SignIn />} />
+            <Suspense fallback={<LoadingSpinner message="페이지 로딩 중..." />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/signup" element={<SignUp />} /> 
+                <Route path="/signin" element={<SignIn />} />
 
-              {/* Protected Routes */}
-              <Route path="/mypage" element={
-                <ProtectedRoute>
-                  <MyPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile/:userId" element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } />
-              
-              {/* Protected Upload Routes */}
-              <Route path="/portfolios/new" element={
-                <ProtectedRoute>
-                  <PortfolioUpload />
-                </ProtectedRoute>
-              } />
-              <Route path="/portfolios/:postId/edit" element={
-                <ProtectedRoute>
-                  <PortfolioUpload />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/labs/new" element={
-                <ProtectedRoute>
-                  <LabUpload />
-                </ProtectedRoute>
-              } />
-              <Route path="/labs/:postId/edit" element={
-                <ProtectedRoute>
-                  <LabUpload />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/companies/new" element={
-                <ProtectedRoute>
-                  <CompanyUpload />
-                </ProtectedRoute>
-              } />
-              <Route path="/companies/:postId/edit" element={
-                <ProtectedRoute>
-                  <CompanyUpload />
-                </ProtectedRoute>
-              } />
+                {/* Protected Routes */}
+                <Route path="/mypage" element={
+                  <ProtectedRoute>
+                    <MyPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile/:userId" element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Protected Upload Routes */}
+                <Route path="/portfolios/new" element={
+                  <ProtectedRoute>
+                    <PortfolioUpload />
+                  </ProtectedRoute>
+                } />
+                <Route path="/portfolios/:postId/edit" element={
+                  <ProtectedRoute>
+                    <PortfolioUpload />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/labs/new" element={
+                  <ProtectedRoute>
+                    <LabUpload />
+                  </ProtectedRoute>
+                } />
+                <Route path="/labs/:postId/edit" element={
+                  <ProtectedRoute>
+                    <LabUpload />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/companies/new" element={
+                  <ProtectedRoute>
+                    <CompanyUpload />
+                  </ProtectedRoute>
+                } />
+                <Route path="/companies/:postId/edit" element={
+                  <ProtectedRoute>
+                    <CompanyUpload />
+                  </ProtectedRoute>
+                } />
 
-              {/* Public Routes */}
-              <Route path="/portfolios" element={<PortfolioPage />} />
-              <Route path="/portfolios/:postId" element={<PortfolioView />} />
-              <Route path="/labs" element={<LabPage />} /> 
-              <Route path="/labs/:postId" element={<LabView />} />
-              <Route path="/companies" element={<CompanyPage />} />
-              <Route path="/companies/:postId" element={<CompanyView />} />
-              <Route path="/softcon" element={<SoftconProjectsPage />} />
-            </Routes>
+                {/* Public Routes */}
+                <Route path="/portfolios" element={<PortfolioPage />} />
+                <Route path="/portfolios/:postId" element={<PortfolioView />} />
+                <Route path="/labs" element={<LabPage />} /> 
+                <Route path="/labs/:postId" element={<LabView />} />
+                <Route path="/companies" element={<CompanyPage />} />
+                <Route path="/companies/:postId" element={<CompanyView />} />
+                <Route path="/softcon" element={<SoftconProjectsPage />} />
+              </Routes>
+            </Suspense>
           </Box>
           <Footer />
         </Box>

@@ -1,214 +1,107 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Paper, 
-  Typography, 
-  TextField, 
-  Button, 
-  Tabs,
-  Tab,
-  Box,
-  Link,
-  Alert,
-  InputAdornment,
-  IconButton,
-  TextareaAutosize
-} from '@mui/material';
-import { Chrome, EyeOff, Eye, Mail, Lock, User } from 'lucide-react';
-import { Link as RouterLink } from 'react-router-dom';
-import { useAuth } from './AuthContext';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider,
-} from 'firebase/auth';
-import { auth, db } from '../../firebase'; 
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import AnimatedLoading from '../common/AnimatedLoading';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import InputAdornment from '@mui/material/InputAdornment';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { Chrome, Mail, Lock, User } from "lucide-react";
+import { useAuth } from "./AuthContext";
 
-const AJOU_BLUE = '#0A2B5D';
+const AJOU_BLUE = "#0A2B5D";
 
 export const SignUp = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [description, setDescription] = useState('');
-  const [role, setRole] = useState(0);
-  const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false); // 로딩 상태 추가
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [role, setRole] = useState("STUDENT"); // 기본값: 학생
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { signUpWithEmail, loginWithGoogle } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
 
   const handleRoleChange = (event, newValue) => {
     setRole(newValue);
-    setError('');
+    setError("");
   };
 
   const handleEmailSignUp = async (e) => {
     e.preventDefault();
-    if (role !== 1) {
-      setError('기업 회원만 이메일 회원가입이 가능합니다.');
+    if (!email || !password || !companyName) {
+      setError("모든 필드를 입력해주세요.");
       return;
     }
 
     try {
-      if (!email || !password || !displayName || !description) {
-        setError('모든 필드를 입력해주세요.');
-        return;
-      }
-
-      setLoading(true); // 로딩 시작
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-
-      await setDoc(doc(db, 'users', result.user.uid), {
-        userId: result.user.uid,
-        email,
-        displayName,
-        description,
-        role: 'default',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      navigate('/');
+      setLoading(true);
+      await signUpWithEmail(email, password, companyName);
+      navigate("/");
     } catch (error) {
-      setError('회원가입에 실패했습니다.' + error.message);
+      setError("회원가입 실패: " + error.message);
     } finally {
-      setLoading(false); // 로딩 완료
+      setLoading(false);
     }
   };
 
   const handleGoogleSignUp = async () => {
-    if (role === 1) {
-      setError('기업 회원은 이메일로 가입해주세요.');
-      return;
-    }
-
     try {
-      setLoading(true); // 로딩 시작
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      
-      const email = result.user.email;
-      if (!email.endsWith('@ajou.ac.kr')) {
-        setError('아주대학교 계정으로만 가입이 가능합니다.');
-        await auth.signOut();
-        setLoading(false); // 로딩 완료
-        return;
-      }
-
-      // 추가 정보 입력을 위한 상태 업데이트
-      setShowDescriptionForm(true);
-      setTempUserData(result.user);
-      setLoading(false); // 로딩 완료
+      setLoading(true);
+      await loginWithGoogle();
+      navigate("/");
     } catch (error) {
-      setError('Google 회원가입에 실패했습니다.');
-      setLoading(false); // 로딩 완료
-    }
-  };
-
-  // 구글 로그인 후 추가 정보 입력 폼
-  const [showDescriptionForm, setShowDescriptionForm] = useState(false);
-  const [tempUserData, setTempUserData] = useState(null);
-
-  const handleDescriptionSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true); // 로딩 시작
-      await setDoc(doc(db, 'users', tempUserData.uid), {
-        userId: tempUserData.uid,
-        email: tempUserData.email,
-        displayName: tempUserData.displayName,
-        description,
-        role: 'STUDENT',
-        profileImage: tempUserData.photoURL,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      navigate('/');
-    } catch (error) {
-      setError('추가 정보 저장에 실패했습니다.');
+      setError("Google 회원가입 실패: " + error.message);
     } finally {
-      setLoading(false); // 로딩 완료
+      setLoading(false);
     }
   };
-
-  // 로딩 중일 때 표시될 UI
-  if (loading) {
-    return <AnimatedLoading message="회원가입 처리 중입니다" fullPage={true} />;
-  }
-
-  if (showDescriptionForm) {
-    return (
-      <Container maxWidth="sm">
-        <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
-          <Typography variant="h4" align="center" gutterBottom>
-            추가 정보 입력
-          </Typography>
-          
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          
-          <form onSubmit={handleDescriptionSubmit}>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="자기소개"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              margin="normal"
-              placeholder="자신을 소개해주세요"
-            />
-            <Button
-              fullWidth
-              type="submit"
-              variant="contained"
-              sx={{ 
-                mt: 3,
-                bgcolor: AJOU_BLUE,
-                '&:hover': {
-                  bgcolor: '#0D3B7D'
-                }
-              }}
-            >
-              완료
-            </Button>
-          </form>
-        </Paper>
-      </Container>
-    );
-  }
 
   return (
     <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
-        <Typography variant="h4" align="center" gutterBottom>
-          회원가입
-        </Typography>
-        
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-        <Tabs 
-          value={role} 
-          onChange={handleRoleChange} 
-          variant="fullWidth" 
-          sx={{ 
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: isMobile ? 4 : 8 }}>
+      <Typography variant="h4" component="h1" sx={{ mb: 4, color: AJOU_BLUE, fontWeight: "bold" }}>
+        AIM AJOU
+      </Typography>
+      <Paper elevation={3} sx={{ p: 4, width: "100%", borderRadius: 2 }}>
+          {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 1 }}>{error}</Alert>}
+        <Tabs
+          value={role}
+          onChange={handleRoleChange}
+          variant="fullWidth"
+          sx={{
             mb: 3,
-            '& .MuiTabs-indicator': {
-              backgroundColor: AJOU_BLUE,
-            },
-            '& .Mui-selected': {
-              color: AJOU_BLUE,
-            }
+            "& .MuiTabs-indicator": { backgroundColor: AJOU_BLUE },
+            "& .Mui-selected": { color: AJOU_BLUE },
           }}
         >
-          <Tab label="학생/교수" />
-          <Tab label="기업" />
+          <Tab label="학생/교수" value="STUDENT" />
+          <Tab label="기업" value="COMPANY" />
         </Tabs>
-
-        {role === 1 ? (
+        {role === "COMPANY" ? (
           <form onSubmit={handleEmailSignUp}>
+            <TextField
+              fullWidth
+              label="회사명"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              margin="normal"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <User size={20} />
+                  </InputAdornment>
+                ),
+              }}
+            />
             <TextField
               fullWidth
               label="이메일"
@@ -226,7 +119,7 @@ export const SignUp = () => {
             <TextField
               fullWidth
               label="비밀번호"
-              type={showPassword ? 'text' : 'password'}
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
@@ -236,94 +129,34 @@ export const SignUp = () => {
                     <Lock size={20} />
                   </InputAdornment>
                 ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
-                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
               }}
-            />
-            <TextField
-              fullWidth
-              label="회사명"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              margin="normal"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <User size={20} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="회사 소개"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              margin="normal"
-              placeholder="회사를 소개해주세요"
             />
             <Button
               fullWidth
               type="submit"
               variant="contained"
-              sx={{ 
-                mt: 3,
-                bgcolor: AJOU_BLUE,
-                '&:hover': {
-                  bgcolor: '#0D3B7D'
-                }
-              }}
+              sx={{ mt: 3, bgcolor: AJOU_BLUE }}
             >
               회원가입
             </Button>
           </form>
         ) : (
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleGoogleSignUp}
-            startIcon={<Chrome />}
-            sx={{ 
-              mt: 2,
-              bgcolor: AJOU_BLUE,
-              '&:hover': {
-                bgcolor: '#0D3B7D'
-              }
-            }}
-          >
-            아주대학교 계정으로 회원가입
-          </Button>
-        )}
-
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2">
-            이미 계정이 있으신가요?{' '}
-            <Link 
-              component={RouterLink} 
-              to="/signin"
-              sx={{ 
-                color: AJOU_BLUE,
-                textDecoration: 'none',
-                '&:hover': {
-                  textDecoration: 'underline'
-                }
-              }}
+          <Box sx={{ mt: 2 }}>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={handleGoogleSignUp}
+              startIcon={<Chrome />}
+              sx={{  mt: 3, mb: 2, bgcolor: AJOU_BLUE, py: 1.5, "&:hover": { bgcolor: "#0D3B7D" } }}
             >
-              로그인
-            </Link>
-          </Typography>
-        </Box>
+              아주대학교 계정으로 회원가입
+            </Button>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>@ajou.ac.kr 계정만 사용 가능합니다</Typography>
+          </Box>
+        )}
       </Paper>
+
+      </Box>
     </Container>
   );
 };

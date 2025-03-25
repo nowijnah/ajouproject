@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, Paper, Box, CircularProgress } from '@mui/material';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import { collection, getDocs, query, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 

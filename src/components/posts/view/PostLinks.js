@@ -1,11 +1,13 @@
 import React from 'react';
-import { Box, Typography, Grid, Paper } from '@mui/material';
-import {
-  Link as LinkIcon,
-  GitHub as GitHubIcon,
-  YouTube as YouTubeIcon,
-  OpenInNew as OpenInNewIcon
-} from '@mui/icons-material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+
+import LinkIcon from '@mui/icons-material/Link';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import YouTubeIcon from '@mui/icons-material/YouTube';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 /**
  * 게시물 링크 컴포넌트 - 관련 링크(GitHub, YouTube 등) 표시

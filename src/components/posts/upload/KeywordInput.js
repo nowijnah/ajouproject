@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Typography, 
-  Box, 
-  TextField, 
-  Chip 
-} from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Chip from '@mui/material/Chip';
+
 
 /**
  * 키워드 입력 컴포넌트
