@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Typography, 
-  Box, 
-  Button, 
-  TextField, 
-  List, 
-  ListItem, 
-  IconButton
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Close as CloseIcon
-} from '@mui/icons-material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import IconButton from '@mui/material/IconButton';
+
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+
 
 /**
  * 링크 입력 컴포넌트

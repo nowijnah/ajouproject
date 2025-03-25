@@ -31,6 +31,7 @@
     "@babel/preset-env": "^7.26.8",
     "@babel/preset-react": "^7.26.3",
     "babel-loader": "^8.4.1",
+    "dotenv-webpack": "^8.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "webpack": "^5.97.1",
@@ -40,7 +41,7 @@
   },
   "scripts": {
     "start": "webpack-dev-server --open --mode development --port 3000",
-    "build": "webpack --mode development",
+    "build": "webpack --mode production",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
