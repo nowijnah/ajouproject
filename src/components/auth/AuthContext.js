@@ -84,11 +84,11 @@ export const AuthProvider = ({ children }) => {
         const university = organizations.find((org) => org.metadata?.primary); // 주요 조직 선택
     
         if (university) {
-          major = university.department || "정보 없음"; // ✅ `department`에서 학과 정보 가져오기
+          major = university.department || "정보 없음"; 
           console.log("학과 정보:", major);
     
-          if (university.title && university.title.includes("교수")) {
-            role = "PROFESSOR"; // 교수이면 역할 변경
+          if (university.title && university.title.includes("교원")) {
+            role = "PROFESSOR"; 
           }
         } else {
           console.warn("Google People API에서 학과 정보를 찾을 수 없음.");
