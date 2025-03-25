@@ -40,3 +40,8 @@ yarn-debug.log*
 yarn-error.log*
 
 /softcon_data
+
+/dist
+/build
+*.bundle.js
+*.LICENSE.txt

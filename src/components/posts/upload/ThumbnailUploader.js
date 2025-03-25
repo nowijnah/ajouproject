@@ -1,15 +1,11 @@
 import React from 'react';
-import { 
-  Typography, 
-  Box, 
-  Button, 
-  IconButton 
-} from '@mui/material';
-import {
-  Image as ImageIcon,
-  Close as CloseIcon
-} from '@mui/icons-material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 
+import ImageIcon from '@mui/icons-material/Image';
+import CloseIcon from '@mui/icons-material/Close';
 /**
  * 썸네일 이미지 업로더 컴포넌트
  */

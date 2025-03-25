@@ -1,7 +1,11 @@
-// Navbar.js
-
 import React from 'react';
-import { Typography, AppBar, Toolbar, useMediaQuery, Box, Avatar, Chip } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import Box from '@mui/material/Box';
+import Avatar from '@mui/material/Avatar';
+import Chip from '@mui/material/Chip';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 

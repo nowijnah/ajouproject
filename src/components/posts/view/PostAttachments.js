@@ -1,22 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Grid, 
-  Paper, 
-  IconButton,
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button
-} from '@mui/material';
-import {
-  Image as ImageIcon,
-  FilePresent as FileIcon,
-  Close as CloseIcon,
-  Download as DownloadIcon
-} from '@mui/icons-material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import IconButton from '@mui/material/IconButton';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+
+import FileIcon from '@mui/icons-material/FilePresent';
+import DownloadIcon from '@mui/icons-material/Download';
 
 /**
  * 게시물 첨부 파일 컴포넌트 - 이미지 및 다운로드 가능한 첨부 파일 표시

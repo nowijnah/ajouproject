@@ -1,21 +1,18 @@
 import React, { useState } from "react";
-import { 
-  Container, 
-  Paper, 
-  Typography, 
-  TextField, 
-  Button, 
-  Alert,
-  Box,
-  Link,
-  Tabs,
-  Tab,
-  IconButton,
-  InputAdornment,
-  useTheme,
-  useMediaQuery,
-  CircularProgress
-} from "@mui/material";
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+
 import { Chrome, EyeOff, Eye, Mail, Lock } from "lucide-react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
