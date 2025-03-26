@@ -81,13 +81,13 @@ export const AuthProvider = ({ children }) => {
         console.log("Google People API 응답 데이터:", data); // 응답 확인
     
         const organizations = data.organizations || [];
-        const university = organizations.find((org) => org.metadata?.primary); // 주요 조직 선택
+        const university = organizations.find((org) => org.metadata?.primary);
     
         if (university) {
-          major = university.department || "정보 없음"; // ✅ `department`에서 학과 정보 가져오기
+          major = university.department || "정보 없음"; 
           console.log("학과 정보:", major);
     
-          if (university.title && university.title.includes("교수")) {
+          if (university.jobDescription && university.jobDescription.includes("교원")) {
             role = "PROFESSOR"; // 교수이면 역할 변경
           }
         } else {

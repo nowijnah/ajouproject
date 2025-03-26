@@ -29,7 +29,7 @@ module.exports = {
     },
     mode: 'production',
     plugins: [
-        new BundleAnalyzerPlugin(),
+        // new BundleAnalyzerPlugin(),
         new Dotenv(),
     ]
 };
