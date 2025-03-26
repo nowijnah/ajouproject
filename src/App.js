@@ -8,8 +8,10 @@ import Footer from './components/Footer';
 import { AuthProvider } from './components/auth/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import LoadingSpinner from './components/common/LoadingSpinner';
+// import SoftconCrawler from './components/SoftconCrawler';
 
 // 지연 로딩 적용
+const SoftconCrawler = lazy(() => import('./components/SoftconCrawler'));
 const Home = lazy(() => import('./pages/Home'));
 const PortfolioPage = lazy(() => import('./pages/portfolios/PortfolioPage'));
 const CompanyPage = lazy(() => import('./pages/companies/CompanyPage'));
@@ -95,6 +97,8 @@ export default function App() {
                     <CompanyUpload />
                   </ProtectedRoute>
                 } />
+
+                <Route path="/crawler" element={<SoftconCrawler />} />
 
                 {/* Public Routes */}
                 <Route path="/portfolios" element={<PortfolioPage />} />
