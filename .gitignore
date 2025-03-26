@@ -23,8 +23,6 @@
 
 .env
 
-# production
-/build
 
 package-lock.json
 
