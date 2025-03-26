@@ -1,5 +1,7 @@
 import React from 'react';
-import { Box, Typography, useTheme } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import { useTheme } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
 
 /**

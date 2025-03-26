@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Button,
-  Container,
-  Tabs,
-  Tab
-} from '@mui/material';
-import {
-  Edit as EditIcon
-} from '@mui/icons-material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+
+import EditIcon from '@mui/icons-material/Edit';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { 
@@ -121,6 +118,7 @@ const MyPage = () => {
         // 2. 각 좋아요한 게시글의 실제 데이터 가져오기
         const likedPostsPromises = likesSnapshot.docs.map(async (likeDoc) => {
           const likeData = likeDoc.data();
+          
           const postRef = doc(db, likeData.collectionName, likeData.postId);
           const postDoc = await getDoc(postRef);
           
@@ -130,6 +128,10 @@ const MyPage = () => {
             const authorDoc = await getDoc(authorRef);
             const authorName = authorDoc.exists() ? authorDoc.data().displayName : '알 수 없음';
 
+            if(likeData.collectionName === "softcon_projects") {
+              likeData.collectionName = "portfolios";
+            }
+            
             return {
               id: postDoc.id,
               ...postDoc.data(),

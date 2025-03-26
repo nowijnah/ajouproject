@@ -10,7 +10,10 @@
     "@mui/material": "^5.16.14",
     "@react-pdf/renderer": "^4.1.6",
     "@uiw/react-md-editor": "^4.0.5",
+    "axios": "^1.8.2",
+    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "easymde": "^2.19.0",
     "firebase": "^11.2.0",
     "lodash": "^4.17.21",
@@ -28,15 +31,17 @@
     "@babel/preset-env": "^7.26.8",
     "@babel/preset-react": "^7.26.3",
     "babel-loader": "^8.4.1",
+    "dotenv-webpack": "^8.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "webpack": "^5.97.1",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^4.15.2"
   },
   "scripts": {
     "start": "webpack-dev-server --open --mode development --port 3000",
-    "build": "webpack --mode development",
+    "build": "webpack --mode production",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
