@@ -93,6 +93,18 @@ export const SignIn = () => {
               <TextField fullWidth label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} margin="normal" InputProps={{ startAdornment: (<InputAdornment position="start"><Mail size={20} /></InputAdornment>), }} />
               <TextField fullWidth label="비밀번호" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} margin="normal" InputProps={{ startAdornment: (<InputAdornment position="start"><Lock size={20} /></InputAdornment>), endAdornment: (<InputAdornment position="end"><IconButton onClick={() => setShowPassword(!showPassword)} edge="end">{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</IconButton></InputAdornment>), }} />
               <Button fullWidth type="submit" variant="contained" sx={{ mt: 3, mb: 2, bgcolor: AJOU_BLUE, py: 1.5, "&:hover": { bgcolor: "#0D3B7D" } }}>로그인</Button>
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  계정이 없으신가요? <Button 
+                    variant="text" 
+                    component={RouterLink} 
+                    to="/signup" 
+                    sx={{ p: 0, minWidth: 'auto', textTransform: 'none', color: AJOU_BLUE, fontWeight: 'medium' }}
+                  >
+                    회원가입
+                  </Button>으로 이동하세요.
+                </Typography>
+              </Box>
             </Box>
           ) : (
             <Box sx={{ mt: 2 }}>
