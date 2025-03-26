@@ -4,6 +4,7 @@ import React from 'react';
 import { Typography, AppBar, Toolbar, useMediaQuery, Box, Avatar, Chip } from '@mui/material';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
+import NotificationMenu from './notifications/NotificationMenu';
 
 const AJOU_BLUE = 'rgb(0, 51, 161)';
 
@@ -225,54 +226,57 @@ export default function Navbar() {
           </Box>
           
           {currentUser ? (
-            <>
-              <Box sx={{ position: 'relative' }}>
-                <RouterLink to="/mypage" style={getLinkStyle('/mypage')}>
-                  <Typography 
-                    variant='body2' 
-                    sx={{ 
-                      ...styles.text,
-                      fontWeight: isActivePage('/mypage') ? 500 : 300,
-                      color: isActivePage('/mypage') ? AJOU_BLUE : 'inherit'
-                    }}
-                  >
-                    MyPage
+  <>
+    <Box sx={{ position: 'relative' }}>
+      <RouterLink to="/mypage" style={getLinkStyle('/mypage')}>
+        <Typography 
+          variant='body2' 
+          sx={{ 
+            ...styles.text,
+            fontWeight: isActivePage('/mypage') ? 500 : 300,
+            color: isActivePage('/mypage') ? AJOU_BLUE : 'inherit'
+          }}
+        >
+          MyPage
+        </Typography>
+        {isActivePage('/mypage') && <div style={styles.activeLinkIndicator}></div>}
+      </RouterLink>
+    </Box>
+    
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      {/* 여기에 NotificationMenu 컴포넌트 추가 */}
+      <NotificationMenu />
+      
+        <RouterLink onClick={handleSignOut} style={{ textDecoration: 'none' }}>
+          <button style={styles.button}>Sign out</button>
+        </RouterLink>
+            {!isSmallScreen && (
+              <Box sx={styles.userProfile}>
+                <Avatar 
+                  src={currentUser.photoURL}
+                  alt={currentUser.displayName}
+                  onClick={handleProfileClick}
+                  sx={styles.avatar}
+                >
+                  {!currentUser.photoURL && currentUser.displayName?.[0]}
+                </Avatar>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography sx={styles.userName}>
+                    {currentUser.displayName}
                   </Typography>
-                  {isActivePage('/mypage') && <div style={styles.activeLinkIndicator}></div>}
-                </RouterLink>
+                  {currentUser.role && (
+                    <Chip 
+                      label={getRoleText(currentUser.role)} 
+                      size="small"
+                      sx={styles.roleChip}
+                    />
+                  )}
+                </Box>
               </Box>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <RouterLink onClick={handleSignOut} style={{ textDecoration: 'none' }}>
-                  <button style={styles.button}>Sign out</button>
-                </RouterLink>
-                {!isSmallScreen && (
-                  <Box sx={styles.userProfile}>
-                    <Avatar 
-                      src={currentUser.photoURL}
-                      alt={currentUser.displayName}
-                      onClick={handleProfileClick}
-                      sx={styles.avatar}
-                    >
-                      {!currentUser.photoURL && currentUser.displayName?.[0]}
-                    </Avatar>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography sx={styles.userName}>
-                        {currentUser.displayName}
-                      </Typography>
-                      {currentUser.role && (
-                        <Chip 
-                          label={getRoleText(currentUser.role)} 
-                          size="small"
-                          sx={styles.roleChip}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            </>
-          ) : (
+            )}
+          </Box>
+        </>
+      ) : (
             <>
               <RouterLink to="/signin" style={{ textDecoration: 'none' }}>
                 <button style={styles.button}>Sign in</button>

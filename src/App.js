@@ -20,6 +20,7 @@ import {SignIn} from './components/auth/SignIn';
 import {SignUp} from './components/auth/SignUp';
 import { AuthProvider } from './components/auth/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   return (
@@ -87,6 +88,11 @@ export default function App() {
               <Route path="/companies/:postId/edit" element={
                 <ProtectedRoute>
                   <CompanyUpload />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               } />
 
