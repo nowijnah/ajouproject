@@ -5,19 +5,25 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../../firebase';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../auth/AuthContext';
-import { 
-    Container, Paper, Typography, Box, Grid, TextField,
-    Button, IconButton, List, ListItem,Divider,
-    Chip, TextField as MuiTextFields
-} from '@mui/material';
-import {
-    CloudUpload as UploadIcon,
-    Close as CloseIcon,
-    Add as AddIcon,
-    Visibility as EyeIcon,
-    Image as ImageIcon,
-    Edit as EditIcon
-} from '@mui/icons-material';
+import Container from '@mui/material/Container';
+import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Grid from '@mui/material/Grid';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
+
+import UploadIcon from '@mui/icons-material/CloudUpload';
+import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
+import EyeIcon from '@mui/icons-material/Visibility';
+import ImageIcon from '@mui/icons-material/Image';
+
 import BasePostView from '../view/BasePostView';
 
 function BasePostUpload({ collectionName }) {

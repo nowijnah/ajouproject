@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  Paper, 
-  TextField, 
-  Button, 
-  Box,
-  FormControlLabel,
-  Checkbox,
-  Typography,
-  Avatar,
-  Chip,
-  Tooltip
-} from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Avatar from '@mui/material/Avatar';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
+import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
 import LockIcon from '@mui/icons-material/Lock';
 import { useAuth } from '../auth/AuthContext';
 

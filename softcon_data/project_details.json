@@ -1,0 +1,277 @@
+[
+  {
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1803&wTerm=2024-1",
+    "uid": "1803",
+    "term": "2024-1",
+    "title": "Moim-Today",
+    "summary": "Moim Today는 \"대학별 시간표 기반 온라인 캘린더 및 일정 관리 서비스\"입니다사용자는 이 서비스를 통해 시간표와 캘린더를 연동하고, 모임 일정을 쉽게 조율할 수 있으며, 교내 모임을 쉽게 찾을 수 있습니다.이를 통해 대학 생활의 다양한 활동을 더욱 효율적으로 관리할 수 있도록 도와줍니다.",
+    "teamInfo": {
+      "registrant": {},
+      "members": [
+        {
+          "role": "팀장",
+          "name": "정유환",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "yhwjd**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "김동현",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "ilovekdh12**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "김유림",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "yur**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "김준영",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "tjclear2**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "양지웅",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "jerry32**@ajou.ac.kr"
+        }
+      ],
+      "mentor": {
+        "name": "정문창",
+        "affiliation": "발카리"
+      }
+    },
+    "gitRepository": "https://github.com/U2DJ2/moim-today",
+    "presentationUrl": "https://softcon.ajou.ac.kr/upload/work/sh_2024530153824h.pdf",
+    "videoUrl": "https://drive.google.com/file/d/1f4nJ-gsjg-oMSvoDnY-KFrqpCZ5YZM_r/preview",
+    "representativeImage": "https://softcon.ajou.ac.kr/images/no_registrant.jpg"
+  },
+  {
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1802&wTerm=2024-1",
+    "uid": "1802",
+    "term": "2024-1",
+    "title": "스마트 헬스장 관리 플랫폼, HELPT",
+    "summary": "헬스장 운영 주체와 고객 간 소통이 어려웠거나운동 방법부터 이용권 구매까지 도움이 필요하거나핸드폰으로도 쉽게 헬스장을 관리하고 싶다면AI 스마트 헬스 관리 시스템 HELPT를 이용하세요!HELPT는 헬스장 이용자와 헬스장 관리자를 위한 서비스를안드로이드 모바일 애플리케이션으로 제공합니다.또한, 운동 기구를 헬스장 이용자가 쉽게 이용할 수 있도록AI 코칭 서비스를 모바일 TTS로 제공하고 있습니다.",
+    "teamInfo": {
+      "registrant": {},
+      "members": [
+        {
+          "role": "팀장",
+          "name": "이정민",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "kyungheeyj**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "송인범",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "dlsqja34**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "한아영",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "hay01**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "최영환",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "gihan**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "최윤서",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "chldbstj05**@ajou.ac.kr"
+        }
+      ],
+      "mentor": {
+        "name": "이창훈",
+        "affiliation": "트위니"
+      }
+    },
+    "gitRepository": "https://github.com/Ajou-Capston-09-HELPT",
+    "presentationUrl": "https://softcon.ajou.ac.kr/upload/work/sh_2024530105718ms.pdf",
+    "videoUrl": "https://drive.google.com/file/d/1mU8AcpJF61WV5wTkJdackQv4v7waT58A/preview?usp=drive_link",
+    "representativeImage": "https://softcon.ajou.ac.kr/images/no_registrant.jpg"
+  },
+  {
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1801&wTerm=2024-1",
+    "uid": "1801",
+    "term": "2024-1",
+    "title": "테니스 재미쓰: 테니스 파트너&코트 매칭 및 무인심판 서비스",
+    "summary": "너무나도 바쁜 우리의 일상. 일하랴 공부하려 취미 생활을 할 틈도 없다.\"간만에 테니스나 치고 싶은데.. 같이 칠 사람 없나?\" 동호회도 다니지 않아서 같이 칠 사람 구하기도 쉽지 않다.테니스 재미쓰는 테니스를 치고 싶어하는 2030 직장인, 학생들에게 원하는 상대 매칭과 테니스 코트 예약까지 한 번에 처리해드립니다. 또한, 매칭된 상대와 경기 중 라인콜링 분쟁 발생이 없도록 AI 무인 심판도 지원합니다. 바쁜 테니스인들에게 필요한 기능을 올인원으로 제공하는 서비스, 테니스 재미쓰를 소개합니다.",
+    "teamInfo": {
+      "registrant": {},
+      "members": [
+        {
+          "role": "팀장",
+          "name": "송정우",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "jws53**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "김영찬",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "ych6**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "김동령",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "insoyafe**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "한승훈",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "hsh12**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "김관주",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "kkj62**@ajou.ac.kr"
+        }
+      ],
+      "mentor": {
+        "name": "신우림",
+        "affiliation": "블루시그넘"
+      }
+    },
+    "gitRepository": "https://github.com/JolUpHoSoIn-sd24",
+    "presentationUrl": "https://softcon.ajou.ac.kr/upload/work/sh_2024530105742yq.pdf",
+    "videoUrl": "https://drive.google.com/file/d/1Xihz4FaQZ4wd_Kmvdzmm9jCCiF4OLOco/preview?usp=sharing",
+    "representativeImage": "https://softcon.ajou.ac.kr/images/no_registrant.jpg"
+  },
+  {
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1797&wTerm=2024-1",
+    "uid": "1797",
+    "term": "2024-1",
+    "title": "Sync-D: 실시간 아이디어 기획 협업 플랫폼",
+    "summary": "기획 경험이 부족한 서비스 개발팀은 기획에 소비하는 시간 대비 불완전한 기획 결과를 얻는다. 이를 기반으로 프로젝트를 진행한다고 해도, 구현 중 발견되는 서비스에 대한 의견 및 컨셉 불일치를 마주하게 된다. Sync-D는 실시간 아이디어 기획 협업 플랫폼으로, 서비스 개발팀이 효과적인 기획 및 SW 프로세스 설계를 쉽게 팀에 적용할 수 있도록 온라인 환경 및 툴을 지원한다. 디자인 씽킹과 애자일 방법론을 기반으로 한 체계적 기획 가이드라인을 제공하여, 사전 학습 없이 쉽게 프로젝트의 기획부터 소프트웨어 프로세스 설계하도록 돕는다. 단계별 템플릿과 튜토리얼을 포함하여 명확하고 성공적인 결과물을 창출할 수 있도록 돕는다.",
+    "teamInfo": {
+      "registrant": {},
+      "members": [
+        {
+          "role": "팀장",
+          "name": "정준호",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "cak1014**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "김태욱",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "soc072**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "오동재",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "dhehdw**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "이재준",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "jaejoon07**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "이찬주",
+          "department": "소프트웨어학과",
+          "grade": "4",
+          "email": "dlckswn3**@ajou.ac.kr"
+        }
+      ],
+      "mentor": {
+        "name": "김영진",
+        "affiliation": "넥슨코리아"
+      }
+    },
+    "gitRepository": "https://github.com/i-Dear",
+    "presentationUrl": "https://softcon.ajou.ac.kr/upload/work/sh_20245301117224v.pdf",
+    "videoUrl": "https://drive.google.com/file/d/1lFxTGHhOZX58stpjYS-eqAOYXzA7ASpT/preview?usp=sharing",
+    "representativeImage": "https://softcon.ajou.ac.kr/images/no_registrant.jpg"
+  },
+  {
+    "url": "https://softcon.ajou.ac.kr/works/works_prev.asp?uid=1796&wTerm=2024-1",
+    "uid": "1796",
+    "term": "2024-1",
+    "title": "게임 서버 대여 및 간편관리 서비스 NEO",
+    "summary": "웹을 통해 게임 서버를 대여하고 관리할 수 있는 서비스이다. 참여자 모집을 할 수 있는 기능을 제공한다.",
+    "teamInfo": {
+      "registrant": {},
+      "members": [
+        {
+          "role": "팀장",
+          "name": "이은구",
+          "department": "소프트웨어",
+          "grade": "4",
+          "email": "mueg**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "이선우",
+          "department": "소프트웨어",
+          "grade": "4",
+          "email": "malenwat**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "박병하",
+          "department": "소프트웨어",
+          "grade": "4",
+          "email": "akdl40**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "권초염",
+          "department": "소프트웨어",
+          "grade": "4",
+          "email": "shikua**@ajou.ac.kr"
+        },
+        {
+          "role": "팀원",
+          "name": "박건희",
+          "department": "소프트웨어",
+          "grade": "4",
+          "email": "gun96**@ajou.ac.kr"
+        }
+      ],
+      "mentor": {
+        "name": "최지헌",
+        "affiliation": "(주)피이그"
+      }
+    },
+    "gitRepository": "https://github.com/ajouNEO/NEO.git",
+    "presentationUrl": "https://softcon.ajou.ac.kr/upload/work/sh_2024530111748q1.pdf",
+    "videoUrl": "https://drive.google.com/file/d/1mkJIdKhs2ZR4ztp_B0-0EbSYVL1ME0k2/preview?usp=sharing",
+    "representativeImage": "https://softcon.ajou.ac.kr/images/no_registrant.jpg"
+  }
+]

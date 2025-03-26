@@ -1,5 +1,7 @@
 import React from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
 
 const LoadingSpinner = ({ message = '로딩 중...', size = 'medium' }) => {
   // AJOU 대학 색상
