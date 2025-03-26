@@ -105,7 +105,7 @@ const AnimatedLoading = ({ message = '콘텐츠를 불러오는 중입니다', f
       </Fade>
 
       {/* 애니메이션을 위한 CSS */}
-      <style jsx global>{`
+      <style>{`
         @keyframes pulse {
           0% {
             transform: scale(1);

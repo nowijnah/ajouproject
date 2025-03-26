@@ -1,0 +1,201 @@
+<!-- functions/templates/comment-notification.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>댓글 알림</title>
+  <style>
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #0A2B5D;
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+    }
+    .content {
+      padding: 30px 20px;
+      background-color: #f7f9fc;
+    }
+    .footer {
+      background-color: #f1f1f1;
+      padding: 15px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+    h1 {
+      color: #0A2B5D;
+      margin-top: 0;
+      font-size: 24px;
+    }
+    .comment-box {
+      background-color: white;
+      border-radius: 5px;
+      padding: 15px;
+      margin: 20px 0;
+      border-left: 4px solid #0A2B5D;
+    }
+    .btn {
+      display: inline-block;
+      background-color: #0A2B5D;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .unsubscribe {
+      color: #999;
+      font-size: 12px;
+      margin-top: 30px;
+    }
+    .unsubscribe a {
+      color: #666;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="https://your-website.com/logo.png" alt="AIM AJOU">
+    </div>
+    <div class="content">
+      <h1>댓글 알림</h1>
+      <p>안녕하세요, {{recipientName}}님!</p>
+      <p><strong>{{authorName}}</strong>님이 회원님의 게시글 <strong>"{{postTitle}}"</strong>에 댓글을 남겼습니다.</p>
+      
+      <div class="comment-box">
+        "{{commentContent}}"
+      </div>
+      
+      <p>게시글에서 댓글을 확인하고 대화에 참여해보세요.</p>
+      
+      <a href="{{postUrl}}" class="btn">게시글로 이동하기</a>
+      
+      <p class="unsubscribe">
+        더 이상 이메일 알림을 받고 싶지 않으신가요? <a href="{{unsubscribeUrl}}">알림 설정 변경하기</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© 2024 AIM AJOU. 모든 권리 보유.</p>
+      <p>경기도 수원시 월드컵로 206, 아주대학교</p>
+    </div>
+  </div>
+</body>
+</html>
+
+<!-- functions/templates/reply-notification.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>답글 알림</title>
+  <style>
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #0A2B5D;
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+    }
+    .content {
+      padding: 30px 20px;
+      background-color: #f7f9fc;
+    }
+    .footer {
+      background-color: #f1f1f1;
+      padding: 15px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+    h1 {
+      color: #0A2B5D;
+      margin-top: 0;
+      font-size: 24px;
+    }
+    .comment-box {
+      background-color: white;
+      border-radius: 5px;
+      padding: 15px;
+      margin: 20px 0;
+      border-left: 4px solid #0A2B5D;
+    }
+    .btn {
+      display: inline-block;
+      background-color: #0A2B5D;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .unsubscribe {
+      color: #999;
+      font-size: 12px;
+      margin-top: 30px;
+    }
+    .unsubscribe a {
+      color: #666;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="https://your-website.com/logo.png" alt="AIM AJOU">
+    </div>
+    <div class="content">
+      <h1>답글 알림</h1>
+      <p>안녕하세요, {{recipientName}}님!</p>
+      <p><strong>{{authorName}}</strong>님이 회원님의 댓글에 답글을 남겼습니다. 게시글: <strong>"{{postTitle}}"</strong></p>
+      
+      <div class="comment-box">
+        "{{commentContent}}"
+      </div>
+      
+      <p>게시글에서 답글을 확인하고 대화에 참여해보세요.</p>
+      
+      <a href="{{postUrl}}" class="btn">게시글로 이동하기</a>
+      
+      <p class="unsubscribe">
+        더 이상 이메일 알림을 받고 싶지 않으신가요? <a href="{{unsubscribeUrl}}">알림 설정 변경하기</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© 2024 AIM AJOU. 모든 권리 보유.</p>
+      <p>경기도 수원시 월드컵로 206, 아주대학교</p>
+    </div>
+  </div>
+</body>
+</html>
