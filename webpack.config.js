@@ -1,5 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
     entry: {
@@ -25,7 +27,9 @@ module.exports = {
         hot: true,
         allowedHosts: 'all',
     },
+    mode: 'production',
     plugins: [
-        new webpack.HotModuleReplacementPlugin()
+        // new BundleAnalyzerPlugin(),
+        new Dotenv(),
     ]
 };

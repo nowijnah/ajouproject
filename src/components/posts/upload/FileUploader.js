@@ -1,17 +1,14 @@
 import React from 'react';
-import { 
-  Typography, 
-  Box, 
-  Button, 
-  List, 
-  ListItem, 
-  IconButton, 
-  TextField 
-} from '@mui/material';
-import {
-  CloudUpload as UploadIcon,
-  Close as CloseIcon
-} from '@mui/icons-material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import IconButton from '@mui/material/IconButton';
+import TextField from '@mui/material/TextField';
+
+import UploadIcon from '@mui/icons-material/CloudUpload';
+import CloseIcon from '@mui/icons-material/Close';
 
 /**
  * 파일 업로더 컴포넌트

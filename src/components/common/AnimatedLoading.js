@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Fade } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Fade from '@mui/material/Fade';
 
-const AnimatedLoading = ({ message = '콘텐츠를 불러오는 중입니다', fullPage = false }) => {
+const AnimatedLoading = ({ message = '콘텐츠를 불러오는 중입니다', fullPage=true}) => {
   const AJOU_BLUE = 'rgb(0, 51, 161)';
   const [progress, setProgress] = useState(0);
   const [dots, setDots] = useState('');
@@ -105,7 +107,11 @@ const AnimatedLoading = ({ message = '콘텐츠를 불러오는 중입니다', f
       </Fade>
 
       {/* 애니메이션을 위한 CSS */}
+<<<<<<< HEAD
       <style>{`
+=======
+      <style jsx="true" global="true">{`
+>>>>>>> main
         @keyframes pulse {
           0% {
             transform: scale(1);

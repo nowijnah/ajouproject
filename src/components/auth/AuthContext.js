@@ -1,14 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
+import React, { createContext, useContext, useState, useEffect } from "react";
+import {
   onAuthStateChanged,
-  signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  signOut 
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../../firebase';
-import AnimatedLoading from '../common/AnimatedLoading';
+  signOut,
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../firebase";
+import AnimatedLoading from "../common/AnimatedLoading";
 
 const AuthContext = createContext(null);
 
@@ -20,26 +19,26 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Firestore에서 추가 사용자 정보 가져오기
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            // Firestore에 사용자 정보가 있으면 합쳐서 저장
             setCurrentUser({
               uid: user.uid,
               email: user.email,
-              displayName: user.displayName || userData.displayName,
-              photoURL: user.photoURL || userData.photoURL,
-              ...userData
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              role: userData.role || "DEFAULT",
+              ...(userData.role === "STUDENT" || userData.role === "PROFESSOR"
+                ? { major: userData.major || "정보 없음" }
+                : {}),
+              ...userData,
             });
           } else {
-            // Firestore에 정보가 없어도 기본 사용자 정보는 설정
             setCurrentUser(user);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
-          // 에러가 발생해도 기본 사용자 정보는 설정
           setCurrentUser(user);
         }
       } else {
@@ -51,50 +50,110 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // 로그인 메서드들
-  const login = async (email, password) => {
-    const result = await signInWithEmailAndPassword(auth, email, password);
+  const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.addScope("https://www.googleapis.com/auth/userinfo.profile");
+    provider.addScope("https://www.googleapis.com/auth/userinfo.email");
+    provider.addScope("https://www.googleapis.com/auth/user.emails.read"); // ✅ 변경된 올바른 범위
+    provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
+
+    const result = await signInWithPopup(auth, provider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const token = credential.accessToken;
+    const user = result.user;
+
+    if (!user.email.endsWith("@ajou.ac.kr")) {
+      throw new Error("아주대학교 계정만 사용 가능합니다.");
+    }
+
+    let role = "STUDENT";
+    let major = null;
+
+    if (token) {
+      try {
+        const response = await fetch(
+          "https://people.googleapis.com/v1/people/me?personFields=organizations",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const data = await response.json();
+        console.log("Google People API 응답 데이터:", data); // 응답 확인
+    
+        const organizations = data.organizations || [];
+        const university = organizations.find((org) => org.metadata?.primary);
+    
+        if (university) {
+          major = university.department || "정보 없음"; 
+          console.log("학과 정보:", major);
+    
+          if (university.jobDescription && university.jobDescription.includes("교원")) {
+            role = "PROFESSOR"; // 교수이면 역할 변경
+          }
+        } else {
+          console.warn("Google People API에서 학과 정보를 찾을 수 없음.");
+        }
+      } catch (error) {
+        console.error("Google People API 호출 실패:", error);
+      }
+    }
+    
+    const userData = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      role: role,
+    };
+
+    if (role === "STUDENT" || role === "PROFESSOR") {
+      userData.major = major || "정보 없음";
+    }
+
+    await setDoc(doc(db, "users", user.uid), userData);
+    setCurrentUser(userData);
+
     return result;
   };
 
-  const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    return result;
+  const signUpWithEmail = async (email, password, companyName) => {
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      email: user.email,
+      displayName: companyName,
+      role: "DEFAULT",
+      createdAt: new Date(),
+    });
+
+    return user;
+  };
+
+  const loginWithEmail = async (email, password) => {
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    return userCredential.user;
   };
 
   const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
-    }
+    await signOut(auth);
+    setCurrentUser(null);
   };
 
-  const value = {
-    currentUser,
-    loading,
-    login,
-    loginWithGoogle,
-    logout
-  };
+  const value = { currentUser, loading, loginWithGoogle, signUpWithEmail, loginWithEmail, logout };
 
   if (loading) {
     return <AnimatedLoading message="사용자 정보를 불러오는 중입니다" fullPage={true} />;
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

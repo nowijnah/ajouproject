@@ -1,30 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Typography, 
-  Avatar, 
-  IconButton, 
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  DialogContentText,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Popover
-} from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  ThumbUp as ThumbUpIcon,
-  ThumbUpOutlined as ThumbUpOutlinedIcon,
-  Person as PersonIcon
-} from '@mui/icons-material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import DialogContentText from '@mui/material/DialogContentText';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import ListItemText from '@mui/material/ListItemText';
+import Popover from '@mui/material/Popover';
+
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import PersonIcon from '@mui/icons-material/Person';
+import CloneToPortfolioButton from '../CloneToPortfolioButton';
 
 /**
  * 게시물 헤더 컴포넌트 - 작성자 정보, 좋아요, 수정/삭제 버튼 등을 표시
@@ -48,6 +46,9 @@ const PostHeader = ({
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // 소프트콘 프로젝트인지 확인
+  const isSoftconProject = collectionName === 'softcon_projects';
 
   // 좋아요 목록 보기
   const handleOpenLikes = () => {
@@ -154,6 +155,11 @@ const PostHeader = ({
 
         {!isPreview && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* 소프트콘 프로젝트이고 STUDENT 권한이 있을 때 복제 버튼 표시 */}
+            {isSoftconProject && currentUser?.role === 'STUDENT' && (
+              <CloneToPortfolioButton postData={postData} postId={postId} />
+            )}
+            
             {/* 작성자일 경우 수정/삭제 버튼 */}
             {currentUser?.uid === authorData?.id && (
               <Box sx={{ display: 'flex', gap: 1 }}>

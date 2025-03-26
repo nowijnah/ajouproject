@@ -1,6 +1,9 @@
 import React from 'react';
-import { Box, Typography, Chip } from '@mui/material';
-import { Code as CodeIcon } from '@mui/icons-material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+
+import CodeIcon from '@mui/icons-material/Code';
 
 /**
  * 게시물 키워드 컴포넌트 - 기술 스택이나 주요 키워드 태그 표시

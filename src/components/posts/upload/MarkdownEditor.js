@@ -1,12 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { 
-  Typography, 
-  Box, 
-  Grid, 
-  TextField, 
-  Button,
-  Divider 
-} from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Grid from '@mui/material/Grid';
+import Divider from '@mui/material/Divider';
+
 import ReactMarkdown from 'react-markdown';
 
 /**
