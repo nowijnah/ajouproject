@@ -238,7 +238,7 @@ const Comment = ({
                   '&:hover': { bgcolor: 'grey.100' }
                 }}
               >
-                답글
+                답글 남기기
               </Button>
             )}
             {replyCount > 0 && (
