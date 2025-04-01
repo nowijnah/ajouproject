@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { AuthProvider } from './components/auth/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import SettingsPage from './pages/SettingsPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 // import SoftconCrawler from './components/SoftconCrawler';
 
@@ -27,6 +28,12 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const SignIn = lazy(() => import('./components/auth/SignIn').then(module => ({ default: module.SignIn })));
 const SignUp = lazy(() => import('./components/auth/SignUp').then(module => ({ default: module.SignUp })));
 const SoftconProjectsPage = lazy(() => import('./pages/SoftconProjectPage'));
+const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
+const AdminNotices = lazy(() => import('./pages/admin/AdminNotices'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminSoftcon = lazy(() => import('./pages/admin/AdminSoftcon'));
+const NoticeView = lazy(() => import('./pages/notices/NoticeView'));
+const NoticeList = lazy(() => import('./pages/notices/NoticeList'));
 
 export default function App() {
   return (
@@ -108,6 +115,32 @@ export default function App() {
                 <Route path="/companies" element={<CompanyPage />} />
                 <Route path="/companies/:postId" element={<CompanyView />} />
                 <Route path="/softcon" element={<SoftconProjectsPage />} />
+
+                {/* Admin Routes */}
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/notices" element={
+                  <ProtectedRoute>
+                    <AdminNotices />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/users" element={
+                  <ProtectedRoute>
+                    <AdminUsers />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/softcon" element={
+                  <ProtectedRoute>
+                    <AdminSoftcon />
+                  </ProtectedRoute>
+                } />
+
+                {/* Notice Routes */}
+                <Route path="/notices" element={<NoticeList />} />
+                <Route path="/notices/:noticeId" element={<NoticeView />} />
               </Routes>
             </Suspense>
           </Box>

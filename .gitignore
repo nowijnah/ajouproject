@@ -18,6 +18,7 @@
 /.firebaserc.js
 /firebase.json
 
+
 # testing
 /coverage
 
@@ -43,3 +44,6 @@ yarn-error.log*
 /build
 *.bundle.js
 *.LICENSE.txt
+
+# MailerSend 
+/extensions/mailersend-email.env
