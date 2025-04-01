@@ -12,14 +12,12 @@ import {
   MenuItem, 
   Button, 
   CircularProgress,
-  Divider,
   ThemeProvider,
   createTheme
 } from '@mui/material';
 
 // 아주대학교 테마 색상
 const ajouBlue = '#003876'; // 아주대학교 공식 파란색
-const ajouLightBlue = '#4D87CA';
 
 // 커스텀 테마 생성
 const ajouTheme = createTheme({
@@ -27,19 +25,19 @@ const ajouTheme = createTheme({
     primary: {
       main: ajouBlue,
     },
-    secondary: {
-      main: ajouLightBlue,
-    },
   },
   typography: {
-    fontFamily: '"Noto Sans KR", "Roboto", "Arial", sans-serif',
-    h4: {
-      fontWeight: 700,
-    },
-    h6: {
-      fontWeight: 600,
-    },
+    fontFamily: '"Noto Sans KR", "Roboto", sans-serif',
   },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)'
+        }
+      }
+    }
+  }
 });
 
 const TERMS = [
@@ -84,11 +82,6 @@ const SoftconCrawler = () => {
       return;
     }
 
-    console.log("크롤링 시작:", {
-      term: selectedTerm,
-      category: selectedCategory
-    });
-
     setLogMessages(prev => [...prev, `크롤링 시작: ${selectedTerm} / ${getCategoryName(selectedCategory)}`]);
     setLoading(true);
 
@@ -105,8 +98,6 @@ const SoftconCrawler = () => {
       setLogMessages(prev => [...prev, `파라미터: ${JSON.stringify(requestData)}`]);
       
       const result = await crawlSoftconData(requestData);
-      
-      console.log("크롤링 응답:", result.data);
       
       if (result.data && result.data.logs && Array.isArray(result.data.logs)) {
         setLogMessages(prev => [...prev, ...result.data.logs]);
@@ -146,29 +137,15 @@ const SoftconCrawler = () => {
 
   return (
     <ThemeProvider theme={ajouTheme}>
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h4" component="h1" color="primary" gutterBottom>
-            소프트콘 작품 크롤링
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            아주대학교 소프트콘 작품을 크롤링하여 데이터베이스에 저장합니다
-          </Typography>
-        </Box>
+      <Container maxWidth="md" sx={{ py: 3 }}>
+        <Typography variant="h5" component="h1" color="primary" gutterBottom align="center" sx={{ mb: 3 }}>
+          소프트콘 크롤링
+        </Typography>
 
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            p: 4, 
-            mb: 4, 
-            border: `1px solid ${ajouLightBlue}`,
-            borderRadius: 2,
-            background: 'linear-gradient(to bottom, #ffffff, #f5f8ff)'
-          }}
-        >
-          <Grid container spacing={3} alignItems="center">
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={4}>
-              <FormControl fullWidth variant="outlined">
+              <FormControl fullWidth size="small">
                 <InputLabel id="term-select-label">학기</InputLabel>
                 <Select
                   labelId="term-select-label"
@@ -185,7 +162,7 @@ const SoftconCrawler = () => {
             </Grid>
             
             <Grid item xs={12} sm={4}>
-              <FormControl fullWidth variant="outlined">
+              <FormControl fullWidth size="small">
                 <InputLabel id="category-select-label">카테고리</InputLabel>
                 <Select
                   labelId="category-select-label"
@@ -208,22 +185,9 @@ const SoftconCrawler = () => {
                 <Button
                   variant="contained"
                   color="primary"
-                  size="large"
                   onClick={handleCrawl}
                   disabled={loading}
                   startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-                  sx={{ 
-                    px: 4, 
-                    py: 1,
-                    fontWeight: 'bold',
-                    boxShadow: '0 4px 6px rgba(0, 56, 118, 0.2)',
-                    '&:hover': {
-                      backgroundColor: ajouBlue,
-                      boxShadow: '0 6px 10px rgba(0, 56, 118, 0.3)',
-                      transform: 'translateY(-1px)'
-                    },
-                    transition: 'all 0.2s'
-                  }}
                 >
                   {loading ? '크롤링 중...' : '크롤링 시작'}
                 </Button>
@@ -232,40 +196,26 @@ const SoftconCrawler = () => {
           </Grid>
         </Paper>
 
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            p: 0, 
-            borderRadius: 2,
-            overflow: 'hidden',
-            border: `1px solid ${ajouLightBlue}`
-          }}
-        >
-          <Box sx={{ bgcolor: ajouBlue, p: 2 }}>
-            <Typography variant="h6" color="white">
-              크롤링 로그
-            </Typography>
-          </Box>
-          
-          <Divider />
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+            크롤링 로그
+          </Typography>
           
           <Box 
             sx={{ 
               height: '300px', 
-              overflowY: 'auto', 
+              overflowY: 'auto',
+              bgcolor: '#f5f5f5',
               p: 2,
-              backgroundColor: '#f8f9fb' 
+              borderRadius: 1
             }}
           >
             <Box 
               component="pre"
               sx={{ 
                 fontFamily: 'monospace', 
-                fontSize: '0.875rem',
-                lineHeight: 1.5,
-                overflowX: 'auto',
-                m: 0,
-                p: 0,
+                fontSize: '0.8rem',
+                margin: 0,
                 color: '#333'
               }}
             >
