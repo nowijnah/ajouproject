@@ -1,532 +1,367 @@
 // functions/index.js
-const functions = require('firebase-functions');
-const axios = require('axios');
-const cheerio = require('cheerio');
-const cors = require('cors')({ origin: true });
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const axios = require("axios");
+const cheerio = require("cheerio");
+const cors = require("cors")({ origin: true });
 
-// 기본 URL 설정
-const BASE_URL = "https://softcon.ajou.ac.kr";
+admin.initializeApp();
+const db = admin.firestore();
 
-/**
- * 크롤링 프록시 함수
- * React 앱에서 호출해서 CORS 문제 없이 크롤링을 수행합니다
- */
-exports.proxyCrawling = functions.https.onRequest((request, response) => {
-  return cors(request, response, async () => {
-    try {
-      const { url } = request.query;
-      
-      if (!url) {
-        return response.status(400).json({ error: 'URL 매개변수가 필요합니다.' });
+const TERMS = [
+  "2020-1", "2020-2",
+  "2021-1", "2021-2",
+  "2022-1", "2022-2",
+  "2023-1", "2023-2",
+  "2024-1", "2024-2"
+];
+
+const CATEGORIES = ["S", "D", "I", "R", "M", "P"];
+
+// CORS를 적용한 HTTP 함수 - 앱에서는 사용하지 않음
+exports.getSoftconTerms = functions.https.onRequest((req, res) => {
+  cors(req, res, () => {
+    res.json({
+      terms: TERMS,
+      categories: CATEGORIES
+    });
+  });
+});
+
+// 크롤링 함수 (Firebase Callable Function)
+exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
+  // 로그 배열 초기화
+  const logs = [];
+  const addLog = (message) => {
+    console.log(message);
+    logs.push(message);
+  };
+
+  try {
+    // 디버깅을 위한 로그 추가
+    console.log("함수 호출됨");
+    console.log("데이터 타입:", typeof data);
+    console.log("데이터 값:", data);
+    
+    if (data === null || data === undefined) {
+      addLog("데이터가 null 또는 undefined입니다.");
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        '유효한 데이터가 전달되지 않았습니다.'
+      );
+    }
+    
+    // 데이터가 문자열이면 JSON으로 파싱 시도
+    let parsedData = data;
+    if (typeof data === 'string') {
+      try {
+        parsedData = JSON.parse(data);
+        addLog("문자열 데이터를 JSON으로 파싱했습니다.");
+      } catch (e) {
+        addLog(`JSON 파싱 실패: ${e.message}`);
       }
+    }
+    
+    // 모든 데이터 키 출력
+    if (typeof parsedData === 'object' && parsedData !== null) {
+      addLog(`데이터 키: ${Object.keys(parsedData).join(', ')}`);
+    }
+    
+    // term과 category 값 추출 시도
+    const term = parsedData?.term || 
+                parsedData?.data?.term || 
+                parsedData?.params?.term || 
+                '';
+                
+    const category = parsedData?.category || 
+                    parsedData?.data?.category || 
+                    parsedData?.params?.category || 
+                    '';
+    
+    addLog(`추출된 term: ${term}, category: ${category}`);
+    
+    // 값 검증
+    if (!term || !category) {
+      addLog(`필수 파라미터 누락. term: ${term}, category: ${category}`);
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        '학기와 카테고리 정보가 필요합니다.'
+      );
+    }
 
-      const headers = {
+    addLog(`크롤링 시작: 학기=${term}, 카테고리=${category}`);
+
+    // URL 설정
+    const baseListUrl = "https://softcon.ajou.ac.kr/works/works_list_prev.asp";
+    const baseDetailUrl = "https://softcon.ajou.ac.kr/works/works_prev.asp";
+    
+    // 최신 학기인 2024-2는 다른 URL 사용 (HTML 분석 기준)
+    const isCurrentTerm = term === "2024-2";
+    const currentTermListUrl = "https://softcon.ajou.ac.kr/works/works_list.asp";
+    const currentTermDetailUrl = "https://softcon.ajou.ac.kr/works/works.asp";
+    
+    const listUrl = isCurrentTerm ? currentTermListUrl : baseListUrl;
+    const detailUrl = isCurrentTerm ? currentTermDetailUrl : baseDetailUrl;
+
+    // HTTP 요청 헤더 추가
+    const axiosConfig = {
+      headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
         'Referer': 'https://softcon.ajou.ac.kr/'
+      },
+      timeout: 30000 // 30초 타임아웃 설정
+    };
+
+    // HTML 페이지 가져오기
+    const getHtml = async (url) => {
+      try {
+        addLog(`URL 요청: ${url}`);
+        const response = await axios.get(url, axiosConfig);
+        return cheerio.load(response.data);
+      } catch (error) {
+        addLog(`URL 요청 실패: ${url}, 오류: ${error.message}`);
+        throw new Error(`URL 요청 실패: ${error.message}`);
+      }
+    };
+
+    // 프로젝트 목록 페이지에서 모든 UID 추출
+    const getAllProjectIds = async () => {
+      // 쿼리 매개변수 설정
+      let url;
+      if (isCurrentTerm) {
+        url = `${listUrl}?category=${category}`;
+      } else {
+        url = `${listUrl}?category=${category}&wTerm=${term}`;
+      }
+      
+      addLog(`프로젝트 목록 URL: ${url}`);
+      
+      // HTML 가져오기
+      const $ = await getHtml(url);
+      const uids = [];
+      
+      // 모달 링크에서 UID 추출 (HTML 구조 기반)
+      $(".modal > div > a").each((_, el) => {
+        const href = $(el).attr("href");
+        if (!href) return;
+        
+        // UID와 wTerm 매개변수 추출
+        const uidMatch = href.match(/uid=(\d+)/);
+        if (uidMatch) {
+          uids.push(uidMatch[1]);
+        }
+      });
+      
+      // UID를 찾지 못한 경우 다른 방법 시도
+      if (uids.length === 0) {
+        addLog("첫 번째 방법으로 UID를 찾지 못해 모든 링크 검색");
+        $("a").each((_, el) => {
+          const href = $(el).attr("href");
+          if (!href) return;
+          
+          const uidMatch = href.match(/uid=(\d+)/);
+          if (uidMatch) {
+            uids.push(uidMatch[1]);
+          }
+        });
+      }
+      
+      // 중복 제거 및 로그
+      const uniqueUids = [...new Set(uids)];
+      addLog(`총 ${uniqueUids.length}개의 프로젝트 ID를 찾았습니다.`);
+      
+      if (uniqueUids.length === 0) {
+        addLog("프로젝트 ID를 찾을 수 없습니다. HTML 구조를 확인하세요.");
+      }
+      
+      return uniqueUids;
+    };
+
+    // 프로젝트 상세 페이지에서 데이터 추출
+    const getDetailData = async (uid) => {
+      // 쿼리 매개변수 설정
+      let url;
+      if (isCurrentTerm) {
+        url = `${detailUrl}?uid=${uid}`;
+      } else {
+        url = `${detailUrl}?uid=${uid}&wTerm=${term}`;
+      }
+      
+      addLog(`프로젝트 상세 URL: ${url}`);
+      
+      // HTML 가져오기
+      const $ = await getHtml(url);
+
+      // 프로젝트 제목
+      let title = $(".dw_title p").text().trim();
+      if (!title) {
+        title = $("h1, h2, .title").first().text().trim();
+      }
+      
+      // 프로젝트 설명
+      let description = $(".work_detail > div:last-child").text().trim();
+      if (!description) {
+        description = $(".work_detail, .detail, .content").text().trim();
+      }
+      
+      // 영상 링크
+      const videoLink = $(".countsort iframe").attr("src") || "";
+
+      const pdfLink = $("#pdfArea").attr("src") || "";
+
+      // 팀원 정보
+      const teamWrap = $(".dw_wrap").filter((i, el) => {
+        return $(el).find(".dw_le").text().includes("팀원");
+      });
+      const team = [];
+
+      teamWrap.find("ul").each((i, el) => {
+        const role = $(el).find("li").eq(0).text().replace(/\s/g, "");
+        const name = $(el).find("li").eq(1).text().trim();
+        const major = $(el).find("li").eq(2).text().trim();
+        const grade = $(el).find("li").eq(3).text().trim();
+        const email = $(el).find("li").eq(4).text().trim();
+
+        team.push({ role, name, major, grade, email });
+      });
+      
+      // 썸네일 이미지 URL
+      let thumbnailUrl = "";
+      try {
+        const imgEl = $(".work_detail img, .detail img").first();
+        if (imgEl.length > 0) {
+          thumbnailUrl = imgEl.attr("src") || "";
+          // 상대 경로를 절대 경로로 변환
+          if (thumbnailUrl && !thumbnailUrl.startsWith("http")) {
+            thumbnailUrl = `https://softcon.ajou.ac.kr${thumbnailUrl.startsWith('/') ? '' : '/'}${thumbnailUrl}`;
+          }
+        }
+      } catch (error) {
+        addLog(`썸네일 추출 실패 (uid: ${uid}): ${error.message}`);
+      }
+
+      const githubLink = $(".dw_wrap").filter((i, el) => {
+        return $(el).find(".dw_le").text().includes("git");
+      }).find("a").attr("href") || "";
+
+      
+      // 결과 데이터 객체
+      const data = {
+        uid,
+        authorId: "admin",
+        title: title || `프로젝트 ${uid}`,
+        content: description || "",
+        team,
+        keywords: category ? [category] : [],
+        thumbnailUrl,
+        files: pdfLink ? [{ name: "발표자료", url: pdfLink }] : [],
+        links: [
+          videoLink ? {
+            linkId: `video-${uid}`,
+            title: "시연 영상",
+            type: "VIDEO",
+            url: videoLink,
+            subtitle: ""
+          } : null,
+          githubLink ? {
+            linkId: `github-${uid}`,
+            title: "GitHub 저장소",
+            type: "WEBSITE",
+            url: githubLink,
+            subtitle: ""
+          } : null
+        ].filter(Boolean),
+        likeCount: 0,
+        commentCount: 0,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       
-      const result = await axios.get(url, {
-        headers: headers,
-        timeout: 10000
-      });
-      
-      response.set('Content-Type', 'text/html; charset=utf-8');
-      response.status(200).send(result.data);
-    } catch (error) {
-      functions.logger.error('크롤링 오류:', error);
-      response.status(500).json({ error: error.message || '크롤링 중 오류가 발생했습니다.' });
-    }
-  });
-});
+      return data;
+    };
 
-/**
- * 프로젝트 링크 가져오기 함수
- */
-exports.getProjectLinks = functions.https.onCall(async (data, context) => {
-  try {
-    const { listType = 'current', category = 'S', term = null } = data;
+    // 메인 크롤링 프로세스
+    const uids = await getAllProjectIds();
     
-    let url;
-    
-    if (listType === "current") {
-      url = `${BASE_URL}/works/works_list.asp?category=${category}`;
-    } else {
-      if (!term) {
-        throw new Error("이전 작품 목록을 가져오려면 학기(term)가 필요합니다.");
-      }
-      url = `${BASE_URL}/works/works_list_prev.asp?category=${category}&wTerm=${term}`;
+    // UID가 없으면 오류 반환
+    if (uids.length === 0) {
+      throw new Error(`프로젝트 ID를 찾을 수 없습니다. 학기(${term})와 카테고리(${category})를 확인해주세요.`);
     }
     
-    functions.logger.info(`목록 URL: ${url}`);
+    // 각 프로젝트 처리
+    let processedCount = 0;
+    let skipCount = 0;
+    let errorCount = 0;
     
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Referer': 'https://softcon.ajou.ac.kr/'
-      }
-    });
+    // 프로세싱할 UID 수를 제한 (혹시 모를 타임아웃 방지)
+    const maxProcessCount = Math.min(uids.length, 50);
+    const uidsToProcess = uids.slice(0, maxProcessCount);
     
-    const $ = cheerio.load(response.data);
-    const projects = [];
+    if (uids.length > maxProcessCount) {
+      addLog(`주의: ${uids.length}개 중 ${maxProcessCount}개만 처리합니다. 나머지는 다음 실행에서 처리하세요.`);
+    }
     
-    // 모든 a 태그를 찾아서 작품 링크 추출
-    $('a').each((index, element) => {
-      const href = $(element).attr('href') || '';
-      
-      // 링크가 작품 상세 페이지인지 확인
-      if ((href.includes('works.asp?uid=') || href.includes('works_prev.asp?uid=')) && !href.includes('javascript:')) {
-        const title = $(element).text().trim();
+    // 각 UID에 대해 상세 정보 크롤링
+    for (const uid of uidsToProcess) {
+      try {
+        // Firestore에 이미 존재하는지 확인
+        const docRef = db.collection("softcon_projects").doc(uid);
+        const doc = await docRef.get();
         
-        // 상대 경로를 절대 경로로 변환
-        let fullUrl = href;
-        if (href.startsWith('./') || href.startsWith('/')) {
-          fullUrl = BASE_URL + href.replace('./', '/');
-        } else if (!href.startsWith('http')) {
-          fullUrl = BASE_URL + '/' + href;
+        if (doc.exists) {
+          addLog(`프로젝트 ID ${uid} 이미 존재함 (스킵)`);
+          skipCount++;
+          continue; // 중복 업로드 방지
         }
-        
-        // UID 및 학기 추출
-        let uid = null;
-        let termValue = null;
-        
-        if (fullUrl.includes('?uid=')) {
-          uid = fullUrl.split('?uid=')[1].split('&')[0];
-        }
-        
-        if (fullUrl.includes('wTerm=')) {
-          const termPart = fullUrl.split('wTerm=')[1];
-          termValue = termPart.includes('&') ? termPart.split('&')[0] : termPart;
-        }
-        
-        // 중복 제거를 위한 확인
-        const existingUrls = projects.map(p => p.url);
-        if (!existingUrls.includes(fullUrl)) {
-          projects.push({
-            title: title || "제목 없음",
-            url: fullUrl,
-            uid,
-            term: termValue
-          });
-        }
-      }
-    });
-    
-    functions.logger.info(`${projects.length}개의 프로젝트 링크를 찾았습니다.`);
-    return { success: true, projects };
-  } catch (error) {
-    functions.logger.error('링크 가져오기 오류:', error);
-    throw new functions.https.HttpsError('internal', error.message);
-  }
-});
 
-/**
- * 프로젝트 상세 정보 가져오기 함수
- */
-exports.getProjectDetails = functions.https.onCall(async (data, context) => {
-  try {
-    const { projectUrl } = data;
-    
-    if (!projectUrl) {
-      throw new Error("프로젝트 URL이 필요합니다.");
-    }
-    
-    functions.logger.info(`크롤링 URL: ${projectUrl}`);
-    
-    const response = await axios.get(projectUrl, {
-      timeout: 10000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Referer': 'https://softcon.ajou.ac.kr/'
+        // 상세 정보 가져오기
+        const detail = await getDetailData(uid);
+        
+        // 제목이 없는 경우 스킵
+        if (!detail.title || detail.title.length < 2) {
+          addLog(`프로젝트 ID ${uid}의 제목이 없거나 너무 짧음 (스킵)`);
+          skipCount++;
+          continue;
+        }
+        
+        // Firestore에 저장
+        await docRef.set(detail);
+        processedCount++;
+        
+        addLog(`프로젝트 저장 완료: ${detail.title} (ID: ${uid})`);
+      } catch (error) {
+        // 에러 객체에서 필요한 정보만 추출
+        addLog(`프로젝트 ID ${uid} 처리 중 오류: ${error.message}`);
+        errorCount++;
       }
-    });
+    }
+
+    // 최종 결과 로그
+    addLog(`크롤링 완료: 처리 대상 ${uidsToProcess.length}개 중 ${processedCount}개 저장, ${skipCount}개 스킵, ${errorCount}개 오류`);
     
-    const $ = cheerio.load(response.data);
-    
-    // 기본 정보 추출
-    const details = {
-      url: projectUrl,
-      uid: null,
-      term: null
+    // 안전한 결과 반환
+    return { 
+      success: true, 
+      count: processedCount,
+      skipped: skipCount,
+      errors: errorCount,
+      total: uids.length,
+      processed: uidsToProcess.length,
+      logs: logs 
     };
     
-    // UID 및 학기 추출
-    if (projectUrl.includes('?uid=')) {
-      details.uid = projectUrl.split('?uid=')[1].split('&')[0];
-    }
-    
-    if (projectUrl.includes('wTerm=')) {
-      const termPart = projectUrl.split('wTerm=')[1];
-      details.term = termPart.includes('&') ? termPart.split('&')[0] : termPart;
-    }
-    
-    // 제목 추출
-    const titleElem = $('.dw_title div p');
-    if (titleElem.length) {
-      details.title = titleElem.text().trim();
-    }
-    
-    // 작품개요 추출
-    const summaryElems = $('.work_detail div');
-    if (summaryElems.length >= 2) {
-      details.summary = $(summaryElems[1]).text().trim();
-    }
-    
-    // 팀 정보 추출 (등록자, 팀원, 멘토)
-    const teamInfo = {};
-    
-    // 등록자 정보
-    const registrantSection = $('.dw_resistrant .dw_wrap:nth-of-type(1)');
-    if (registrantSection.length) {
-      const registrant = {};
-      
-      const departmentElem = registrantSection.find('.dw3 p');
-      if (departmentElem.length) {
-        registrant.department = departmentElem.text().trim();
-      }
-      
-      const gradeElem = registrantSection.find('.dw4 p');
-      if (gradeElem.length) {
-        registrant.grade = gradeElem.text().trim();
-      }
-      
-      const emailElem = registrantSection.find('.dw5 p');
-      if (emailElem.length) {
-        registrant.email = emailElem.text().trim();
-      }
-      
-      teamInfo.registrant = registrant;
-    }
-    
-    // 팀원 정보
-    const membersSection = $('.dw_resistrant .dw_wrap:nth-of-type(2)');
-    if (membersSection.length) {
-      const members = [];
-      
-      membersSection.find('ul').each((index, element) => {
-        const member = {};
-        
-        const roleElem = $(element).find('.dw1 span');
-        if (roleElem.length) {
-          member.role = roleElem.text().trim();
-        }
-        
-        const nameElem = $(element).find('.dw2');
-        if (nameElem.length) {
-          member.name = nameElem.text().trim();
-        }
-        
-        const deptElem = $(element).find('.dw3');
-        if (deptElem.length) {
-          member.department = deptElem.text().trim();
-        }
-        
-        const gradeElem = $(element).find('.dw4');
-        if (gradeElem.length) {
-          member.grade = gradeElem.text().trim();
-        }
-        
-        const emailElem = $(element).find('.dw5');
-        if (emailElem.length) {
-          member.email = emailElem.text().trim();
-        }
-        
-        if (Object.keys(member).length) {
-          members.push(member);
-        }
-      });
-      
-      teamInfo.members = members;
-    }
-    
-    // 멘토 정보
-    const mentorSection = $('.dw_resistrant .dw_wrap:nth-of-type(3)');
-    if (mentorSection.length) {
-      const mentor = {};
-      
-      const nameElem = mentorSection.find('.dw2');
-      if (nameElem.length) {
-        mentor.name = nameElem.text().trim();
-      }
-      
-      const affiliationElem = mentorSection.find('.dw3');
-      if (affiliationElem.length) {
-        mentor.affiliation = affiliationElem.text().trim();
-      }
-      
-      if (Object.keys(mentor).length) {
-        teamInfo.mentor = mentor;
-      }
-    }
-    
-    details.teamInfo = teamInfo;
-    
-    // Git 저장소 정보
-    const gitSection = $('.dw_resistrant .dw_wrap:nth-of-type(4)');
-    if (gitSection.length) {
-      const gitLinkElem = gitSection.find('.dw5 a');
-      if (gitLinkElem.length) {
-        details.gitRepository = gitLinkElem.attr('href')?.trim();
-      }
-    }
-    
-    // 간략설명 정보
-    const descriptionSection = $('.dw_resistrant .dw_wrap:nth-of-type(5)');
-    if (descriptionSection.length) {
-      const descElem = descriptionSection.find('.dw5');
-      if (descElem.length) {
-        details.description = descElem.text().trim();
-      }
-    }
-    
-    // 발표자료 링크
-    const presentationIframe = $('#pdfArea');
-    if (presentationIframe.length) {
-      details.presentationUrl = BASE_URL + presentationIframe.attr('src')?.trim();
-    }
-    
-    // 발표 동영상 링크
-    const videoIframe = $('.dw_video iframe');
-    if (videoIframe.length) {
-      details.videoUrl = videoIframe.attr('src')?.trim();
-    }
-    
-    // 이미지 추출 (대표 이미지)
-    const repImage = $('.dw_title div img');
-    if (repImage.length && repImage.attr('src')) {
-      let imgSrc = repImage.attr('src');
-      if (imgSrc.startsWith('./') || imgSrc.startsWith('/')) {
-        imgSrc = BASE_URL + imgSrc.replace('./', '/');
-      }
-      details.representativeImage = imgSrc;
-    }
-    
-    return { success: true, details };
   } catch (error) {
-    functions.logger.error(`상세 정보 가져오기 오류 (${data.projectUrl}): ${error.message}`);
-    throw new functions.https.HttpsError('internal', error.message);
+    // 전역 오류 처리 - 오류 객체에서 필요한 정보만 추출
+    const errorMessage = error.message || "알 수 없는 오류";
+    addLog(`크롤링 중 오류 발생: ${errorMessage}`);
+    console.error("크롤링 오류:", errorMessage);
+    
+    // 디버깅을 위해 모든 로그 반환
+    return {
+      success: false,
+      error: errorMessage,
+      logs: logs
+    };
   }
 });
-
-/**
- * 다중 프로젝트 정보 가져오기 (대량 작업용)
- */
-// 새 버전에 맞게 수정
-const { onCall } = require('firebase-functions/v2/https');
-
-exports.getMultipleProjectDetails = onCall(
-  {
-    timeoutSeconds: 540,
-    memory: '1GB'
-  },
-  async (data, context) => {
-    try {
-      const { projectUrls, delayMs = 1000 } = data;
-      
-      if (!projectUrls || !Array.isArray(projectUrls) || projectUrls.length === 0) {
-        throw new Error("프로젝트 URL 배열이 필요합니다.");
-      }
-      
-      functions.logger.info(`${projectUrls.length}개의 프로젝트 정보를 가져옵니다.`);
-      
-      const results = [];
-      
-      for (let i = 0; i < projectUrls.length; i++) {
-        try {
-          const url = projectUrls[i];
-          functions.logger.info(`프로젝트 ${i+1}/${projectUrls.length} 처리 중: ${url}`);
-          
-          // 상세 정보 가져오기 로직
-          const response = await axios.get(url, {
-            timeout: 10000,
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-              'Referer': 'https://softcon.ajou.ac.kr/'
-            }
-          });
-          
-          const $ = cheerio.load(response.data);
-          
-          // 기본 정보 추출
-          const details = {
-            url,
-            uid: null,
-            term: null
-          };
-          
-          // UID 및 학기 추출
-          if (url.includes('?uid=')) {
-            details.uid = url.split('?uid=')[1].split('&')[0];
-          }
-          
-          if (url.includes('wTerm=')) {
-            const termPart = url.split('wTerm=')[1];
-            details.term = termPart.includes('&') ? termPart.split('&')[0] : termPart;
-          }
-          
-          // 제목 추출
-          const titleElem = $('.dw_title div p');
-          if (titleElem.length) {
-            details.title = titleElem.text().trim();
-          }
-          
-          // 작품개요 추출
-          const summaryElems = $('.work_detail div');
-          if (summaryElems.length >= 2) {
-            details.summary = $(summaryElems[1]).text().trim();
-          }
-          
-          // 팀 정보 추출 (등록자, 팀원, 멘토)
-          const teamInfo = {};
-          
-          // 등록자 정보
-          const registrantSection = $('.dw_resistrant .dw_wrap:nth-of-type(1)');
-          if (registrantSection.length) {
-            const registrant = {};
-            
-            const departmentElem = registrantSection.find('.dw3 p');
-            if (departmentElem.length) {
-              registrant.department = departmentElem.text().trim();
-            }
-            
-            const gradeElem = registrantSection.find('.dw4 p');
-            if (gradeElem.length) {
-              registrant.grade = gradeElem.text().trim();
-            }
-            
-            const emailElem = registrantSection.find('.dw5 p');
-            if (emailElem.length) {
-              registrant.email = emailElem.text().trim();
-            }
-            
-            teamInfo.registrant = registrant;
-          }
-          
-          // 팀원 정보
-          const membersSection = $('.dw_resistrant .dw_wrap:nth-of-type(2)');
-          if (membersSection.length) {
-            const members = [];
-            
-            membersSection.find('ul').each((index, element) => {
-              const member = {};
-              
-              const roleElem = $(element).find('.dw1 span');
-              if (roleElem.length) {
-                member.role = roleElem.text().trim();
-              }
-              
-              const nameElem = $(element).find('.dw2');
-              if (nameElem.length) {
-                member.name = nameElem.text().trim();
-              }
-              
-              const deptElem = $(element).find('.dw3');
-              if (deptElem.length) {
-                member.department = deptElem.text().trim();
-              }
-              
-              const gradeElem = $(element).find('.dw4');
-              if (gradeElem.length) {
-                member.grade = gradeElem.text().trim();
-              }
-              
-              const emailElem = $(element).find('.dw5');
-              if (emailElem.length) {
-                member.email = emailElem.text().trim();
-              }
-              
-              if (Object.keys(member).length) {
-                members.push(member);
-              }
-            });
-            
-            teamInfo.members = members;
-          }
-          
-          // 멘토 정보
-          const mentorSection = $('.dw_resistrant .dw_wrap:nth-of-type(3)');
-          if (mentorSection.length) {
-            const mentor = {};
-            
-            const nameElem = mentorSection.find('.dw2');
-            if (nameElem.length) {
-              mentor.name = nameElem.text().trim();
-            }
-            
-            const affiliationElem = mentorSection.find('.dw3');
-            if (affiliationElem.length) {
-              mentor.affiliation = affiliationElem.text().trim();
-            }
-            
-            if (Object.keys(mentor).length) {
-              teamInfo.mentor = mentor;
-            }
-          }
-          
-          details.teamInfo = teamInfo;
-          
-          // Git 저장소 정보
-          const gitSection = $('.dw_resistrant .dw_wrap:nth-of-type(4)');
-          if (gitSection.length) {
-            const gitLinkElem = gitSection.find('.dw5 a');
-            if (gitLinkElem.length) {
-              details.gitRepository = gitLinkElem.attr('href')?.trim();
-            }
-          }
-          
-          // 간략설명 정보
-          const descriptionSection = $('.dw_resistrant .dw_wrap:nth-of-type(5)');
-          if (descriptionSection.length) {
-            const descElem = descriptionSection.find('.dw5');
-            if (descElem.length) {
-              details.description = descElem.text().trim();
-            }
-          }
-          
-          // 발표자료 링크
-          const presentationIframe = $('#pdfArea');
-          if (presentationIframe.length) {
-            details.presentationUrl = BASE_URL + presentationIframe.attr('src')?.trim();
-          }
-          
-          // 발표 동영상 링크
-          const videoIframe = $('.dw_video iframe');
-          if (videoIframe.length) {
-            details.videoUrl = videoIframe.attr('src')?.trim();
-          }
-          
-          // 이미지 추출 (대표 이미지)
-          const repImage = $('.dw_title div img');
-          if (repImage.length && repImage.attr('src')) {
-            let imgSrc = repImage.attr('src');
-            if (imgSrc.startsWith('./') || imgSrc.startsWith('/')) {
-              imgSrc = BASE_URL + imgSrc.replace('./', '/');
-            }
-            details.representativeImage = imgSrc;
-          }
-          
-          results.push(details);
-          
-          // 서버 부하 방지를 위한 지연
-          if (i < projectUrls.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-          }
-        } catch (error) {
-          functions.logger.error(`URL 처리 오류 (${projectUrls[i]}): ${error.message}`);
-          results.push({
-            url: projectUrls[i],
-            error: error.message
-          });
-        }
-      }
-      
-      return { success: true, results };
-    } catch (error) {
-      functions.logger.error('다중 프로젝트 정보 가져오기 오류:', error);
-      throw new functions.https.HttpsError('internal', error.message);
-    }
-  });
