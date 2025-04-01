@@ -18,8 +18,8 @@ import { useAuth } from '../auth/AuthContext';
  * 소프트콘 프로젝트를 사용자의 포트폴리오로 복제하는 버튼 컴포넌트
  * 
  * @param {Object} props
- * @param {Object} props.postData - 소프트콘 프로젝트 데이터 객체
- * @param {string} props.postId - 소프트콘 프로젝트 ID
+ * @param {Object} props.postData 
+ * @param {string} props.postId 
  */
 function CloneToPortfolioButton({ postData, postId }) {
   const [dialogOpen, setDialogOpen] = useState(false);
