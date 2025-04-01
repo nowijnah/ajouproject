@@ -18,7 +18,16 @@ const TERMS = [
 
 const CATEGORIES = ["S", "D", "I", "R", "M", "P"];
 
-// CORS를 적용한 HTTP 함수 - 앱에서는 사용하지 않음
+// 카테고리 이름 매핑
+const CATEGORY_NAMES = {
+  'S': '소프트웨어',
+  'D': '사이버보안',
+  'I': 'AI융합',
+  'R': '미디어',
+  'M': '자기주도연구',
+  'P': '자기주도 프로젝트'
+};
+
 exports.getSoftconTerms = functions.https.onRequest((req, res) => {
   cors(req, res, () => {
     res.json({
@@ -28,9 +37,68 @@ exports.getSoftconTerms = functions.https.onRequest((req, res) => {
   });
 });
 
-// 크롤링 함수 (Firebase Callable Function)
+async function ensureAuthorDocument() {
+  const authorRef = db.collection('users').doc('softcon-author');
+  const doc = await authorRef.get();
+  
+  if (!doc.exists) {
+    await authorRef.set({
+      displayName: "아주대학교 소프트콘",
+      role: "ADMIN",
+      profileImage: "/images/softcon-logo.png",
+      email: "softcon@ajou.ac.kr",
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    console.log("소프트콘 작성자 정보가 생성되었습니다.");
+  }
+}
+
+// URL을 절대 경로로 변환
+function getAbsoluteUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  return `https://softcon.ajou.ac.kr${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
+// 크롤링한 데이터를 파이어스토어에 맞게 변환
+function transformForFirestore(project, term, category) {
+  const teamKeywords = project.team
+    .map(member => member.name)
+    .filter(Boolean);
+  
+  const categoryName = CATEGORY_NAMES[category] || category;
+  
+  const filteredKeywords = [
+    ...teamKeywords,
+    categoryName,
+    term,
+    "소프트콘"
+  ].filter(keyword => keyword.length > 1);
+  
+  return {
+    title: project.title || "제목 없음",
+    subtitle: `${term} ${categoryName}`,
+    content: project.content || "",
+    keywords: filteredKeywords,
+    thumbnail: project.thumbnail || "",
+    files: [
+      ...(project.files && project.files.length > 0 ? project.files : [])
+    ],
+    links: project.links || [],
+    team: project.team || [],
+    term: term,
+    category: category,
+    authorId: "softcon-author",
+    likeCount: 0,
+    commentCount: 0,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    sourceUrl: project.sourceUrl || ""
+  };
+}
+
+// 크롤링 함수
 exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
-  // 로그 배열 초기화
   const logs = [];
   const addLog = (message) => {
     console.log(message);
@@ -38,36 +106,15 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
   };
 
   try {
-    // 디버깅을 위한 로그 추가
-    console.log("함수 호출됨");
-    console.log("데이터 타입:", typeof data);
-    console.log("데이터 값:", data);
-    
-    if (data === null || data === undefined) {
-      addLog("데이터가 null 또는 undefined입니다.");
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        '유효한 데이터가 전달되지 않았습니다.'
-      );
-    }
-    
-    // 데이터가 문자열이면 JSON으로 파싱 시도
     let parsedData = data;
     if (typeof data === 'string') {
       try {
         parsedData = JSON.parse(data);
-        addLog("문자열 데이터를 JSON으로 파싱했습니다.");
       } catch (e) {
         addLog(`JSON 파싱 실패: ${e.message}`);
       }
     }
     
-    // 모든 데이터 키 출력
-    if (typeof parsedData === 'object' && parsedData !== null) {
-      addLog(`데이터 키: ${Object.keys(parsedData).join(', ')}`);
-    }
-    
-    // term과 category 값 추출 시도
     const term = parsedData?.term || 
                 parsedData?.data?.term || 
                 parsedData?.params?.term || 
@@ -78,9 +125,6 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
                     parsedData?.params?.category || 
                     '';
     
-    addLog(`추출된 term: ${term}, category: ${category}`);
-    
-    // 값 검증
     if (!term || !category) {
       addLog(`필수 파라미터 누락. term: ${term}, category: ${category}`);
       throw new functions.https.HttpsError(
@@ -91,11 +135,11 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
 
     addLog(`크롤링 시작: 학기=${term}, 카테고리=${category}`);
 
-    // URL 설정
+    await ensureAuthorDocument();
+
     const baseListUrl = "https://softcon.ajou.ac.kr/works/works_list_prev.asp";
     const baseDetailUrl = "https://softcon.ajou.ac.kr/works/works_prev.asp";
     
-    // 최신 학기인 2024-2는 다른 URL 사용 (HTML 분석 기준)
     const isCurrentTerm = term === "2024-2";
     const currentTermListUrl = "https://softcon.ajou.ac.kr/works/works_list.asp";
     const currentTermDetailUrl = "https://softcon.ajou.ac.kr/works/works.asp";
@@ -103,7 +147,6 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
     const listUrl = isCurrentTerm ? currentTermListUrl : baseListUrl;
     const detailUrl = isCurrentTerm ? currentTermDetailUrl : baseDetailUrl;
 
-    // HTTP 요청 헤더 추가
     const axiosConfig = {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -111,7 +154,7 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
         'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
         'Referer': 'https://softcon.ajou.ac.kr/'
       },
-      timeout: 30000 // 30초 타임아웃 설정
+      timeout: 30000
     };
 
     // HTML 페이지 가져오기
@@ -126,9 +169,7 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
       }
     };
 
-    // 프로젝트 목록 페이지에서 모든 UID 추출
-    const getAllProjectIds = async () => {
-      // 쿼리 매개변수 설정
+    const getAllProjectsFromList = async () => {
       let url;
       if (isCurrentTerm) {
         url = `${listUrl}?category=${category}`;
@@ -138,50 +179,79 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
       
       addLog(`프로젝트 목록 URL: ${url}`);
       
-      // HTML 가져오기
       const $ = await getHtml(url);
-      const uids = [];
+      const projects = [];
       
-      // 모달 링크에서 UID 추출 (HTML 구조 기반)
-      $(".modal > div > a").each((_, el) => {
-        const href = $(el).attr("href");
-        if (!href) return;
-        
-        // UID와 wTerm 매개변수 추출
-        const uidMatch = href.match(/uid=(\d+)/);
-        if (uidMatch) {
-          uids.push(uidMatch[1]);
+      $("li.vw_close").each((_, el) => {
+        try {
+          const modalLink = $(el).find(".modal > div > a").first().attr("href");
+          const uidMatch = modalLink ? modalLink.match(/uid=(\d+)/) : null;
+          if (!uidMatch) return;
+          
+          const uid = uidMatch[1];
+          
+          let thumbnail = "";
+          const imgTag = $(el).find(".vw_ma_img img").first();
+          
+          if (imgTag.length > 0) {
+            const imgSrc = imgTag.attr("src");
+            if (imgSrc) {
+              thumbnail = imgSrc.startsWith('http') 
+                ? imgSrc 
+                : `https://softcon.ajou.ac.kr${imgSrc.startsWith('/') ? '' : '/'}${imgSrc}`;
+                
+              addLog(`프로젝트 ${uid} 썸네일 URL: ${thumbnail}`);
+            }
+          }
+          
+          const title = $(el).find("div > div > p").first().text().trim();
+          
+          projects.push({
+            uid,
+            thumbnail,
+            title
+          });
+        } catch (error) {
+          addLog(`목록 항목 처리 중 오류: ${error.message}`);
         }
       });
       
-      // UID를 찾지 못한 경우 다른 방법 시도
-      if (uids.length === 0) {
-        addLog("첫 번째 방법으로 UID를 찾지 못해 모든 링크 검색");
+      if (projects.length === 0) {
+        addLog("목록에서 프로젝트를 찾을 수 없습니다. 대체 방법으로 UID만 추출합니다.");
+        
         $("a").each((_, el) => {
           const href = $(el).attr("href");
           if (!href) return;
           
           const uidMatch = href.match(/uid=(\d+)/);
           if (uidMatch) {
-            uids.push(uidMatch[1]);
+            projects.push({
+              uid: uidMatch[1],
+              thumbnail: "",
+              title: ""
+            });
           }
         });
       }
       
-      // 중복 제거 및 로그
-      const uniqueUids = [...new Set(uids)];
-      addLog(`총 ${uniqueUids.length}개의 프로젝트 ID를 찾았습니다.`);
+      const uniqueProjects = [];
+      const seenUids = new Set();
       
-      if (uniqueUids.length === 0) {
-        addLog("프로젝트 ID를 찾을 수 없습니다. HTML 구조를 확인하세요.");
+      for (const project of projects) {
+        if (!seenUids.has(project.uid)) {
+          seenUids.add(project.uid);
+          uniqueProjects.push(project);
+        }
       }
       
-      return uniqueUids;
+      addLog(`총 ${uniqueProjects.length}개의 프로젝트를 찾았습니다.`);
+      
+      return uniqueProjects;
     };
 
-    // 프로젝트 상세 페이지에서 데이터 추출
-    const getDetailData = async (uid) => {
-      // 쿼리 매개변수 설정
+    const getDetailData = async (projectInfo) => {
+      const { uid, thumbnail: listThumbnail, title: listTitle } = projectInfo;
+      
       let url;
       if (isCurrentTerm) {
         url = `${detailUrl}?uid=${uid}`;
@@ -191,72 +261,147 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
       
       addLog(`프로젝트 상세 URL: ${url}`);
       
-      // HTML 가져오기
       const $ = await getHtml(url);
 
-      // 프로젝트 제목
-      let title = $(".dw_title p").text().trim();
+      let thumbnail = listThumbnail || "";
+      
+      if (!thumbnail) {
+        try {
+          const titleImg = $(".dw_title img").first();
+          if (titleImg.length > 0) {
+            thumbnail = titleImg.attr("src") || "";
+          }
+          
+          if (!thumbnail) {
+            const detailImg = $(".work_detail img, .detail img").first();
+            if (detailImg.length > 0) {
+              thumbnail = detailImg.attr("src") || "";
+            }
+          }
+          
+          if (thumbnail) {
+            thumbnail = getAbsoluteUrl(thumbnail);
+          }
+        } catch (error) {
+          addLog(`썸네일 추출 실패 (uid: ${uid}): ${error.message}`);
+        }
+      }
+
+      let title = listTitle || "";
+      
       if (!title) {
-        title = $("h1, h2, .title").first().text().trim();
+        title = $(".dw_title p").text().trim();
+        if (!title) {
+          title = $("h1, h2, .title").first().text().trim();
+        }
       }
       
-      // 프로젝트 설명
-      let description = $(".work_detail > div:last-child").text().trim();
-      if (!description) {
-        description = $(".work_detail, .detail, .content").text().trim();
+      let description = "";
+      
+      const workOverview = $(".work_detail > div:last-child").text().trim();
+      if (workOverview) {
+        description += workOverview + "\n\n";
+      } else {
+        const altWorkOverview = $(".work_detail, .detail, .content").text().trim();
+        if (altWorkOverview) {
+          description += altWorkOverview + "\n\n";
+        }
       }
       
-      // 영상 링크
-      const videoLink = $(".countsort iframe").attr("src") || "";
-
-      const pdfLink = $("#pdfArea").attr("src") || "";
-
-      // 팀원 정보
-      const teamWrap = $(".dw_wrap").filter((i, el) => {
+      const teamSection = $(".dw_wrap").filter((i, el) => {
         return $(el).find(".dw_le").text().includes("팀원");
       });
+      
+      if (teamSection.length > 0) {
+        description += "팀원 정보:\n";
+        
+        teamSection.find("ul").each((i, el) => {
+          const role = $(el).find("li.dw1").text().trim();
+          const name = $(el).find("li.dw2").text().trim();
+          const major = $(el).find("li.dw3").text().trim();
+          const grade = $(el).find("li.dw4").text().trim();
+          
+          if (name) {
+            description += `- ${role} ${name} (${major}`;
+            if (grade) description += `, ${grade}학년`;
+            description += ")\n";
+          }
+        });
+        
+        description += "\n";
+      }
+      
+      const mentorSection = $(".dw_wrap").filter((i, el) => {
+        return $(el).find(".dw_le").text().includes("멘토");
+      });
+      
+      if (mentorSection.length > 0) {
+        description += "멘토:\n";
+        
+        mentorSection.find("ul").each((i, el) => {
+          const name = $(el).find("li.dw2").text().trim();
+          const affiliation = $(el).find("li.dw3").text().trim();
+          
+          if (name) {
+            description += `- ${name}`;
+            if (affiliation) description += ` (${affiliation})`;
+            description += "\n";
+          }
+        });
+        
+        description += "\n";
+      }
+            
       const team = [];
-
-      teamWrap.find("ul").each((i, el) => {
-        const role = $(el).find("li").eq(0).text().replace(/\s/g, "");
-        const name = $(el).find("li").eq(1).text().trim();
-        const major = $(el).find("li").eq(2).text().trim();
-        const grade = $(el).find("li").eq(3).text().trim();
-        const email = $(el).find("li").eq(4).text().trim();
+      teamSection.find("ul").each((i, el) => {
+        const role = $(el).find("li.dw1").text().trim();
+        const name = $(el).find("li.dw2").text().trim();
+        const major = $(el).find("li.dw3").text().trim();
+        const grade = $(el).find("li.dw4").text().trim();
+        const email = $(el).find("li.dw5").text().trim();
 
         team.push({ role, name, major, grade, email });
       });
       
-      // 썸네일 이미지 URL
-      let thumbnailUrl = "";
+      const videoLink = $(".countsort iframe").attr("src") || "";
+
+      let pdfLink = "";
       try {
-        const imgEl = $(".work_detail img, .detail img").first();
-        if (imgEl.length > 0) {
-          thumbnailUrl = imgEl.attr("src") || "";
-          // 상대 경로를 절대 경로로 변환
-          if (thumbnailUrl && !thumbnailUrl.startsWith("http")) {
-            thumbnailUrl = `https://softcon.ajou.ac.kr${thumbnailUrl.startsWith('/') ? '' : '/'}${thumbnailUrl}`;
-          }
+        pdfLink = $("#pdfArea").attr("src") || "";
+        
+        if (!pdfLink) {
+          $("iframe").each((i, el) => {
+            const src = $(el).attr("src") || "";
+            if (src.includes(".pdf")) {
+              pdfLink = src;
+              return false; // 루프 중단
+            }
+          });
+        }
+        
+        if (pdfLink) {
+          pdfLink = getAbsoluteUrl(pdfLink);
         }
       } catch (error) {
-        addLog(`썸네일 추출 실패 (uid: ${uid}): ${error.message}`);
+        addLog(`PDF 링크 추출 실패 (uid: ${uid}): ${error.message}`);
       }
 
-      const githubLink = $(".dw_wrap").filter((i, el) => {
+      const gitSection = $(".dw_wrap").filter((i, el) => {
         return $(el).find(".dw_le").text().includes("git");
-      }).find("a").attr("href") || "";
-
+      });
+      const githubLink = gitSection.find("a").attr("href") || "";
       
-      // 결과 데이터 객체
       const data = {
         uid,
-        authorId: "admin",
         title: title || `프로젝트 ${uid}`,
         content: description || "",
         team,
-        keywords: category ? [category] : [],
-        thumbnailUrl,
-        files: pdfLink ? [{ name: "발표자료", url: pdfLink }] : [],
+        files: pdfLink ? [{ 
+          fileId: `pdf-${uid}`,
+          type: 'PDF',
+          filename: '발표자료',
+          url: pdfLink
+        }] : [],
         links: [
           videoLink ? {
             linkId: `video-${uid}`,
@@ -268,96 +413,83 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
           githubLink ? {
             linkId: `github-${uid}`,
             title: "GitHub 저장소",
-            type: "WEBSITE",
+            type: "GITHUB",
             url: githubLink,
             subtitle: ""
           } : null
         ].filter(Boolean),
-        likeCount: 0,
-        commentCount: 0,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        thumbnail,
+        sourceUrl: url
       };
       
       return data;
     };
 
-    // 메인 크롤링 프로세스
-    const uids = await getAllProjectIds();
+    const projectsInfo = await getAllProjectsFromList();
     
-    // UID가 없으면 오류 반환
-    if (uids.length === 0) {
+    if (projectsInfo.length === 0) {
       throw new Error(`프로젝트 ID를 찾을 수 없습니다. 학기(${term})와 카테고리(${category})를 확인해주세요.`);
     }
     
-    // 각 프로젝트 처리
     let processedCount = 0;
     let skipCount = 0;
     let errorCount = 0;
     
-    // 프로세싱할 UID 수를 제한 (혹시 모를 타임아웃 방지)
-    const maxProcessCount = Math.min(uids.length, 50);
-    const uidsToProcess = uids.slice(0, maxProcessCount);
+    const maxProcessCount = Math.min(projectsInfo.length, 100);
+    const projectsToProcess = projectsInfo.slice(0, maxProcessCount);
     
-    if (uids.length > maxProcessCount) {
-      addLog(`주의: ${uids.length}개 중 ${maxProcessCount}개만 처리합니다. 나머지는 다음 실행에서 처리하세요.`);
+    if (projectsInfo.length > maxProcessCount) {
+      addLog(`주의: ${projectsInfo.length}개 중 ${maxProcessCount}개만 처리합니다. 나머지는 다음 실행에서 처리하세요.`);
     }
     
-    // 각 UID에 대해 상세 정보 크롤링
-    for (const uid of uidsToProcess) {
+    for (const projectInfo of projectsToProcess) {
       try {
-        // Firestore에 이미 존재하는지 확인
-        const docRef = db.collection("softcon_projects").doc(uid);
+        const docRef = db.collection("softcon_projects").doc(projectInfo.uid);
         const doc = await docRef.get();
         
         if (doc.exists) {
-          addLog(`프로젝트 ID ${uid} 이미 존재함 (스킵)`);
+          addLog(`프로젝트 ID ${projectInfo.uid} 이미 존재함 (스킵)`);
           skipCount++;
           continue; // 중복 업로드 방지
         }
 
-        // 상세 정보 가져오기
-        const detail = await getDetailData(uid);
+        const detail = await getDetailData(projectInfo);
         
-        // 제목이 없는 경우 스킵
         if (!detail.title || detail.title.length < 2) {
-          addLog(`프로젝트 ID ${uid}의 제목이 없거나 너무 짧음 (스킵)`);
+          addLog(`프로젝트 ID ${projectInfo.uid}의 제목이 없거나 너무 짧음 (스킵)`);
           skipCount++;
           continue;
         }
         
-        // Firestore에 저장
-        await docRef.set(detail);
+        const firestoreData = transformForFirestore(detail, term, category);
+        
+        await docRef.set(firestoreData);
         processedCount++;
         
-        addLog(`프로젝트 저장 완료: ${detail.title} (ID: ${uid})`);
+        addLog(`프로젝트 저장 완료: ${detail.title} (ID: ${projectInfo.uid}), 썸네일: ${detail.thumbnail}`);
       } catch (error) {
-        // 에러 객체에서 필요한 정보만 추출
-        addLog(`프로젝트 ID ${uid} 처리 중 오류: ${error.message}`);
+        addLog(`프로젝트 ID ${projectInfo.uid} 처리 중 오류: ${error.message}`);
         errorCount++;
       }
     }
 
-    // 최종 결과 로그
-    addLog(`크롤링 완료: 처리 대상 ${uidsToProcess.length}개 중 ${processedCount}개 저장, ${skipCount}개 스킵, ${errorCount}개 오류`);
+    addLog(`크롤링 완료: 처리 대상 ${projectsToProcess.length}개 중 ${processedCount}개 저장, ${skipCount}개 스킵, ${errorCount}개 오류`);
     
-    // 안전한 결과 반환
     return { 
       success: true, 
       count: processedCount,
       skipped: skipCount,
       errors: errorCount,
-      total: uids.length,
-      processed: uidsToProcess.length,
+      total: projectsInfo.length,
+      processed: projectsToProcess.length,
       logs: logs 
     };
     
   } catch (error) {
-    // 전역 오류 처리 - 오류 객체에서 필요한 정보만 추출
     const errorMessage = error.message || "알 수 없는 오류";
     addLog(`크롤링 중 오류 발생: ${errorMessage}`);
     console.error("크롤링 오류:", errorMessage);
     
-    // 디버깅을 위해 모든 로그 반환
     return {
       success: false,
       error: errorMessage,
