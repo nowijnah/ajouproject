@@ -16,8 +16,9 @@ import {
   getDoc,
   increment
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, functions } from '../firebase';
 import { useAuth } from '../components/auth/AuthContext';
+import { httpsCallable } from 'firebase/functions';
 
 const commentsHook = (postId, collectionName) => {
   const [comments, setComments] = useState([]);
@@ -119,7 +120,8 @@ const commentsHook = (postId, collectionName) => {
         authorId: currentUser.uid,
         parentId: null,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        collectionName // 알림을 위한 컬렉션 정보 저장
       };
       
       batch.set(newCommentRef, newComment);
@@ -164,7 +166,8 @@ const commentsHook = (postId, collectionName) => {
         authorId: currentUser.uid,
         parentId,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        collectionName // 알림을 위한 컬렉션 정보 저장
       };
 
       batch.set(newReplyRef, newReply);
@@ -175,6 +178,19 @@ const commentsHook = (postId, collectionName) => {
       });
       
       await batch.commit();
+
+      // 이메일 알림 트리거 (Firebase Functions)
+      try {
+        // 함수가 배포되었다면 주석 해제
+        // const sendCommentNotification = httpsCallable(functions, 'sendCommentNotification');
+        // await sendCommentNotification({
+        //   commentId: newReplyRef.id,
+        //   postId,
+        //   collectionName
+        // });
+      } catch (error) {
+        console.error('Error triggering notification:', error);
+      }
     } catch (err) {
       console.error("Error adding reply:", err);
       setError(err);

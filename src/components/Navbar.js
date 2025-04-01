@@ -8,6 +8,7 @@ import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
+import NotificationMenu from './notifications/NotificationMenu';
 
 const AJOU_BLUE = 'rgb(0, 51, 161)';
 
@@ -110,6 +111,15 @@ const styles = {
     backgroundColor: 'rgba(0, 51, 161, 0.08)',
     color: AJOU_BLUE,
     border: '1px solid rgba(0, 51, 161, 0.2)'
+  },
+  adminRoleChip: {
+    marginLeft: '8px',
+    height: '22px',
+    fontSize: '0.7rem',
+    fontWeight: 500,
+    backgroundColor: 'rgba(211, 47, 47, 0.08)',
+    color: '#d32f2f',
+    border: '1px solid rgba(211, 47, 47, 0.2)'
   }
 };
 
@@ -143,6 +153,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const isSmallScreen = useMediaQuery('(max-width:900px)');
+  const isAdmin = currentUser && currentUser.role === 'ADMIN';
 
   const handleSignOut = async () => {
     try {
@@ -231,25 +242,46 @@ export default function Navbar() {
           {currentUser ? (
             <>
               <Box sx={{ position: 'relative' }}>
-                <RouterLink to="/mypage" style={getLinkStyle('/mypage')}>
-                  <Typography 
-                    variant='body2' 
-                    sx={{ 
-                      ...styles.text,
-                      fontWeight: isActivePage('/mypage') ? 500 : 300,
-                      color: isActivePage('/mypage') ? AJOU_BLUE : 'inherit'
-                    }}
-                  >
-                    MyPage
-                  </Typography>
-                  {isActivePage('/mypage') && <div style={styles.activeLinkIndicator}></div>}
-                </RouterLink>
+                {isAdmin ? (
+                  <RouterLink to="/admin" style={getLinkStyle('/admin')}>
+                    <Typography 
+                      variant='body2' 
+                      sx={{ 
+                        ...styles.text,
+                        fontWeight: isActivePage('/admin') ? 600 : 400,
+                        color: isActivePage('/admin') ? '#d32f2f' : 'inherit',
+                        transform: isActivePage('/admin') ? 'scale(1.05)' : 'scale(1)'
+                      }}
+                    >
+                      관리자
+                    </Typography>
+                    {isActivePage('/admin') && <div style={{...styles.activeLinkIndicator, backgroundColor: '#d32f2f'}}></div>}
+                  </RouterLink>
+                ) : (
+                  <RouterLink to="/mypage" style={getLinkStyle('/mypage')}>
+                    <Typography 
+                      variant='body2' 
+                      sx={{ 
+                        ...styles.text,
+                        fontWeight: isActivePage('/mypage') ? 500 : 300,
+                        color: isActivePage('/mypage') ? AJOU_BLUE : 'inherit'
+                      }}
+                    >
+                      MyPage
+                    </Typography>
+                    {isActivePage('/mypage') && <div style={styles.activeLinkIndicator}></div>}
+                  </RouterLink>
+                )}
               </Box>
               
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {/* 여기에 NotificationMenu 컴포넌트 추가 */}
+                <NotificationMenu />
+                
                 <RouterLink onClick={handleSignOut} style={{ textDecoration: 'none' }}>
                   <button style={styles.button}>Sign out</button>
                 </RouterLink>
+                
                 {!isSmallScreen && (
                   <Box sx={styles.userProfile}>
                     <Avatar 
@@ -268,7 +300,7 @@ export default function Navbar() {
                         <Chip 
                           label={getRoleText(currentUser.role)} 
                           size="small"
-                          sx={styles.roleChip}
+                          sx={isAdmin ? styles.adminRoleChip : styles.roleChip}
                         />
                       )}
                     </Box>
