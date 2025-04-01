@@ -1,5 +1,5 @@
 // src/pages/admin/AdminNotices.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
@@ -21,13 +21,20 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
+
+// 재사용 가능한 기존 컴포넌트 import
+import MarkdownEditor from '../../components/posts/upload/MarkdownEditor';
+import FileUploader from '../../components/posts/upload/FileUploader';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
+// 아이콘
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EyeIcon from '@mui/icons-material/Visibility';
 
+// Firebase
 import { useAuth } from '../../components/auth/AuthContext';
 import { 
   collection, 
@@ -41,8 +48,9 @@ import {
   serverTimestamp,
   orderBy
 } from 'firebase/firestore';
-import { db } from '../../firebase';
-import MarkdownEditor from '../../components/posts/upload/MarkdownEditor';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../firebase';
+import ReactMarkdown from 'react-markdown';
 
 const AdminNotices = () => {
   const navigate = useNavigate();
@@ -57,6 +65,9 @@ const AdminNotices = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [noticeToDelete, setNoticeToDelete] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [files, setFiles] = useState([]);
+  const textAreaRef = useRef(null);
+  const [previewMode, setPreviewMode] = useState(false);
 
   // 관리자 권한 확인
   useEffect(() => {
@@ -102,19 +113,103 @@ const AdminNotices = () => {
       setNoticeTitle(notice.title);
       setNoticeContent(notice.content);
       setIsMainPageNotice(notice.isMainPageNotice || false);
+      // 기존 파일 정보 설정
+      setFiles(notice.files || []);
     } else {
       setEditingNotice(null);
       setNoticeTitle('');
       setNoticeContent('');
       setIsMainPageNotice(false);
+      setFiles([]);
     }
     setDialogOpen(true);
+    setPreviewMode(false);
   };
 
   // 공지사항 삭제 다이얼로그 열기
   const handleOpenDeleteDialog = (notice) => {
     setNoticeToDelete(notice);
     setDeleteDialogOpen(true);
+  };
+
+  // 드래그 앤 드롭으로 받은 파일 처리 (MarkdownEditor에서 호출)
+  const handleDrop = (e, textAreaRef) => {
+    const files = Array.from(e.dataTransfer.files);
+    const validFiles = files.filter(file => 
+      file.type.startsWith('image/') || 
+      file.type === 'application/pdf' ||
+      file.type.includes('document')
+    );
+
+    if (validFiles.length > 0 && textAreaRef.current) {
+      const cursorPosition = textAreaRef.current.selectionStart;
+      
+      for (const file of validFiles) {
+        let markdown = '';
+        let fileType = '';
+        
+        if (file.type.startsWith('image/')) {
+          const tempUrl = URL.createObjectURL(file);
+          markdown = `![${file.name}](${tempUrl})\n`;
+          fileType = 'IMAGE';
+        } else {
+          const tempUrl = URL.createObjectURL(file);
+          markdown = `[${file.type === 'application/pdf' ? 'PDF: ' : '문서: '}${file.name}](${tempUrl})\n`;
+          fileType = file.type === 'application/pdf' ? 'PDF' : 'DOC';
+        }
+        
+        const newContent = noticeContent.slice(0, cursorPosition) + 
+                    markdown + 
+                    noticeContent.slice(cursorPosition);
+        
+        setNoticeContent(newContent);
+        
+        // 파일 목록에 추가
+        handleAddFile({
+          fileId: `file-${Date.now()}-${Math.random()}`,
+          file: file,
+          type: fileType,
+          description: file.name,
+          tempUrl
+        });
+      }
+    }
+  };
+
+  // 파일 추가 (FileUploader에서 호출)
+  const handleAddFile = (fileData) => {
+    setFiles(prev => [...prev, fileData]);
+  };
+
+  // 파일 설명 업데이트 (FileUploader에서 호출)
+  const handleUpdateFileDescription = (fileId, description) => {
+    setFiles(prev => prev.map(file => 
+      file.fileId === fileId ? { ...file, description } : file
+    ));
+  };
+
+  // 파일 삭제 (FileUploader에서 호출)
+  const handleRemoveFile = (fileId) => {
+    // 파일 목록에서 삭제할 파일 정보 찾기
+    const fileToRemove = files.find(file => file.fileId === fileId);
+    
+    if (fileToRemove) {
+      // 해당 파일의 마크다운 패턴을 찾아 삭제
+      let updatedContent = noticeContent;
+      
+      if (fileToRemove.type === 'IMAGE') {
+        // 이미지 마크다운 패턴: ![파일이름](URL)
+        const imgPattern = new RegExp(`!\\[.*?\\]\\(${fileToRemove.tempUrl || fileToRemove.url}\\)`, 'g');
+        updatedContent = updatedContent.replace(imgPattern, '');
+      } else {
+        // 파일 링크 마크다운 패턴: [파일이름](URL)
+        const linkPattern = new RegExp(`\\[.*?\\]\\(${fileToRemove.tempUrl || fileToRemove.url}\\)`, 'g');
+        updatedContent = updatedContent.replace(linkPattern, '');
+      }
+      
+      setNoticeContent(updatedContent);
+      setFiles(prev => prev.filter(file => file.fileId !== fileId));
+    }
   };
 
   // 공지사항 저장
@@ -127,14 +222,63 @@ const AdminNotices = () => {
     try {
       setSaving(true);
       
+      // 1. 파일 업로드
+      const uploadedFiles = await Promise.all(
+        files.map(async (fileItem) => {
+          // 이미 업로드된 파일은 그대로 사용
+          if (fileItem.url && !fileItem.file) {
+            return fileItem;
+          }
+          
+          // 새로운 파일 업로드
+          const fileRef = ref(storage, `notices/${currentUser.uid}/${Date.now()}-${fileItem.file.name}`);
+          const fileSnapshot = await uploadBytes(fileRef, fileItem.file);
+          const url = await getDownloadURL(fileSnapshot.ref);
+          
+          return {
+            fileId: fileItem.fileId,
+            url: url,
+            filename: fileItem.file.name,
+            type: fileItem.type,
+            description: fileItem.description
+          };
+        })
+      );
+      
+      // 2. 임시 URL을 실제 URL로 변경
+      let updatedContent = noticeContent;
+      
+      files.forEach((fileItem) => {
+        if (fileItem.tempUrl) {
+          const uploadedFile = uploadedFiles.find(f => f.fileId === fileItem.fileId);
+          
+          if (uploadedFile) {
+            // 임시 URL을 실제 업로드된 URL로 교체
+            if (fileItem.type === 'IMAGE') {
+              // 이미지 마크다운 패턴: ![파일이름](tempUrl)
+              const imgPattern = new RegExp(`!\\[.*?\\]\\(${fileItem.tempUrl}\\)`, 'g');
+              updatedContent = updatedContent.replace(imgPattern, `![${uploadedFile.filename}](${uploadedFile.url})`);
+            } else {
+              // 파일 링크 마크다운 패턴: [파일이름](tempUrl)
+              // 다운로드를 위해 특별한 형식으로 표시
+              const linkPattern = new RegExp(`\\[.*?\\]\\(${fileItem.tempUrl}\\)`, 'g');
+              updatedContent = updatedContent.replace(linkPattern, `[${uploadedFile.filename}](${uploadedFile.url} "download")`);
+            }
+          }
+        }
+      });
+      
+      // 3. 공지사항 데이터 준비
       const noticeData = {
         title: noticeTitle,
-        content: noticeContent,
+        content: updatedContent,
         isMainPageNotice,
         authorId: currentUser.uid,
+        files: uploadedFiles,
         updatedAt: serverTimestamp()
       };
       
+      // 4. 공지사항 저장 또는 수정
       if (editingNotice) {
         // 수정
         await updateDoc(doc(db, 'notices', editingNotice.id), noticeData);
@@ -148,24 +292,6 @@ const AdminNotices = () => {
       } else {
         // 새 공지사항
         noticeData.createdAt = serverTimestamp();
-        
-        // 메인 페이지 공지로 설정된 경우 기존 메인 페이지 공지를 해제
-        if (isMainPageNotice) {
-          const mainNotices = notices.filter(n => n.isMainPageNotice);
-          for (const notice of mainNotices) {
-            await updateDoc(doc(db, 'notices', notice.id), {
-              isMainPageNotice: false,
-              updatedAt: serverTimestamp()
-            });
-          }
-          
-          // 상태 업데이트
-          setNotices(prev => prev.map(notice => 
-            notice.isMainPageNotice 
-              ? { ...notice, isMainPageNotice: false, updatedAt: new Date() } 
-              : notice
-          ));
-        }
         
         // 새 공지사항 추가
         const newNoticeRef = doc(collection(db, 'notices'));
@@ -210,9 +336,9 @@ const AdminNotices = () => {
     }
   };
 
-  // 드래그 앤 드롭 이미지 처리
-  const handleDrop = (e, textAreaRef) => {
-    // 구현은 생략 (MarkdownEditor 컴포넌트에서 처리)
+  // 미리보기 모드 토글
+  const togglePreviewMode = () => {
+    setPreviewMode(!previewMode);
   };
 
   if (!currentUser) {
@@ -335,14 +461,45 @@ const AdminNotices = () => {
             label="메인 페이지에 표시"
           />
           
-          <Box sx={{ mt: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, mb: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<EyeIcon />}
+              onClick={togglePreviewMode}
+            >
+              {previewMode ? "에디터로 돌아가기" : "미리보기"}
+            </Button>
+          </Box>
+
+          {!previewMode ? (
+            // 마크다운 에디터 컴포넌트 사용
             <MarkdownEditor
               value={noticeContent}
               onChange={setNoticeContent}
               onDrop={handleDrop}
-              placeholder="공지사항 내용을 입력해주세요."
+              placeholder="공지사항 내용을 입력해주세요. 이미지나 파일을 드래그하여 추가할 수 있습니다."
             />
-          </Box>
+          ) : (
+            <Box sx={{
+              height: '400px',
+              overflow: 'auto',
+              p: 3,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1,
+              bgcolor: 'grey.50'
+            }}>
+              <ReactMarkdown>{noticeContent}</ReactMarkdown>
+            </Box>
+          )}
+
+          {/* 파일 업로더 컴포넌트 사용 */}
+          <FileUploader
+            files={files}
+            onAddFiles={handleAddFile}
+            onUpdateDescription={handleUpdateFileDescription}
+            onRemoveFile={handleRemoveFile}
+          />
         </DialogContent>
         <DialogActions>
           <Button 
