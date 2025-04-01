@@ -141,13 +141,37 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
   };
 
-  const value = { currentUser, loading, loginWithGoogle, signUpWithEmail, loginWithEmail, logout };
-
+  const value = { 
+    currentUser, 
+    loading, 
+    loginWithGoogle, 
+    signUpWithEmail, 
+    loginWithEmail, 
+    logout,
+    isAdmin: currentUser?.role === 'ADMIN'
+  };
+  
   if (loading) {
     return <AnimatedLoading message="사용자 정보를 불러오는 중입니다" fullPage={true} />;
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const checkAdminRole = async (userId) => {
+  if (!userId) return false;
+  
+  try {
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      return userData.role === 'ADMIN';
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking admin role:', error);
+    return false;
+  }
 };
 
 export const useAuth = () => {
