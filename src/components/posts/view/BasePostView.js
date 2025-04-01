@@ -27,7 +27,7 @@ const BasePostView = ({
   const { postId } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  
+
   // 게시물 데이터 로딩
   const {
     postData,
@@ -40,6 +40,7 @@ const BasePostView = ({
     fetchLikedUsers,
     getDisplayImage
   } = usePostData(postId, collectionName, previewData, previewAuthor);
+  console.log(postData);
   
   // 게시물 작업 관련 훅
   const {
