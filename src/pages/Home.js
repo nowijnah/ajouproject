@@ -2,6 +2,8 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { Link as RouterLink } from 'react-router-dom';
 import React from 'react';
+import NoticeSection from '../components/home/NoticeSection';
+import { useNavigate } from 'react-router-dom';
 
 function Home() {
   const fontStyle = {
@@ -51,6 +53,8 @@ function Home() {
     p: { xs: 2, sm: 3, md: 3 },
     minWidth: 0  // 이것이 flex item의 overflow를 방지합니다
   };
+
+  const navigate = useNavigate();
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -178,7 +182,7 @@ function Home() {
               borderBottom: '1px solid #e0e0e0'
             }} />
 
-            {/* 포트폴리오 작성 가이드 섹션 */}
+            {/* 공지사항 섹션 */}
             <Box sx={{ mb: { xs: 3, sm: 4, md: 5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
                 <Typography variant='h4' sx={{ 
@@ -186,83 +190,32 @@ function Home() {
                   ...fontStyle,
                   fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' }
                 }}>
-                  포트폴리오 작성 가이드
+                  공지사항
                 </Typography>
-                <Box sx={{
-                  bgcolor: '#2196f3',
-                  color: 'white',
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  ...fontStyle
-                }}>
-                  New
-                </Box>
-              </Box>
-
-              <Box sx={{ 
-                p: { xs: 2, sm: 3, md: 4 }, 
-                bgcolor: '#f8f9fa', 
-                borderRadius: 2,
-                ...fontStyle
-              }}>
-                <Typography variant="h6" sx={{ 
-                  fontWeight: 600,
-                  mb: 2,
-                  ...fontStyle
-                }}>
-                  요렇게 조렇게
-                </Typography>
-                <Typography variant="body1" sx={fontStyle}>
-                  당신의 우수한 프로젝트와 연구 경험을 더 돋보이게 만들어보세요. 기술 스택, 주요 기능, 성과 등을 잘 정리하여 기업과 연구실에 어필할 수 있는 포트폴리오를 작성해보세요.
-                </Typography>
-                
-                {/* 이미지 컨테이너 */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  gap: 2,
-                  mt: 3,
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  '& img': {
-                    width: '100%',
-                    height: 'auto',
+                <Box 
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: 'rgba(33, 150, 243, 0.1)',
+                    color: '#2196f3',
+                    px: 1.5,
+                    py: 0.5,
                     borderRadius: 1,
-                    objectFit: 'cover'
-                  }
-                }}>
-                  <Box sx={{ 
-                    flex: 1,
-                    height: { xs: '200px', sm: '240px' },
-                    overflow: 'hidden'
-                  }}>
-                    <img src="/guide1.png" alt="포트폴리오 예시 1" />
-                  </Box>
-                  <Box sx={{ 
-                    flex: 1,
-                    height: { xs: '200px', sm: '240px' },
-                    overflow: 'hidden'
-                  }}>
-                    <img src="/guide2.png" alt="포트폴리오 예시 2" />
-                  </Box>
-                </Box>
-
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mt: 3,
-                  color: '#2196f3',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    textDecoration: 'underline'
-                  }
-                }}>
-                  <Typography variant="body2" sx={{ mr: 1, ...fontStyle }}>
-                    LINK 산업단 ↗
-                  </Typography>
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: 'rgba(33, 150, 243, 0.2)',
+                    },
+                    ...fontStyle
+                  }}
+                  onClick={() => navigate('/notices')}
+                >
+                  모든 공지 보기
                 </Box>
               </Box>
+
+              <NoticeSection />
             </Box>
           </Box>
         </Box>
