@@ -447,7 +447,7 @@ function BasePostUpload({ collectionName }) {
               mb: 4 
             }}>
               <Typography variant="h4" component="h1">
-                {postId ? '포트폴리오 수정' : '포트폴리오 작성'}
+                {postId ? '게시글 수정' : '게시글 작성'}
               </Typography>
               {(title || markdownContent) && (
                 <Button
