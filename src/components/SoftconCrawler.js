@@ -48,7 +48,7 @@ const TERMS = [
   "2024-1", "2024-2"
 ];
 
-const CATEGORIES = ["S", "D", "I", "R", "M", "P"];
+const CATEGORIES = ["ALL","S", "D", "I", "R", "M", "P"];
 
 const SoftconCrawler = () => {
   const [selectedTerm, setSelectedTerm] = useState(TERMS[TERMS.length - 1]);
@@ -66,6 +66,7 @@ const SoftconCrawler = () => {
 
   const getCategoryName = (code) => {
     const categoryMap = {
+      'ALL': '전체',
       'S': '소프트웨어',
       'D': '사이버보안',
       'I': 'AI융합',
@@ -77,47 +78,87 @@ const SoftconCrawler = () => {
   };
 
   const handleCrawl = async () => {
-    if (!selectedTerm || !selectedCategory) {
-      alert('학기와 카테고리를 선택해주세요.');
+    if (!selectedTerm) {
+      alert('학기를 선택해주세요.');
       return;
     }
 
-    setLogMessages(prev => [...prev, `크롤링 시작: ${selectedTerm} / ${getCategoryName(selectedCategory)}`]);
+    const isAllCategories = selectedCategory === "ALL";
+    
+    const categoriesToCrawl = isAllCategories 
+      ? CATEGORIES.filter(cat => cat !== "ALL")
+      : [selectedCategory]; 
+    
+    setLogMessages(prev => [
+      ...prev, 
+      `크롤링 시작: ${selectedTerm} / ${
+        isAllCategories 
+          ? '전체 카테고리' 
+          : getCategoryName(selectedCategory)
+      }`
+    ]);
+    
     setLoading(true);
-
+    
     try {
-      setLogMessages(prev => [...prev, `직접 HTTP 요청 테스트 중...`]);
-      
-      const crawlSoftconData = httpsCallable(functions, 'crawlSoftconData');
-      
-      const requestData = {
-        term: String(selectedTerm), 
-        category: String(selectedCategory)
-      };
-      
-      setLogMessages(prev => [...prev, `파라미터: ${JSON.stringify(requestData)}`]);
-      
-      const result = await crawlSoftconData(requestData);
-      
-      if (result.data && result.data.logs && Array.isArray(result.data.logs)) {
-        setLogMessages(prev => [...prev, ...result.data.logs]);
-      }
-      
-      if (result.data && result.data.success) {
+      let totalProcessed = 0;
+      let totalSkipped = 0;
+      let totalErrors = 0;
+      let allLogs = [];
+
+      for (const category of categoriesToCrawl) {
         setLogMessages(prev => [
           ...prev, 
-          `크롤링 완료: ${result.data.count}개 데이터 처리됨${
-            result.data.skipped ? `, ${result.data.skipped}개 스킵됨` : ''
-          }${
-            result.data.errors ? `, ${result.data.errors}개 오류` : ''
-          }`
+          isAllCategories 
+            ? `카테고리 ${getCategoryName(category)} 크롤링 중...` 
+            : `직접 HTTP 요청 테스트 중...`
         ]);
-      } else {
+        
+        const crawlSoftconData = httpsCallable(functions, 'crawlSoftconData');
+        
+        const requestData = {
+          term: String(selectedTerm), 
+          category: String(category)
+        };
+        
         setLogMessages(prev => [
           ...prev, 
-          `크롤링 실패: ${result.data?.error || '알 수 없는 오류'}`
+          `파라미터: ${JSON.stringify(requestData)}`
         ]);
+        
+        const result = await crawlSoftconData(requestData);
+        
+        if (result.data && result.data.logs && Array.isArray(result.data.logs)) {
+          if (isAllCategories) {
+            const categoryLogs = result.data.logs.map(log => 
+              `[${getCategoryName(category)}] ${log}`
+            );
+            allLogs = [...allLogs, ...categoryLogs];
+          } else {
+            allLogs = [...allLogs, ...result.data.logs];
+          }
+        }
+        
+        // 결과 집계
+        if (result.data && result.data.success) {
+          totalProcessed += result.data.count || 0;
+          totalSkipped += result.data.skipped || 0;
+          totalErrors += result.data.errors || 0;
+        }
       }
+      
+      // 로그 업데이트
+      setLogMessages(prev => [...prev, ...allLogs]);
+      
+      // 최종 결과 추가
+      setLogMessages(prev => [
+        ...prev, 
+        `크롤링 완료: ${totalProcessed}개 데이터 처리됨${
+          totalSkipped ? `, ${totalSkipped}개 스킵됨` : ''
+        }${
+          totalErrors ? `, ${totalErrors}개 오류` : ''
+        }`
+      ]);
     } catch (error) {
       console.error('크롤링 중 오류:', error);
       
