@@ -24,6 +24,34 @@ import CompanyCard from '../pages/companies/CompanyCard';
 import PortfolioCard from '../pages/portfolios/PortfolioCard';
 import LabCard from '../pages/labs/LabCard';
 
+// 마크다운 내용에서 이미지 URL 추출하는 함수
+const extractImagesFromMarkdown = (content) => {
+  if (!content) return [];
+  
+  // Markdown 이미지 구문 찾기: ![alt text](image-url)
+  const imageRegex = /!\[.*?\]\((.*?)\)/g;
+  const matches = [...content.matchAll(imageRegex)];
+  
+  return matches.map(match => match[1]).filter(url => {
+    // 로컬 파일 URL은 제외하고 원격 URL만 반환
+    return !url.startsWith('blob:') && !url.startsWith('data:');
+  });
+};
+
+// 게시물에서 썸네일 추출 함수
+const getThumbnailFromPost = (post) => {
+  // 이미 썸네일이 있으면 그대로 사용
+  if (post.thumbnail) return post.thumbnail;
+  
+  // 마크다운 내용에서 이미지 추출
+  const markdownImages = extractImagesFromMarkdown(post.content);
+  if (markdownImages.length > 0) {
+    return markdownImages[0];
+  }
+  
+  return null;
+};
+
 const MyPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -82,12 +110,20 @@ const MyPage = () => {
         );
 
         const querySnapshot = await getDocs(q);
-        const posts = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          type: collectionName,
-          createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt) || new Date()
-        }));
+        const posts = querySnapshot.docs.map(doc => {
+          const postData = doc.data();
+          // 마크다운에서 썸네일 추출 로직 적용
+          const extractedThumbnail = getThumbnailFromPost(postData);
+          
+          return {
+            id: doc.id,
+            ...postData,
+            type: collectionName,
+            // 기존 썸네일이 없고 마크다운에서 추출된 썸네일이 있으면 사용
+            thumbnail: postData.thumbnail || extractedThumbnail,
+            createdAt: postData.createdAt?.toDate?.() || new Date(postData.createdAt) || new Date()
+          };
+        });
 
         setUserPosts(posts);
       } catch (error) {
@@ -127,6 +163,10 @@ const MyPage = () => {
             const authorRef = doc(db, 'users', postDoc.data().authorId);
             const authorDoc = await getDoc(authorRef);
             const authorName = authorDoc.exists() ? authorDoc.data().displayName : '알 수 없음';
+            
+            const postData = postDoc.data();
+            // 마크다운에서 썸네일 추출 로직 적용
+            const extractedThumbnail = getThumbnailFromPost(postData);
 
             if(likeData.collectionName === "softcon_projects") {
               likeData.collectionName = "portfolios";
@@ -134,10 +174,12 @@ const MyPage = () => {
             
             return {
               id: postDoc.id,
-              ...postDoc.data(),
+              ...postData,
               type: likeData.collectionName,
               description: authorName,
-              createdAt: postDoc.data().createdAt?.toDate?.() || new Date(postDoc.data().createdAt) || new Date()
+              // 기존 썸네일이 없고 마크다운에서 추출된 썸네일이 있으면 사용
+              thumbnail: postData.thumbnail || extractedThumbnail,
+              createdAt: postData.createdAt?.toDate?.() || new Date(postData.createdAt) || new Date()
             };
           }
           return null;
@@ -193,7 +235,7 @@ const MyPage = () => {
   };
 
   const renderCard = (post) => {
-          const commonProps = {
+    const commonProps = {
       id: post.id,
       title: post.title || '',
       description: post.type === 'labs' ? `${post.description || post.subtitle || ''} 교수님` : (post.description || post.subtitle || ''),
