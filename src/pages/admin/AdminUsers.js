@@ -66,6 +66,7 @@ const AdminUsers = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [userToBlock, setUserToBlock] = useState(null);
+  const [roleData, setRoleData] = useState({});
 
   // 관리자 권한 확인
   useEffect(() => {
@@ -92,35 +93,69 @@ const AdminUsers = () => {
     fetchUserCount();
   }, [currentUser]);
 
-  // 사용자 목록 가져오기
+  // 사용자 목록 가져오기 - 수정된 역할별 로직
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchUsersByRole = async () => {
       if (!currentUser || currentUser.role !== 'ADMIN') return;
       
       try {
         setLoading(true);
-        const usersRef = collection(db, 'users');
-        const q = query(
-          usersRef,
-          orderBy('createdAt', 'desc'),
-          limit(ROWS_PER_PAGE)
-        );
         
-        const querySnapshot = await getDocs(q);
+        // 역할 목록
+        const roles = ['ADMIN', 'PROFESSOR', 'STUDENT', 'COMPANY', 'DEFAULT'];
+        let allUsers = [];
+        const roleStats = {};
         
-        if (!querySnapshot.empty) {
-          const fetchedUsers = querySnapshot.docs.map(doc => ({
+        // 각 역할별로 사용자 가져오기
+        for (const role of roles) {
+          console.log(`Fetching users with role: ${role}`);
+          
+          const roleQuery = query(
+            collection(db, 'users'),
+            where('role', '==', role),
+            orderBy('createdAt', 'desc')
+          );
+          
+          const roleSnapshot = await getDocs(roleQuery);
+          const usersWithRole = roleSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
             createdAt: doc.data().createdAt?.toDate?.() || new Date()
           }));
           
-          setUsers(fetchedUsers);
-          setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+          roleStats[role] = usersWithRole.length;
+          console.log(`Found ${usersWithRole.length} users with role ${role}`);
+          
+          allUsers = [...allUsers, ...usersWithRole];
+        }
+        
+        // 사용자를 생성 날짜 기준으로 정렬
+        allUsers.sort((a, b) => b.createdAt - a.createdAt);
+        
+        console.log('Role statistics:', roleStats);
+        setRoleData(roleStats);
+        
+        // 전체 사용자 목록 업데이트
+        setUsers(allUsers);
+        
+        // 사용자 총 수 업데이트
+        setTotalUsers(allUsers.length);
+        
+        // 첫 페이지 표시를 위한 처리
+        if (allUsers.length > 0) {
+          const firstPageUsers = allUsers.slice(0, ROWS_PER_PAGE);
+          const lastUser = firstPageUsers[firstPageUsers.length - 1];
+          
+          // lastVisible 설정
+          setLastVisible({
+            data: () => ({
+              createdAt: lastUser.createdAt
+            })
+          });
         } else {
-          setUsers([]);
           setLastVisible(null);
         }
+        
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {
@@ -128,67 +163,32 @@ const AdminUsers = () => {
       }
     };
     
-    fetchUsers();
+    fetchUsersByRole();
   }, [currentUser]);
 
   // 페이지 변경 시 데이터 로드
-  const handleChangePage = async (event, newPage) => {
+  const handleChangePage = (event, newPage) => {
     if (newPage < page) {
-      // 이전 페이지로 이동 (첫 페이지로 돌아가서 다시 로드)
-      setPage(0);
-      const usersRef = collection(db, 'users');
-      const q = query(
-        usersRef,
-        orderBy('createdAt', 'desc'),
-        limit(ROWS_PER_PAGE)
-      );
-      
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const fetchedUsers = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.() || new Date()
-        }));
-        
-        setUsers(fetchedUsers);
-        setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-      }
-      
+      // 이전 페이지로 이동
       setPage(0);
       return;
     }
     
-    if (!lastVisible) return;
+    setPage(newPage);
     
-    try {
-      setLoading(true);
-      const usersRef = collection(db, 'users');
-      const q = query(
-        usersRef,
-        orderBy('createdAt', 'desc'),
-        startAfter(lastVisible),
-        limit(ROWS_PER_PAGE)
-      );
-      
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const fetchedUsers = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.() || new Date()
-        }));
-        
-        setUsers(fetchedUsers);
-        setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-        setPage(newPage);
-      }
-    } catch (error) {
-      console.error('Error fetching next page:', error);
-    } finally {
-      setLoading(false);
+    // 페이지에 맞게 사용자 목록 슬라이싱
+    const startIndex = newPage * ROWS_PER_PAGE;
+    const endIndex = startIndex + ROWS_PER_PAGE;
+    
+    // lastVisible 업데이트
+    if (users.length > endIndex) {
+      setLastVisible({
+        data: () => ({
+          createdAt: users[endIndex - 1].createdAt
+        })
+      });
+    } else {
+      setLastVisible(null);
     }
   };
 
@@ -203,48 +203,89 @@ const AdminUsers = () => {
       setLoading(true);
       const usersRef = collection(db, 'users');
       
-      // 이메일 또는 displayName으로 검색
+      // 이메일 검색
       const emailQuery = query(
         usersRef,
         where('email', '>=', searchTerm),
         where('email', '<=', searchTerm + '\uf8ff')
       );
       
+      // 이름 검색
       const nameQuery = query(
         usersRef,
         where('displayName', '>=', searchTerm),
         where('displayName', '<=', searchTerm + '\uf8ff')
       );
       
-      const [emailSnapshot, nameSnapshot] = await Promise.all([
-        getDocs(emailQuery),
-        getDocs(nameQuery)
-      ]);
+      // 역할 검색 (한글/영문 지원)
+      let roleQuery = null;
+      const searchTermLower = searchTerm.toLowerCase();
+      
+      if (['학생', 'student'].some(term => searchTermLower.includes(term))) {
+        roleQuery = query(usersRef, where('role', '==', 'STUDENT'));
+      } else if (['교수', 'professor'].some(term => searchTermLower.includes(term))) {
+        roleQuery = query(usersRef, where('role', '==', 'PROFESSOR'));
+      } else if (['관리자', 'admin'].some(term => searchTermLower.includes(term))) {
+        roleQuery = query(usersRef, where('role', '==', 'ADMIN'));
+      } else if (['기업', 'company'].some(term => searchTermLower.includes(term))) {
+        roleQuery = query(usersRef, where('role', '==', 'COMPANY'));
+      }
+      
+      // 쿼리 실행
+      const queries = [getDocs(emailQuery), getDocs(nameQuery)];
+      if (roleQuery) queries.push(getDocs(roleQuery));
+      
+      const results = await Promise.all(queries);
       
       // 결과 합치기
-      const emailResults = emailSnapshot.docs.map(doc => ({
+      const emailResults = results[0].docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate?.() || new Date()
       }));
       
-      const nameResults = nameSnapshot.docs.map(doc => ({
+      const nameResults = results[1].docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate?.() || new Date()
       }));
+      
+      // 역할 검색 결과 (있는 경우)
+      let roleResults = [];
+      if (roleQuery) {
+        roleResults = results[2].docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate?.() || new Date()
+        }));
+      }
       
       // 중복 제거
       const combined = [...emailResults];
+      
+      // 이름 결과 추가
       nameResults.forEach(user => {
         if (!combined.some(u => u.id === user.id)) {
           combined.push(user);
         }
       });
       
+      // 역할 결과 추가
+      roleResults.forEach(user => {
+        if (!combined.some(u => u.id === user.id)) {
+          combined.push(user);
+        }
+      });
+      
+      console.log(`Search found ${combined.length} users`);
+      
+      // 결과를 생성 날짜 기준으로 정렬
+      combined.sort((a, b) => b.createdAt - a.createdAt);
+      
       setSearchResults(combined);
     } catch (error) {
       console.error('Error searching users:', error);
+      alert('사용자 검색 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -335,6 +376,16 @@ const AdminUsers = () => {
     }
   };
 
+  // 현재 페이지의 사용자 가져오기
+  const getCurrentPageUsers = () => {
+    if (searchResults.length > 0) {
+      return searchResults;
+    }
+    
+    const startIndex = page * ROWS_PER_PAGE;
+    return users.slice(startIndex, startIndex + ROWS_PER_PAGE);
+  };
+
   if (!currentUser) {
     return <LoadingSpinner message="로그인 상태를 확인하는 중..." />;
   }
@@ -357,11 +408,29 @@ const AdminUsers = () => {
         </Typography>
       </Box>
       
+      {/* 디버깅 정보 - 개발 중에만 표시 */}
+      {process.env.NODE_ENV === 'development' && (
+        <Paper sx={{ p: 2, mb: 2, bgcolor: '#f5f5f5' }}>
+          <Typography variant="subtitle2">디버깅 정보:</Typography>
+          <Typography variant="body2">총 사용자 수: {totalUsers}</Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+            {Object.entries(roleData).map(([role, count]) => (
+              <Chip 
+                key={role} 
+                label={`${role}: ${count}명`} 
+                size="small" 
+                variant="outlined" 
+              />
+            ))}
+          </Box>
+        </Paper>
+      )}
+      
       {/* 검색 폼 */}
       <Paper sx={{ p: 2, mb: 3, display: 'flex', alignItems: 'center' }}>
         <TextField
           label="사용자 검색"
-          placeholder="이메일 또는 이름으로 검색"
+          placeholder="이메일, 이름 또는 역할(학생, 교수 등)으로 검색"
           variant="outlined"
           size="small"
           fullWidth
@@ -396,69 +465,69 @@ const AdminUsers = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {(searchResults.length > 0 ? searchResults : users).map((user) => (
-                  <TableRow key={user.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar 
-                          src={user.profileImage} 
-                          alt={user.displayName}
-                          sx={{ width: 32, height: 32, mr: 1 }}
-                        >
-                          {user.displayName?.[0]}
-                        </Avatar>
-                        <Typography>{user.displayName || '이름 없음'}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{renderRoleChip(user.role)}</TableCell>
-                    <TableCell>
-                      {user.createdAt?.toLocaleDateString('ko-KR')}
-                    </TableCell>
-                    <TableCell>
-                      {user.isBlocked ? (
-                        <Chip 
-                          label="차단됨" 
-                          size="small" 
-                          color="error" 
-                          variant="outlined" 
-                          icon={<BlockIcon />} 
-                        />
-                      ) : (
-                        <Chip 
-                          label="정상" 
-                          size="small" 
-                          color="success" 
-                          variant="outlined" 
-                          icon={<CheckCircleIcon />} 
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton 
-                        onClick={() => handleEditUser(user)}
-                        size="small"
-                        sx={{ color: 'primary.main' }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton 
-                        onClick={() => handleBlockUser(user)}
-                        size="small"
-                        sx={{ color: user.isBlocked ? 'success.main' : 'error.main' }}
-                      >
-                        {user.isBlocked ? <CheckCircleIcon /> : <BlockIcon />}
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                
-                {(searchResults.length === 0 && users.length === 0) && (
+                {getCurrentPageUsers().length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
                       {searchTerm ? '검색 결과가 없습니다.' : '사용자가 없습니다.'}
                     </TableCell>
                   </TableRow>
+                ) : (
+                  getCurrentPageUsers().map((user) => (
+                    <TableRow key={user.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar 
+                            src={user.profileImage} 
+                            alt={user.displayName}
+                            sx={{ width: 32, height: 32, mr: 1 }}
+                          >
+                            {user.displayName?.[0]}
+                          </Avatar>
+                          <Typography>{user.displayName || '이름 없음'}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{renderRoleChip(user.role)}</TableCell>
+                      <TableCell>
+                        {user.createdAt?.toLocaleDateString('ko-KR')}
+                      </TableCell>
+                      <TableCell>
+                        {user.isBlocked ? (
+                          <Chip 
+                            label="차단됨" 
+                            size="small" 
+                            color="error" 
+                            variant="outlined" 
+                            icon={<BlockIcon />} 
+                          />
+                        ) : (
+                          <Chip 
+                            label="정상" 
+                            size="small" 
+                            color="success" 
+                            variant="outlined" 
+                            icon={<CheckCircleIcon />} 
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton 
+                          onClick={() => handleEditUser(user)}
+                          size="small"
+                          sx={{ color: 'primary.main' }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton 
+                          onClick={() => handleBlockUser(user)}
+                          size="small"
+                          sx={{ color: user.isBlocked ? 'success.main' : 'error.main' }}
+                        >
+                          {user.isBlocked ? <CheckCircleIcon /> : <BlockIcon />}
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
