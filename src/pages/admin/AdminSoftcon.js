@@ -28,7 +28,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import { useAuth } from '../../components/auth/AuthContext';
 import { 
   collection, 
-  getDocs, 
+  getDocs,
   doc, 
   deleteDoc,
   query
