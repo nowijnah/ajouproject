@@ -141,6 +141,8 @@ export default function App() {
                 {/* Notice Routes */}
                 <Route path="/notices" element={<NoticeList />} />
                 <Route path="/notices/:noticeId" element={<NoticeView />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                  
               </Routes>
             </Suspense>
           </Box>
