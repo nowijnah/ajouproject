@@ -155,7 +155,6 @@ const PostHeader = ({
 
         {!isPreview && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {/* 소프트콘 프로젝트이고 STUDENT 권한이 있을 때 복제 버튼 표시 */}
             {isSoftconProject && currentUser?.role === 'STUDENT' && (
               <CloneToPortfolioButton postData={postData} postId={postId} />
             )}
