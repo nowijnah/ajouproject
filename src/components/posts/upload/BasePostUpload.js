@@ -26,6 +26,29 @@ import ImageIcon from '@mui/icons-material/Image';
 
 import BasePostView from '../view/BasePostView';
 
+// 커스텀 ReactMarkdown 컴포넌트
+const CustomReactMarkdown = ({ children }) => {
+  return (
+    <ReactMarkdown
+      components={{
+        a: ({ node, ...props }) => (
+          <a 
+            {...props} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              // 이벤트 버블링 방지 (링크 클릭 시 다른 이벤트 방지)
+              e.stopPropagation();
+            }}
+          />
+        )
+      }}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+};
+
 function BasePostUpload({ collectionName }) {
     const { postId } = useParams();
     const navigate = useNavigate();
@@ -89,7 +112,19 @@ function BasePostUpload({ collectionName }) {
       };
     
       fetchPost();
-    }, [postId, collection]);
+    }, [postId, collectionName]);
+
+    // 마크다운 내용에서 이미지 URL 추출
+    const extractImagesFromMarkdown = (content) => {
+      // Markdown 이미지 구문 찾기: ![alt text](image-url)
+      const imageRegex = /!\[.*?\]\((.*?)\)/g;
+      const matches = [...content.matchAll(imageRegex)];
+      
+      return matches.map(match => match[1]).filter(url => {
+        // 로컬 파일 URL은 제외하고 원격 URL만 반환
+        return !url.startsWith('blob:') && !url.startsWith('data:');
+      });
+    };
 
     // 썸네일
     const handleThumbnailChange = (e) => {
@@ -97,7 +132,6 @@ function BasePostUpload({ collectionName }) {
         if (file && file.type.startsWith('image/')) {
         setThumbnail(file);
         } else {
-        // 에러 핸들링 추가하기
         alert('이미지 파일을 선택하세요.');
         }
     };
@@ -176,9 +210,10 @@ function BasePostUpload({ collectionName }) {
         const cursorPosition = textArea.selectionStart;
         
         for (const file of validFiles) {
+            const tempUrl = URL.createObjectURL(file);
             const markdown = file.type === 'application/pdf' 
-            ? `[PDF: ${file.name}](${URL.createObjectURL(file)})\n`
-            : `![${file.name}](${URL.createObjectURL(file)})\n`;
+            ? `[PDF: ${file.name}](${tempUrl})\n`
+            : `![${file.name}](${tempUrl})\n`;
             
             const newContent = markdownContent.slice(0, cursorPosition) + 
                         markdown + 
@@ -191,6 +226,7 @@ function BasePostUpload({ collectionName }) {
             fileId: `file-${Date.now()}-${Math.random()}`,
             file: file,
             type: fileType,
+            tempUrl: tempUrl,
             description: ''
             }]);
         }
@@ -235,6 +271,28 @@ function BasePostUpload({ collectionName }) {
       setKeywords(keywords.filter(kw => kw !== keyword));
     };
 
+    // 업로드된 파일의 마크다운 URL을 실제 URL로 업데이트
+    const updateMarkdownWithRealUrls = (markdown, uploadedFiles) => {
+      let updatedMarkdown = markdown;
+      
+      // 임시 URL을 실제 URL로 교체
+      uploadedFiles.forEach(file => {
+        if (file.tempUrl && file.url) {
+          // 파일 유형에 따라 마크다운 패턴 설정
+          if (file.type === 'IMAGE') {
+            // 이미지: ![alt text](temp-url)
+            const imgRegex = new RegExp(`!\\[.*?\\]\\(${file.tempUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g');
+            updatedMarkdown = updatedMarkdown.replace(imgRegex, `![${file.filename || 'image'}](${file.url})`);
+          } else {
+            // 파일 링크: [text](temp-url)
+            const linkRegex = new RegExp(`\\[.*?\\]\\(${file.tempUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g');
+            updatedMarkdown = updatedMarkdown.replace(linkRegex, `[${file.filename || 'file'}](${file.url})`);
+          }
+        }
+      });
+      
+      return updatedMarkdown;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -246,88 +304,104 @@ function BasePostUpload({ collectionName }) {
         try {
             setIsSubmitting(true);
             
-            let thumbnailUrl = thumbnail;
-
-            if (!thumbnail) {
-              const imageFile = files.find(fileItem => fileItem.type === 'IMAGE' && fileItem.file);
-              if (imageFile) {
-                const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${imageFile.file.name}`);
-                const thumbnailSnapshot = await uploadBytes(thumbnailRef, imageFile.file);
-                thumbnailUrl = await getDownloadURL(thumbnailSnapshot.ref);
-              }
-            } 
-            // 새로운 썸네일일 경우에만 업로드
-            else if (thumbnail instanceof File) {
-              const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${thumbnail.name}`);
-              const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnail);
-              thumbnailUrl = await getDownloadURL(thumbnailSnapshot.ref);
-            }
-            
-            // 새로운 썸네일일 경우에만 업로드
-            if (thumbnail instanceof File) {
-            const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${thumbnail.name}`);
-            const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnail);
-            thumbnailUrl = await getDownloadURL(thumbnailSnapshot.ref);
-            }
-
-            // 새로운 파일들만 업로드
+            // 1. 파일 업로드 처리
+            const tempFiles = [...files];
             const uploadedFiles = await Promise.all(
-            files.map(async (fileItem) => {
+              tempFiles.map(async (fileItem) => {
                 // 이미 업로드된 파일은 그대로 사용
-                if (fileItem.url) {
-                return fileItem;
+                if (fileItem.url && !fileItem.file) {
+                  return {
+                    ...fileItem,
+                    tempUrl: fileItem.tempUrl || null
+                  };
                 }
+                
                 // 새로운 파일 업로드
                 const fileRef = ref(storage, `files/${currentUser.uid}/${Date.now()}-${fileItem.file.name}`);
                 const fileSnapshot = await uploadBytes(fileRef, fileItem.file);
                 const url = await getDownloadURL(fileSnapshot.ref);
                 
                 return {
-                fileId: fileItem.fileId,
-                url: url,
-                filename: fileItem.file.name,
-                type: fileItem.type,
-                description: fileItem.description
+                  fileId: fileItem.fileId,
+                  url: url,
+                  tempUrl: fileItem.tempUrl, // 임시 URL 저장 (마크다운 내용 업데이트용)
+                  filename: fileItem.file.name,
+                  type: fileItem.type,
+                  description: fileItem.description || ''
                 };
-            })
-        );
-
-        const updatedData = {
-            title,
-            subtitle,
-            content: markdownContent,
-            files: uploadedFiles,
-            links,
-            thumbnail: thumbnailUrl,
-            keywords,
-            updatedAt: serverTimestamp()
-        };
-
-        if (postId) {
-          await updateDoc(doc(db, collectionName, postId), updatedData);
-          alert('게시글이 수정되었습니다.');
-          navigate(`/${collectionName}/${postId}`);
-        } else {
-            updatedData.authorId = currentUser.uid;
-            updatedData.likeCount = 0;
-            updatedData.commentCount = 0;
-            updatedData.createdAt = serverTimestamp();
+              })
+            );
             
-            const docRef = await addDoc(collection(db, collectionName), updatedData);
-            alert('게시글이 작성되었습니다.');
-            navigate(`/${collectionName}/${docRef.id}`);
-        }
+            // 2. 마크다운 내용 업데이트 (임시 URL -> 실제 URL)
+            const updatedMarkdownContent = updateMarkdownWithRealUrls(markdownContent, uploadedFiles);
+            
+            // 3. 썸네일 처리
+            let thumbnailUrl = thumbnail;
+            
+            // 3-1. 사용자가 직접 썸네일을 업로드한 경우
+            if (thumbnail instanceof File) {
+              const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${thumbnail.name}`);
+              const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnail);
+              thumbnailUrl = await getDownloadURL(thumbnailSnapshot.ref);
+            } 
+            // 3-2. 썸네일이 없을 경우 마크다운 내 첫번째 이미지 사용
+            else if (!thumbnailUrl) {
+              // 마크다운에서 이미지 추출
+              const markdownImages = extractImagesFromMarkdown(updatedMarkdownContent);
+              
+              if (markdownImages && markdownImages.length > 0) {
+                // 마크다운 내 첫번째 이미지를 썸네일로 사용
+                thumbnailUrl = markdownImages[0];
+                console.log("썸네일로 사용될 마크다운 이미지:", thumbnailUrl);
+              } else {
+                // 업로드된 이미지 파일 중 첫번째 이미지 사용
+                const imageFile = uploadedFiles.find(file => file.type === 'IMAGE');
+                if (imageFile && imageFile.url) {
+                  thumbnailUrl = imageFile.url;
+                  console.log("썸네일로 사용될 업로드 이미지:", thumbnailUrl);
+                }
+              }
+            }
 
-      } catch (error) {
-          console.error('Error:', error);
-          alert(`업로드 중 오류 발생: ${error.message}`);
-      } finally {
-        setIsSubmitting(false);
-      }
+            // 4. 최종 데이터 준비
+            const updatedData = {
+              title,
+              subtitle,
+              content: updatedMarkdownContent,
+              files: uploadedFiles.map(({ tempUrl, ...file }) => file), // tempUrl 제거
+              links,
+              thumbnail: thumbnailUrl,
+              keywords,
+              updatedAt: serverTimestamp()
+            };
+
+            console.log("저장될 썸네일 URL:", thumbnailUrl);
+
+            // 5. Firestore에 저장
+            if (postId && postId !== 'preview-id') {
+              await updateDoc(doc(db, collectionName, postId), updatedData);
+              alert('게시글이 수정되었습니다.');
+              navigate(`/${collectionName}/${postId}`);
+            } else {
+              updatedData.authorId = currentUser.uid;
+              updatedData.likeCount = 0;
+              updatedData.commentCount = 0;
+              updatedData.createdAt = serverTimestamp();
+                
+              const docRef = await addDoc(collection(db, collectionName), updatedData);
+              alert('게시글이 작성되었습니다.');
+              navigate(`/${collectionName}/${docRef.id}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert(`업로드 중 오류 발생: ${error.message}`);
+        } finally {
+          setIsSubmitting(false);
+        }
     };
 
     const insertMarkdownSyntax = (syntax, placeholder = '') => {
-      const textArea = document.querySelector('textarea');
+      const textArea = textAreaRef.current;
       if (!textArea) return;
     
       const start = textArea.selectionStart;
@@ -351,7 +425,7 @@ function BasePostUpload({ collectionName }) {
             : `\`${selectedText || '인라인 코드'}\``;
           break;
         case 'link':
-          insertText = `[${selectedText || '링크 텍스트'}](url)`;
+          insertText = `[${selectedText || '링크 텍스트'}](https://example.com)`;
           break;
         case 'image':
           insertText = `![${selectedText || '이미지 설명'}](이미지 URL)`;
@@ -542,7 +616,7 @@ function BasePostUpload({ collectionName }) {
                         onChange={handleThumbnailChange}
                       />
                       <ImageIcon sx={{ fontSize: 40 }} />
-                      <Typography>대표 이미지 추가</Typography>
+                      <Typography>대표 이미지 추가 (없을 경우 본문 첫 이미지 사용)</Typography>
                     </Button>
                   )}
                 </Box>
@@ -709,7 +783,7 @@ function BasePostUpload({ collectionName }) {
                     borderRadius: 1,
                     bgcolor: 'grey.50'
                   }}>
-                    <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                    <CustomReactMarkdown>{markdownContent}</CustomReactMarkdown>
                   </Box>
                 </Grid>
               </Grid>
