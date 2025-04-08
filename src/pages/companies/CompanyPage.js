@@ -37,7 +37,7 @@ export default function CompanyPage() {
               subtitle: postData.subtitle,
               description: authorName, // 부제목 대신 작성자 이름 표시
               image: postData.thumbnail || '',
-              content: postData.content,
+              content: postData.content || '',
               authorId: postData.authorId,
               createdAt: postData.createdAt,
               likeCount: postData.likeCount,
