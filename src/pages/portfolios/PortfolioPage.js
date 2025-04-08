@@ -14,12 +14,18 @@ export default function PortfolioPage() {
       const q = query(collection(db, collectionName), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
 
-      const data = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      console.log(`Firestore에서 ${collectionName} 가져오기 완료:`, data);
+      const data = querySnapshot.docs.map(doc => {
+        const docData = doc.data();
+        console.log('Firebase에서 가져온 원본 데이터:', { id: doc.id, ...docData });
+        
+        return {
+          id: doc.id,
+          ...docData,
+          // 썸네일 필드명 명시적 지정 - 이 부분이 중요!
+          image: docData.thumbnail || docData.image || '',
+          content: docData.content || '',
+        };
+      });
       return data;
     } catch (error) {
       console.error(`Firestore에서 ${collectionName} 데이터 가져오기 오류:`, error);

@@ -41,7 +41,7 @@ export default function LabPage() {
               image: postData.thumbnail || '',
               content: postData.content || '',
               authorId: postData.authorId || '',
-              createdAt, // Timestamp를 Date 객체로 변환
+              createdAt: postData.createdAt,
               likeCount: postData.likeCount || 0,
               commentCount: postData.commentCount || 0,
               files: postData.files || [],

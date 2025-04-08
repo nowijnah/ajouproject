@@ -21,6 +21,7 @@ const ContentCard = ({
   title, 
   description, 
   image, 
+  content = '', // 마크다운 콘텐츠 추가
   likeCount: initialLikeCount = 0, 
   commentCount = 0,
   type = 'portfolio', // 'portfolio', 'company', 'lab'
@@ -35,17 +36,44 @@ const ContentCard = ({
     currentUser?.uid || null
   );
 
-  // 이미지 처리
-  const getDisplayImage = () => {
-    // 1. 기존 썸네일 이미지가 있으면 사용
-    if (image) return image;
+  // 마크다운 내용에서 이미지 URL 추출하는 함수
+  const extractImagesFromMarkdown = (content) => {
+    if (!content) return [];
     
-    // 2. 첨부 파일 중 이미지가 있으면 첫 번째 이미지 사용
+    // Markdown 이미지 구문 찾기: ![alt text](image-url)
+    const imageRegex = /!\[.*?\]\((.*?)\)/g;
+    const matches = [...(content.matchAll(imageRegex) || [])];
+    
+    return matches.map(match => match[1]).filter(url => {
+      // 로컬 파일 URL은 제외하고 원격 URL만 반환
+      return !url.startsWith('blob:') && !url.startsWith('data:');
+    });
+  };
+
+  // 게시물에서 썸네일 추출 함수
+  const getThumbnailFromPost = (image, content, files) => {
+    // 1. 이미 썸네일이 있으면 그대로 사용
+    if (image && image !== 'markdown-image') return image;
+    
+    // 2. 마크다운 내용에서 이미지 추출
+    if (content) {
+      const markdownImages = extractImagesFromMarkdown(content);
+      if (markdownImages.length > 0) {
+        return markdownImages[0];
+      }
+    }
+    
+    // 3. 첨부 파일 중 이미지가 있으면 첫 번째 이미지 사용
     const imageFile = files?.find(file => file.type === 'IMAGE' && file.url);
     if (imageFile) return imageFile.url;
     
-    // 3. 기본 이미지 사용
+    // 4. 기본 이미지 사용
     return `/default-img.png`;
+  };
+  
+  // 이미지 처리
+  const getDisplayImage = () => {
+    return getThumbnailFromPost(image, content, files);
   };
 
   const handleClick = () => {
