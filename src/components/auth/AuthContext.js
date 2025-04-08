@@ -5,7 +5,7 @@ import {
   GoogleAuthProvider,
   signOut,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import AnimatedLoading from "../common/AnimatedLoading";
 
@@ -104,6 +104,7 @@ export const AuthProvider = ({ children }) => {
       displayName: user.displayName,
       photoURL: user.photoURL,
       role: role,
+      createdAt: serverTimestamp(),
     };
 
     if (role === "STUDENT" || role === "PROFESSOR") {
