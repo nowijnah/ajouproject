@@ -22,7 +22,7 @@ const ContentCard = ({
   title, 
   description, 
   image, 
-  content,  // 추가: 마크다운 콘텐츠
+  content = '',  // 마크다운 콘텐츠
   likeCount: initialLikeCount = 0, 
   commentCount = 0,
   type = 'portfolio', // 'portfolio', 'company', 'lab'
@@ -48,50 +48,56 @@ const ContentCard = ({
     currentUser?.uid || null
   );
 
-  // 마크다운 내용에서 첫 번째 이미지 URL 추출
-  const extractFirstImageFromMarkdown = (markdownContent) => {
-    if (!markdownContent) return null;
+  // 마크다운 내용에서 이미지 URL 추출하는 함수
+  const extractImagesFromMarkdown = (content) => {
+    if (!content) return [];
     
-    // 마크다운 이미지 형식 ![alt](url) 또는 <img src="url"> 패턴 찾기
-    const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
-    const htmlImageRegex = /<img.*?src=["'](.*?)["']/;
+    // Markdown 이미지 구문 찾기: ![alt text](image-url)
+    const imageRegex = /!\[.*?\]\((.*?)\)/g;
+    const matches = [...(content.matchAll(imageRegex) || [])];
     
-    const markdownMatch = markdownContent.match(markdownImageRegex);
-    const htmlMatch = markdownContent.match(htmlImageRegex);
-    
-    // 마크다운 형식 이미지 우선, 없으면 HTML 형식 이미지 사용
-    if (markdownMatch && markdownMatch[1]) {
-      return markdownMatch[1];
-    } else if (htmlMatch && htmlMatch[1]) {
-      return htmlMatch[1];
-    }
-    
-    return null;
+    return matches.map(match => match[1]).filter(url => {
+      // 로컬 파일 URL은 제외하고 원격 URL만 반환
+      return !url.startsWith('blob:') && !url.startsWith('data:');
+    });
   };
 
+  // 게시물에서 썸네일 추출 함수
+const getThumbnailFromPost = (image, content, files) => {
+  // 디버깅 정보 출력 (문제 해결 후 제거 가능)
+  console.log('썸네일 처리:', { image, hasContent: !!content, filesCount: files?.length });
+  
+  // 1. 이미 썸네일이 있으면 그대로 사용 (null이나 undefined가 아닌 모든 값)
+  if (image) {
+    // 'markdown-image'는 특수 케이스로 건너뛰기
+    if (image !== 'markdown-image') {
+      return image;
+    }
+  }
+  
+  // 2. 마크다운 내용에서 이미지 추출
+  if (content) {
+    const markdownImages = extractImagesFromMarkdown(content);
+    if (markdownImages.length > 0) {
+      console.log('마크다운에서 추출된 이미지:', markdownImages[0]);
+      return markdownImages[0];
+    }
+  }
+  
+  // 3. 첨부 파일 중 이미지가 있으면 첫 번째 이미지 사용
+  const imageFile = files?.find(file => file.type === 'IMAGE' && file.url);
+  if (imageFile) {
+    console.log('첨부 파일에서 추출된 이미지:', imageFile.url);
+    return imageFile.url;
+  }
+  
+  // 4. 기본 이미지 사용
+  return `/default-img.png`;
+};
+  
   // 이미지 처리
   const getDisplayImage = () => {
-    // 1. 기존 썸네일 이미지가 있으면 사용
-    if (image && image !== 'markdown-image') return image;
-    
-    // 2. 첨부 파일 중 이미지가 있으면 첫 번째 이미지 사용
-    const imageFile = files?.find(file => file.type === 'IMAGE' && file.url);
-    if (imageFile) return imageFile.url;
-    
-    // 3. 'markdown-image'인 경우 content에서 이미지 추출
-    if (image === 'markdown-image' && content) {
-      const markdownImage = extractFirstImageFromMarkdown(content);
-      if (markdownImage) return markdownImage;
-    }
-    
-    // 4. 마크다운 내용에서 이미지 추출 (내용이 있는 경우)
-    if (content) {
-      const markdownImage = extractFirstImageFromMarkdown(content);
-      if (markdownImage) return markdownImage;
-    }
-    
-    // 5. 기본 이미지 사용
-    return `/default-img.png`;
+    return getThumbnailFromPost(image, content, files);
   };
 
   const handleClick = () => {

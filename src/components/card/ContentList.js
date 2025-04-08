@@ -18,13 +18,19 @@ export default function ContentList({ type, data}) {
   }
 
   const renderCard = (item) => {
+    // content 프로퍼티가 전달되는지 확인
+    const props = {
+      ...item,
+      content: item.content || '', // content가 없으면 빈 문자열 기본값 설정
+    };
+    
     switch (type) {
       case 'portfolio':
-        return <PortfolioCard {...item} />;
+        return <PortfolioCard {...props} />;
       case 'lab':
-        return <LabCard {...item} />;
+        return <LabCard {...props} />;
       case 'company':
-        return <CompanyCard {...item} />;
+        return <CompanyCard {...props} />;
       default:
         return null;
     }
