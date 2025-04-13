@@ -70,11 +70,6 @@ const PostKeywords = ({ keywords = [] }) => {
                   py: 0.8,
                   fontSize: '0.875rem',
                   fontWeight: 500
-                },
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  bgcolor: 'rgba(0, 102, 204, 0.12)',
-                  transform: 'translateY(-1px)'
                 }
               }}
             />

@@ -132,14 +132,14 @@ const BasePostView = ({
           getDisplayImage={getDisplayImage}
         />
         
-        {/* 키워드 */}
-        <PostKeywords keywords={postData.keywords} />
-        
-        {/* 첨부 파일 */}
-        <PostAttachments files={postData.files} />
-        
         {/* 관련 링크 */}
         <PostLinks links={postData.links} />
+
+        {/* 첨부 파일 */}
+        <PostAttachments files={postData.files} />
+
+        {/* 키워드 */}
+        <PostKeywords keywords={postData.keywords} />
 
         {/* 댓글 섹션 */}
         {!previewData && (

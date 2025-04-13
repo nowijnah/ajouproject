@@ -340,27 +340,7 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
         description += "\n";
       }
       
-      const mentorSection = $(".dw_wrap").filter((i, el) => {
-        return $(el).find(".dw_le").text().includes("멘토");
-      });
       
-      if (mentorSection.length > 0) {
-        description += "멘토:\n";
-        
-        mentorSection.find("ul").each((i, el) => {
-          const name = $(el).find("li.dw2").text().trim();
-          const affiliation = $(el).find("li.dw3").text().trim();
-          
-          if (name) {
-            description += `- ${name}`;
-            if (affiliation) description += ` (${affiliation})`;
-            description += "\n";
-          }
-        });
-        
-        description += "\n";
-      }
-            
       const team = [];
       teamSection.find("ul").each((i, el) => {
         const role = $(el).find("li.dw1").text().trim();
