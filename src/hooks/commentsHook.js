@@ -179,15 +179,15 @@ const commentsHook = (postId, collectionName) => {
       
       await batch.commit();
 
-      // 이메일 알림 트리거 (Firebase Functions)
       try {
-        // 함수가 배포되었다면 주석 해제
-        // const sendCommentNotification = httpsCallable(functions, 'sendCommentNotification');
-        // await sendCommentNotification({
-        //   commentId: newReplyRef.id,
-        //   postId,
-        //   collectionName
-        // });
+        console.log("Attempting to send notification for comment:", newReplyRef.id);
+        const sendCommentNotification = httpsCallable(functions, 'sendCommentNotification');
+        const result = await sendCommentNotification({
+          commentId: newReplyRef.id,
+          postId,
+          collectionName
+        });
+        console.log("Notification function result:", result.data);
       } catch (error) {
         console.error('Error triggering notification:', error);
       }
