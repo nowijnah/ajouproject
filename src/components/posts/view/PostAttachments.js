@@ -16,15 +16,22 @@ import DownloadIcon from '@mui/icons-material/Download';
 
 /**
  * 게시물 첨부 파일 컴포넌트 - 이미지 및 다운로드 가능한 첨부 파일 표시
+ * 이미지는 클릭 시 미리보기, 다른 파일은 클릭 시 바로 다운로드
  */
 const PostAttachments = ({ files = [] }) => {
   const [selectedFile, setSelectedFile] = useState(null);
 
   if (!files || files.length === 0) return null;
 
-  // 파일 미리보기
+  // 파일 클릭 처리 - 이미지는 미리보기, 다른 파일은 바로 다운로드
   const handleFileClick = (file) => {
-    setSelectedFile(file);
+    if (file.type === 'IMAGE') {
+      // 이미지인 경우 미리보기 다이얼로그 열기
+      setSelectedFile(file);
+    } else {
+      // 다른 파일 타입은 바로 다운로드
+      handleDownload(file);
+    }
   };
 
   // 미리보기 닫기
@@ -62,13 +69,17 @@ const PostAttachments = ({ files = [] }) => {
                   borderColor: 'divider',
                   '&:hover': {
                     bgcolor: 'grey.100'
-                  }
+                  },
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}
               >
                 <Box sx={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: 2 
+                  gap: 2,
+                  flex: 1
                 }}>
                   {file.type === 'IMAGE' ? (
                     <ImageIcon color="primary" />
@@ -90,13 +101,25 @@ const PostAttachments = ({ files = [] }) => {
                     )}
                   </Box>
                 </Box>
+                
+                {/* 이미지가 아닌 파일에는 다운로드 아이콘 표시 */}
+                {file.type !== 'IMAGE' && (
+                  <DownloadIcon 
+                    color="primary" 
+                    fontSize="small" 
+                    sx={{ 
+                      opacity: 0.7,
+                      ml: 1
+                    }}
+                  />
+                )}
               </Paper>
             </Grid>
           ))}
         </Grid>
       </Box>
 
-      {/* 파일 미리보기 다이얼로그 */}
+      {/* 이미지 미리보기 다이얼로그 */}
       <Dialog
         open={Boolean(selectedFile)}
         onClose={handleClosePreview}
@@ -120,37 +143,22 @@ const PostAttachments = ({ files = [] }) => {
         </DialogTitle>
         
         <DialogContent>
-          {selectedFile?.type === 'IMAGE' ? (
-            <Box sx={{ 
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              minHeight: 400
-            }}>
-              <img
-                src={selectedFile.url}
-                alt={selectedFile.filename}
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '70vh',
-                  objectFit: 'cover'
-                }}
-              />
-            </Box>
-          ) : (
-            <Box sx={{ 
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 2,
-              py: 4
-            }}>
-              <FileIcon sx={{ fontSize: 60, color: 'primary.main' }} />
-              <Typography>
-                이 파일은 미리보기를 지원하지 않습니다
-              </Typography>
-            </Box>
-          )}
+          <Box sx={{ 
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: 400
+          }}>
+            <img
+              src={selectedFile?.url}
+              alt={selectedFile?.filename}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '70vh',
+                objectFit: 'cover'
+              }}
+            />
+          </Box>
         </DialogContent>
 
         <DialogActions>
