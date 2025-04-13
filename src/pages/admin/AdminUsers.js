@@ -407,24 +407,7 @@ const AdminUsers = () => {
           사용자 관리
         </Typography>
       </Box>
-      
-      {/* 디버깅 정보 - 개발 중에만 표시 */}
-      {process.env.NODE_ENV === 'development' && (
-        <Paper sx={{ p: 2, mb: 2, bgcolor: '#f5f5f5' }}>
-          <Typography variant="subtitle2">디버깅 정보:</Typography>
-          <Typography variant="body2">총 사용자 수: {totalUsers}</Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-            {Object.entries(roleData).map(([role, count]) => (
-              <Chip 
-                key={role} 
-                label={`${role}: ${count}명`} 
-                size="small" 
-                variant="outlined" 
-              />
-            ))}
-          </Box>
-        </Paper>
-      )}
+    
       
       {/* 검색 폼 */}
       <Paper sx={{ p: 2, mb: 3, display: 'flex', alignItems: 'center' }}>

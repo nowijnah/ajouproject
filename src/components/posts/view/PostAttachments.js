@@ -13,6 +13,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import ImageIcon from '@mui/icons-material/Image';
 import FileIcon from '@mui/icons-material/FilePresent';
 import DownloadIcon from '@mui/icons-material/Download';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 
 /**
  * 게시물 첨부 파일 컴포넌트 - 이미지 및 다운로드 가능한 첨부 파일 표시
@@ -32,6 +33,13 @@ const PostAttachments = ({ files = [] }) => {
       // 다른 파일 타입은 바로 다운로드
       handleDownload(file);
     }
+  };
+  
+  // PDF 파일도 처리
+  const isPdfFile = (file) => {
+    return file.type === 'PDF' || 
+           (file.filename && file.filename.toLowerCase().endsWith('.pdf')) ||
+           (file.url && file.url.toLowerCase().includes('.pdf'));
   };
 
   // 미리보기 닫기
@@ -83,6 +91,8 @@ const PostAttachments = ({ files = [] }) => {
                 }}>
                   {file.type === 'IMAGE' ? (
                     <ImageIcon color="primary" />
+                  ) : isPdfFile(file) ? (
+                    <PictureAsPdfIcon sx={{ color: '#e53935' }} />
                   ) : (
                     <FileIcon color="primary" />
                   )}

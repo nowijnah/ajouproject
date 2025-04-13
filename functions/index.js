@@ -260,158 +260,125 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
 
     const getDetailData = async (projectInfo) => {
       const { uid, thumbnail: listThumbnail, title: listTitle } = projectInfo;
-      
-      let url;
-      if (isCurrentTerm) {
-        url = `${detailUrl}?uid=${uid}`;
-      } else {
-        url = `${detailUrl}?uid=${uid}&wTerm=${term}`;
-      }
-      
+    
+      let url = isCurrentTerm
+        ? `${detailUrl}?uid=${uid}`
+        : `${detailUrl}?uid=${uid}&wTerm=${term}`;
+    
       addLog(`프로젝트 상세 URL: ${url}`);
-      
       const $ = await getHtml(url);
-
+    
+      // 썸네일 추출
       let thumbnail = listThumbnail || "";
-      
       if (!thumbnail) {
         try {
           const titleImg = $(".dw_title img").first();
-          if (titleImg.length > 0) {
-            thumbnail = titleImg.attr("src") || "";
-          }
-          
+          if (titleImg.length > 0) thumbnail = titleImg.attr("src") || "";
           if (!thumbnail) {
             const detailImg = $(".work_detail img, .detail img").first();
-            if (detailImg.length > 0) {
-              thumbnail = detailImg.attr("src") || "";
-            }
+            if (detailImg.length > 0) thumbnail = detailImg.attr("src") || "";
           }
-          
-          if (thumbnail) {
-            thumbnail = getAbsoluteUrl(thumbnail);
-          }
+          if (thumbnail) thumbnail = getAbsoluteUrl(thumbnail);
         } catch (error) {
           addLog(`썸네일 추출 실패 (uid: ${uid}): ${error.message}`);
         }
       }
-
-      let title = listTitle || "";
-      
-      if (!title) {
-        title = $(".dw_title p").text().trim();
-        if (!title) {
-          title = $("h1, h2, .title").first().text().trim();
-        }
-      }
-      
+    
+      let title = $(".dw_title p").text().trim();
+if (!title || title.length < 2) {
+  title = listTitle?.trim() || `프로젝트 ${uid}`;
+}
+      // 설명 추출
       let description = "";
-      
       const workOverview = $(".work_detail > div:last-child").text().trim();
       if (workOverview) {
         description += workOverview + "\n\n";
       } else {
-        const altWorkOverview = $(".work_detail, .detail, .content").text().trim();
-        if (altWorkOverview) {
-          description += altWorkOverview + "\n\n";
-        }
+        const altOverview = $(".work_detail, .detail, .content").text().trim();
+        if (altOverview) description += altOverview + "\n\n";
       }
-      
-      const teamSection = $(".dw_wrap").filter((i, el) => {
-        return $(el).find(".dw_le").text().includes("팀원");
-      });
-      
-      if (teamSection.length > 0) {
-        description += "팀원 정보:\n";
-        
-        teamSection.find("ul").each((i, el) => {
-          const role = $(el).find("li.dw1").text().trim();
-          const name = $(el).find("li.dw2").text().trim();
-          const major = $(el).find("li.dw3").text().trim();
-          const grade = $(el).find("li.dw4").text().trim();
-          
-          if (name) {
-            description += `- ${role} ${name} (${major}`;
-            if (grade) description += `, ${grade}학년`;
-            description += ")\n";
-          }
-        });
-        
-        description += "\n";
-      }
-      
-      
+    
+      // 팀 정보 또는 등록자 추출
       const team = [];
-      teamSection.find("ul").each((i, el) => {
-        const role = $(el).find("li.dw1").text().trim();
-        const name = $(el).find("li.dw2").text().trim();
-        const major = $(el).find("li.dw3").text().trim();
-        const grade = $(el).find("li.dw4").text().trim();
-        const email = $(el).find("li.dw5").text().trim();
-
-        team.push({ role, name, major, grade, email });
+      $(".dw_wrap").each((i, el) => {
+        const label = $(el).find(".dw_le").text().trim();
+        if (label === "팀원") {
+          $(el).find(".dw_ri ul").each((i, ul) => {
+            const role = $(ul).find("li.dw1").text().trim();
+            const name = $(ul).find("li.dw2").text().trim();
+            const major = $(ul).find("li.dw3").text().trim();
+            const grade = $(ul).find("li.dw4").text().trim();
+            const email = $(ul).find("li.dw5").text().trim();
+            if (name) team.push({ role, name, major, grade, email });
+          });
+        }
       });
-      
+    
+      // 등록자 (팀원이 없을 경우만)
+      if (team.length === 0) {
+        const registrant = $(".dw_wrap")
+          .filter((i, el) => $(el).find(".dw_le").text().includes("등록자"))
+          .find(".dw1 span")
+          .text()
+          .trim();
+        if (registrant) team.push({ name: registrant });
+      }
+    
+      // 링크 추출
       const videoLink = $(".countsort iframe").attr("src") || "";
-
       let pdfLink = "";
       try {
         pdfLink = $("#pdfArea").attr("src") || "";
-        
         if (!pdfLink) {
           $("iframe").each((i, el) => {
             const src = $(el).attr("src") || "";
             if (src.includes(".pdf")) {
               pdfLink = src;
-              return false; // 루프 중단
+              return false;
             }
           });
         }
-        
-        if (pdfLink) {
-          pdfLink = getAbsoluteUrl(pdfLink);
-        }
+        if (pdfLink) pdfLink = getAbsoluteUrl(pdfLink);
       } catch (error) {
         addLog(`PDF 링크 추출 실패 (uid: ${uid}): ${error.message}`);
       }
-
+    
       const gitSection = $(".dw_wrap").filter((i, el) => {
         return $(el).find(".dw_le").text().includes("git");
       });
       const githubLink = gitSection.find("a").attr("href") || "";
-      
-      const data = {
+    
+      return {
         uid,
-        title: title || `프로젝트 ${uid}`,
-        content: description || "",
+        title,
+        content: description,
         team,
-        files: pdfLink ? [{ 
-          fileId: `pdf-${uid}`,
-          type: 'PDF',
-          filename: '발표자료',
-          url: pdfLink
-        }] : [],
+        files: pdfLink
+          ? [{ fileId: `pdf-${uid}`, type: "PDF", filename: "발표자료", url: pdfLink }]
+          : [],
         links: [
-          videoLink ? {
-            linkId: `video-${uid}`,
-            title: "시연 영상",
-            type: "VIDEO",
-            url: videoLink,
-            subtitle: ""
-          } : null,
-          githubLink ? {
-            linkId: `github-${uid}`,
-            title: "GitHub 저장소",
-            type: "GITHUB",
-            url: githubLink,
-            subtitle: ""
-          } : null
+          videoLink
+            ? {
+                linkId: `video-${uid}`,
+                title: "시연 영상",
+                type: "VIDEO",
+                url: videoLink,
+                subtitle: ""
+              }
+            : null,
+          githubLink
+            ? {
+                linkId: `github-${uid}`,
+                title: "GitHub 저장소",
+                type: "GITHUB",
+                url: githubLink,
+                subtitle: ""
+              }
+            : null
         ].filter(Boolean),
         thumbnail,
         sourceUrl: url
       };
-      
-      return data;
     };
 
     const projectsInfo = await getAllProjectsFromList();
