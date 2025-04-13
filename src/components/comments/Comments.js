@@ -31,6 +31,19 @@ const Comments = ({ postId, collectionName, postAuthorId }) => {
     );
   }
 
+  if (collectionName === 'softcon_projects') {
+    return (
+      <Typography 
+        color="text.secondary" 
+        textAlign="center" 
+        sx={{ py: 4 }}
+      >
+        댓글이 허용되지 않은 게시물입니다.
+      </Typography>
+    );
+  }
+
+
   if (error) {
     return (
       <Alert severity="error" sx={{ mt: 2 }}>
