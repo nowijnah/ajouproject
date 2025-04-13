@@ -4,6 +4,10 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const cors = require("cors")({ origin: true });
+const nodemailer = require("nodemailer");
+const fs = require("fs");
+const path = require("path");
+const handlebars = require("handlebars");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -28,6 +32,31 @@ const CATEGORY_NAMES = {
   'M': '자기주도연구',
   'P': '자기주도 프로젝트'
 };
+
+// SMTP 설정
+const smtpTransport = nodemailer.createTransport({
+  host: "smtp.gmail.com", // 또는 적절한 SMTP 서버
+  port: 587,
+  secure: false, // true는 465 포트, false는 다른 포트
+  auth: {
+    user: process.env.SMTP_EMAIL || "tooltime@ajou.ac.kr", 
+    pass: process.env.SMTP_PASSWORD || "dkwneo1234!!"  
+  },
+  authentication: "login",
+  enableStartTls: true,
+  tls: false,
+  tlsOptions: {
+    rejectUnauthorized: true
+  },
+  pool: false
+});
+
+// 이메일 템플릿 로드 함수
+function loadEmailTemplate(templateName) {
+  const templatePath = path.join(__dirname, 'templates', `${templateName}.html`);
+  const template = fs.readFileSync(templatePath, 'utf-8');
+  return handlebars.compile(template);
+}
 
 exports.getSoftconTerms = functions.https.onRequest((req, res) => {
   cors(req, res, () => {
@@ -451,5 +480,171 @@ if (!title || title.length < 2) {
       error: errorMessage,
       logs: logs
     };
+  }
+});
+
+// 댓글 알림 이메일 전송 함수
+exports.sendCommentNotification = functions.https.onCall(async (data, context) => {
+  try {
+    const { commentId, postId, collectionName } = data;
+    
+    if (!commentId || !postId || !collectionName) {
+      throw new Error('필수 정보가 누락되었습니다.');
+    }
+    
+    // 댓글 정보 가져오기
+    const commentRef = db.collection(`${collectionName}_comments`).doc(commentId);
+    const commentDoc = await commentRef.get();
+    
+    if (!commentDoc.exists) {
+      throw new Error('댓글을 찾을 수 없습니다.');
+    }
+    
+    const comment = commentDoc.data();
+    
+    // 게시물 정보 가져오기
+    const postRef = db.collection(collectionName).doc(postId);
+    const postDoc = await postRef.get();
+    
+    if (!postDoc.exists) {
+      throw new Error('게시물을 찾을 수 없습니다.');
+    }
+    
+    const post = postDoc.data();
+    
+    // 게시물 작성자와 댓글 작성자가 같은 경우 알림 X
+    if (post.authorId === comment.authorId) {
+      return { success: true, message: '자신의 게시물에 댓글을 작성하여 알림을 보내지 않습니다.' };
+    }
+    
+    // 게시물 작성자 정보 가져오기
+    const recipientUserRef = db.collection('users').doc(post.authorId);
+    const recipientUserDoc = await recipientUserRef.get();
+    
+    if (!recipientUserDoc.exists) {
+      throw new Error('게시물 작성자 정보를 찾을 수 없습니다.');
+    }
+    
+    const recipientUser = recipientUserDoc.data();
+    
+    // 이메일 알림 설정이 꺼져있는 경우 알림 X
+    if (recipientUser.emailNotifications === false) {
+      return { success: true, message: '이메일 알림 설정이 꺼져있습니다.' };
+    }
+    
+    // 댓글 작성자 정보 가져오기
+    const authorUserRef = db.collection('users').doc(comment.authorId);
+    const authorUserDoc = await authorUserRef.get();
+    
+    if (!authorUserDoc.exists) {
+      throw new Error('댓글 작성자 정보를 찾을 수 없습니다.');
+    }
+    
+    const authorUser = authorUserDoc.data();
+    
+    // 이메일 템플릿 로드
+    const isReply = comment.parentId !== null;
+    const templateName = isReply ? 'reply-notification' : 'comment-notification';
+    const template = loadEmailTemplate(templateName);
+    
+    // 템플릿 데이터 설정
+    const templateData = {
+      recipientName: recipientUser.displayName || '사용자',
+      authorName: authorUser.displayName || '사용자',
+      postTitle: post.title,
+      commentContent: comment.content,
+      postUrl: `https://aimajou.web.app/${collectionName}/${postId}`, // 실제 도메인으로 변경
+      unsubscribeUrl: 'https://aimajou.web.app/settings' // 실제 도메인으로 변경
+    };
+    
+    // 이메일 옵션 설정
+    const mailOptions = {
+      from: '"AIM AJOU" <noreply@aimajou.web.app>', // 실제 발신자 이메일로 변경
+      to: recipientUser.email,
+      subject: isReply ? '새 답글 알림' : '새 댓글 알림',
+      html: template(templateData)
+    };
+    
+    // 이메일 발송
+    await smtpTransport.sendMail(mailOptions);
+    
+    // Firestore에 알림 저장
+    const notificationRef = db.collection('notifications').doc();
+    await notificationRef.set({
+      userId: post.authorId,
+      authorId: comment.authorId,
+      postId,
+      commentId,
+      collectionName,
+      type: isReply ? 'REPLY' : 'COMMENT',
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('댓글 알림 전송 중 오류:', error);
+    throw new functions.https.HttpsError('internal', `알림 전송 실패: ${error.message}`);
+  }
+});
+
+// 앱 내 알림 읽음 처리 함수
+exports.markNotificationAsRead = functions.https.onCall(async (data, context) => {
+  try {
+    const { notificationId } = data;
+    
+    if (!notificationId || !context.auth) {
+      throw new Error('필수 정보가 누락되었거나 인증되지 않았습니다.');
+    }
+    
+    const notificationRef = db.collection('notifications').doc(notificationId);
+    const notificationDoc = await notificationRef.get();
+    
+    if (!notificationDoc.exists) {
+      throw new Error('알림을 찾을 수 없습니다.');
+    }
+    
+    const notification = notificationDoc.data();
+    
+    // 본인의 알림만 읽음 처리 가능
+    if (notification.userId !== context.auth.uid) {
+      throw new Error('권한이 없습니다.');
+    }
+    
+    await notificationRef.update({
+      read: true,
+      readAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('알림 읽음 처리 중 오류:', error);
+    throw new functions.https.HttpsError('internal', `알림 읽음 처리 실패: ${error.message}`);
+  }
+});
+
+// 알림 설정 업데이트 함수
+exports.updateNotificationSettings = functions.https.onCall(async (data, context) => {
+  try {
+    if (!context.auth) {
+      throw new Error('인증이 필요합니다.');
+    }
+    
+    const { emailNotifications } = data;
+    
+    if (emailNotifications === undefined) {
+      throw new Error('알림 설정이 지정되지 않았습니다.');
+    }
+    
+    const userRef = db.collection('users').doc(context.auth.uid);
+    await userRef.update({
+      emailNotifications: !!emailNotifications, // Boolean으로 변환
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('알림 설정 업데이트 중 오류:', error);
+    throw new functions.https.HttpsError('internal', `알림 설정 업데이트 실패: ${error.message}`);
   }
 });

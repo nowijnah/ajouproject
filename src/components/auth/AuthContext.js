@@ -1,3 +1,5 @@
+// src/components/auth/AuthContext.js - 수정된 부분
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   onAuthStateChanged,
@@ -29,6 +31,8 @@ export const AuthProvider = ({ children }) => {
               displayName: user.displayName,
               photoURL: user.photoURL,
               role: userData.role || "DEFAULT",
+              // admin 필드 추가 - 기본값은 false
+              admin: userData.admin || false,
               ...(userData.role === "STUDENT" || userData.role === "PROFESSOR" || userData.role === "STAFF"
                 ? { major: userData.major || "정보 없음" }
                 : {}),
@@ -106,6 +110,8 @@ export const AuthProvider = ({ children }) => {
       displayName: user.displayName,
       photoURL: user.photoURL,
       role: role,
+      // admin 필드 추가 - 기본값은 false
+      admin: false,
       createdAt: serverTimestamp(),
     };
 
@@ -130,6 +136,8 @@ export const AuthProvider = ({ children }) => {
       email: user.email,
       displayName: companyName,
       role: "DEFAULT",
+      // admin 필드 추가 - 기본값은 false
+      admin: false,
       createdAt: new Date(),
     });
 

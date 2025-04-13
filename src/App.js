@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { AuthProvider } from './components/auth/AuthContext';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { ProtectedRoute, AdminRoute } from './components/auth/ProtectedRoute';
 import SettingsPage from './pages/SettingsPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 // import SoftconCrawler from './components/SoftconCrawler';
@@ -116,26 +116,26 @@ export default function App() {
                 <Route path="/companies/:postId" element={<CompanyView />} />
                 <Route path="/softcon" element={<SoftconProjectsPage />} />
 
-                {/* Admin Routes */}
+                {/* Admin Routes - AdminRoute 컴포넌트로 보호 */}
                 <Route path="/admin" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminPage />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
                 <Route path="/admin/notices" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminNotices />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
                 <Route path="/admin/users" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminUsers />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
                 <Route path="/admin/softcon" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminSoftcon />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
 
                 {/* Notice Routes */}
