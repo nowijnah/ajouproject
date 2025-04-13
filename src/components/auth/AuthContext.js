@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
               displayName: user.displayName,
               photoURL: user.photoURL,
               role: userData.role || "DEFAULT",
-              ...(userData.role === "STUDENT" || userData.role === "PROFESSOR"
+              ...(userData.role === "STUDENT" || userData.role === "PROFESSOR" || userData.role === "STAFF"
                 ? { major: userData.major || "정보 없음" }
                 : {}),
               ...userData,
@@ -89,6 +89,8 @@ export const AuthProvider = ({ children }) => {
     
           if (university.jobDescription && university.jobDescription.includes("교원")) {
             role = "PROFESSOR"; // 교수이면 역할 변경
+          } else if (university.jobDescription && university.jobDescription.includes("직원")) {
+            role = "STAFF"; // 직원이면 역할 변경
           }
         } else {
           console.warn("Google People API에서 학과 정보를 찾을 수 없음.");
@@ -109,6 +111,8 @@ export const AuthProvider = ({ children }) => {
 
     if (role === "STUDENT" || role === "PROFESSOR") {
       userData.major = major || "정보 없음";
+    } else if (role === "STAFF") {
+      userData.department = major || "정보 없음"; 
     }
 
     await setDoc(doc(db, "users", user.uid), userData);
