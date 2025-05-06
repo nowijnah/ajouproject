@@ -98,7 +98,7 @@ function CloneToPortfolioButton({ postData, postId }) {
     }
 
     if (!isTeamMember) {
-      setErrorMessage('이 프로젝트의 팀원만 복제할 수 있습니다.');
+      setErrorMessage('이 프로젝트의 팀원만 가져갈 수 있습니다.');
       return;
     }
 
@@ -115,8 +115,8 @@ function CloneToPortfolioButton({ postData, postId }) {
       const sourceData = sourceDocSnap.data();
 
       const portfolioData = {
-        title: `[복제] ${sourceData.title || '소프트콘 프로젝트'}`,
-        subtitle: sourceData.subtitle || '소프트콘 프로젝트 복제본',
+        title: `[softcon] ${sourceData.title || '소프트콘 프로젝트'}`,
+        subtitle: sourceData.subtitle || '소프트콘 프로젝트입니다.',
         content: sourceData.content || '',
         
         files: sourceData.files || [],
@@ -158,7 +158,7 @@ function CloneToPortfolioButton({ postData, postId }) {
 
   return (
     <>
-      <Tooltip title="내 포트폴리오로 복제하기">
+      <Tooltip title="내 포트폴리오로 가져오기">
         <Button
           variant="outlined"
           size="small"
@@ -173,7 +173,7 @@ function CloneToPortfolioButton({ postData, postId }) {
             }
           }}
         >
-          복제하기
+          가져오기
         </Button>
       </Tooltip>
 
@@ -184,7 +184,7 @@ function CloneToPortfolioButton({ postData, postId }) {
         maxWidth="sm"
       >
         <DialogTitle>
-          소프트콘 프로젝트 복제
+          소프트콘 프로젝트 가져오기
         </DialogTitle>
         
         <DialogContent>
@@ -197,7 +197,7 @@ function CloneToPortfolioButton({ postData, postId }) {
           {isTeamMember ? (
             <>
               <Typography variant="body1" gutterBottom>
-                이 소프트콘 프로젝트를 내 포트폴리오로 복제하시겠습니까?
+                이 소프트콘 프로젝트를 내 포트폴리오로 가져오시겠습니까?
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 복제하면 프로젝트의 모든 내용(텍스트, 이미지, 링크 등)이 내 포트폴리오로 복사됩니다.
@@ -232,7 +232,7 @@ function CloneToPortfolioButton({ postData, postId }) {
               }
             }}
           >
-            {cloning ? '복제 중...' : '복제하기'}
+            {cloning ? '가져오는 중...' : '가져오기'}
           </Button>
         </DialogActions>
       </Dialog>
