@@ -1,11 +1,10 @@
-// src/components/auth/AuthContext.js - 수정된 부분
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   onAuthStateChanged,
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
+
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "firebase/auth";
@@ -112,6 +111,7 @@ export const AuthProvider = ({ children }) => {
       photoURL: user.photoURL,
       role: role,
       // admin 필드 추가 - 기본값은 false
+      admin: false,
       createdAt: serverTimestamp(),
     };
 
@@ -136,7 +136,6 @@ export const AuthProvider = ({ children }) => {
       email: user.email,
       displayName: companyName,
       role: "DEFAULT",
-      // admin 필드 추가 - 기본값은 false
       admin: false,
       createdAt: new Date(),
     });
