@@ -4,6 +4,12 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
+<<<<<<< HEAD
+=======
+
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
+>>>>>>> 78a145f433d382d0c332e6c161d7805df43bc88f
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase";
@@ -29,6 +35,10 @@ export const AuthProvider = ({ children }) => {
               displayName: user.displayName,
               photoURL: user.photoURL,
               role: userData.role || "DEFAULT",
+<<<<<<< HEAD
+=======
+              admin: userData.admin || false,
+>>>>>>> 78a145f433d382d0c332e6c161d7805df43bc88f
               ...(userData.role === "STUDENT" || userData.role === "PROFESSOR" || userData.role === "STAFF"
                 ? { major: userData.major || "정보 없음" }
                 : {}),
@@ -106,6 +116,11 @@ export const AuthProvider = ({ children }) => {
       displayName: user.displayName,
       photoURL: user.photoURL,
       role: role,
+<<<<<<< HEAD
+=======
+      // admin 필드 추가 - 기본값은 false
+      admin: false,
+>>>>>>> 78a145f433d382d0c332e6c161d7805df43bc88f
       createdAt: serverTimestamp(),
     };
 
@@ -122,7 +137,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signUpWithEmail = async (email, password, companyName) => {
+<<<<<<< HEAD
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+=======
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+>>>>>>> 78a145f433d382d0c332e6c161d7805df43bc88f
     const user = userCredential.user;
 
     await setDoc(doc(db, "users", user.uid), {
@@ -130,6 +149,10 @@ export const AuthProvider = ({ children }) => {
       email: user.email,
       displayName: companyName,
       role: "DEFAULT",
+<<<<<<< HEAD
+=======
+      admin: false,
+>>>>>>> 78a145f433d382d0c332e6c161d7805df43bc88f
       createdAt: new Date(),
     });
 
@@ -137,7 +160,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginWithEmail = async (email, password) => {
+<<<<<<< HEAD
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
+=======
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+>>>>>>> 78a145f433d382d0c332e6c161d7805df43bc88f
     return userCredential.user;
   };
 
