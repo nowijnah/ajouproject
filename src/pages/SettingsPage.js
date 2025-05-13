@@ -1,13 +1,11 @@
 // pages/SettingsPage.js
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Container,
-  Tabs,
-  Tab,
-  Paper
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Paper from '@mui/material/Paper';
 import { useAuth } from '../components/auth/AuthContext';
 import NotificationSettings from '../components/settings/NotificationSettings';
 import AnimatedLoading from '../components/common/AnimatedLoading';

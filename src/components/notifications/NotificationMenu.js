@@ -1,18 +1,16 @@
 // components/notifications/NotificationMenu.js
 import React, { useState, useEffect } from 'react';
-import {
-  Badge,
-  IconButton,
-  Menu,
-  MenuItem,
-  Typography,
-  Box,
-  Divider,
-  CircularProgress,
-  ListItemIcon,
-  ListItemText,
-  Button
-} from '@mui/material';
+import Badge from '@mui/material/Badge';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
+import CircularProgress from '@mui/material/CircularProgress';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Button from '@mui/material/Button';
 import {
   Notifications as NotificationsIcon,
   NotificationsNone as NotificationsNoneIcon,
