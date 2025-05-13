@@ -6,6 +6,8 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase";
@@ -31,7 +33,6 @@ export const AuthProvider = ({ children }) => {
               displayName: user.displayName,
               photoURL: user.photoURL,
               role: userData.role || "DEFAULT",
-              // admin 필드 추가 - 기본값은 false
               admin: userData.admin || false,
               ...(userData.role === "STUDENT" || userData.role === "PROFESSOR" || userData.role === "STAFF"
                 ? { major: userData.major || "정보 없음" }
@@ -111,7 +112,6 @@ export const AuthProvider = ({ children }) => {
       photoURL: user.photoURL,
       role: role,
       // admin 필드 추가 - 기본값은 false
-      admin: false,
       createdAt: serverTimestamp(),
     };
 
@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signUpWithEmail = async (email, password, companyName) => {
-    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
     await setDoc(doc(db, "users", user.uid), {
@@ -145,7 +145,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginWithEmail = async (email, password) => {
-    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   };
 
