@@ -1,3 +1,4 @@
+// src/components/auth/SignUp.js - admin 필드 추가
 import React, { useState } from "react";
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
@@ -35,6 +36,8 @@ export const SignUp = () => {
 
     try {
       setLoading(true);
+      // 기업 회원가입 시 admin 필드는 false로 설정됨
+      // 이 필드는 AuthContext에서 이미 기본값으로 설정됨
       await signUpWithEmail(email, password, companyName);
       navigate("/");
     } catch (error) {

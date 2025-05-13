@@ -1,3 +1,5 @@
+// src/components/comments/Comment.js 수정
+
 import React, { useState } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -10,12 +12,18 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
 import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogActions from '@mui/material/DialogActions';
 
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import LockIcon from '@mui/icons-material/Lock';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import useReplies from '../../hooks/useReplies';
 
 const roleConfig = {
@@ -46,6 +54,12 @@ const Comment = ({
   const [showReplies, setShowReplies] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const [replyContent, setReplyContent] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // 관리자 여부 확인
+  const isAdmin = currentUser?.role === 'ADMIN';
+  // 댓글 작성자 또는 관리자인지 확인 (둘 중 하나라도 true면 삭제 가능)
+  const canDelete = isEditable || isAdmin;
 
   const {
     replyList,
@@ -132,6 +146,17 @@ const Comment = ({
     }
   };
 
+  // 삭제 확인 다이얼로그 열기
+  const handleOpenDeleteDialog = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  // 삭제 처리
+  const handleConfirmDelete = () => {
+    onDelete();
+    setDeleteDialogOpen(false);
+  };
+
   return (
     <Card sx={{ 
       mb: 1.5, 
@@ -178,14 +203,35 @@ const Comment = ({
                 '날짜 없음'}
             </Typography>
           </Box>
-          {isEditable && !isEditing && (
+          {!isEditing && canDelete && (
             <Box>
-              <IconButton size="small" onClick={handleEdit}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={onDelete}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
+              {isEditable && (
+                <IconButton size="small" onClick={handleEdit}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              )}
+              <Tooltip title={isAdmin && !isEditable ? "관리자 권한으로 삭제" : "삭제"}>
+                <IconButton size="small" onClick={handleOpenDeleteDialog}>
+                  {isAdmin && !isEditable ? (
+                    <Box sx={{ position: 'relative' }}>
+                      <DeleteIcon fontSize="small" />
+                      <AdminPanelSettingsIcon 
+                        sx={{ 
+                          position: 'absolute', 
+                          bottom: -8, 
+                          right: -8, 
+                          fontSize: 12, 
+                          color: '#d32f2f',
+                          backgroundColor: 'white',
+                          borderRadius: '50%'
+                        }} 
+                      />
+                    </Box>
+                  ) : (
+                    <DeleteIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
             </Box>
           )}
           {isEditing && (
@@ -337,6 +383,43 @@ const Comment = ({
           </Box>
         )}
       </CardContent>
+
+      {/* 삭제 확인 다이얼로그 */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>
+          {isAdmin && !isEditable ? "관리자 권한으로 삭제" : "댓글 삭제"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {isAdmin && !isEditable ? (
+              <>
+                <Typography variant="body1" gutterBottom>
+                  관리자 권한으로 이 댓글을 삭제하시겠습니까?
+                </Typography>
+                <Typography color="error" variant="body2">
+                  관리자 권한으로 삭제된 댓글은 복구할 수 없습니다.
+                </Typography>
+              </>
+            ) : (
+              "이 댓글을 삭제하시겠습니까? 삭제된 댓글은 복구할 수 없습니다."
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>
+            취소
+          </Button>
+          <Button 
+            onClick={handleConfirmDelete}
+            color="error"
+          >
+            삭제
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };

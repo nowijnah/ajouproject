@@ -97,13 +97,6 @@ const commentsHook = (postId, collectionName) => {
     fetchComments();
   }, [postId, collectionName]);
 
-  const updateCommentCount = async (postId, increment = true) => {
-    const postRef = doc(db, collectionName, postId);
-    await updateDoc(postRef, {
-      commentCount: increment(increment ? 1 : -1)
-    });
-  };
-  
   // 댓글 작성
   const addComment = async (content, isPrivate = false) => {
     if (!currentUser) throw new Error("로그인이 필요합니다.");
@@ -143,6 +136,27 @@ const commentsHook = (postId, collectionName) => {
         updatedAt: new Date()
       }, ...prev]);
 
+      // 알림 전송 - 직접 HTTP API 호출로 변경
+      try {
+        // Firebase Functions 직접 참조
+        const sendCommentNotification = httpsCallable(functions, 'sendCommentNotification');
+        
+        // 단순한 객체로 데이터 구성
+        // 문자열로 명시적 전달하여 타입 문제 방지
+        const notificationData = {
+          commentId: String(newCommentRef.id),
+          postId: String(postId),
+          collectionName: String(collectionName)
+        };
+        
+        // 함수 호출
+        const result = await sendCommentNotification(notificationData);
+        console.log("알림 전송 성공:", result.data);
+      } catch (error) {
+        console.error('알림 전송 오류:', error);
+      }
+
+      return newCommentRef.id;
     } catch (err) {
       console.error("Error adding comment:", err);
       setError(err);
@@ -179,18 +193,27 @@ const commentsHook = (postId, collectionName) => {
       
       await batch.commit();
 
-      // 이메일 알림 트리거 (Firebase Functions)
+      // 알림 전송 - 직접 HTTP API 호출로 변경
       try {
-        // 함수가 배포되었다면 주석 해제
-        // const sendCommentNotification = httpsCallable(functions, 'sendCommentNotification');
-        // await sendCommentNotification({
-        //   commentId: newReplyRef.id,
-        //   postId,
-        //   collectionName
-        // });
+        // Firebase Functions 직접 참조
+        const sendCommentNotification = httpsCallable(functions, 'sendCommentNotification');
+        
+        // 단순한 객체로 데이터 구성
+        // 문자열로 명시적 전달하여 타입 문제 방지
+        const notificationData = {
+          commentId: String(newReplyRef.id),
+          postId: String(postId),
+          collectionName: String(collectionName)
+        };
+        
+        // 함수 호출
+        const result = await sendCommentNotification(notificationData);
+        console.log("답글 알림 전송 성공:", result.data);
       } catch (error) {
-        console.error('Error triggering notification:', error);
+        console.error('답글 알림 전송 오류:', error);
       }
+      
+      return newReplyRef.id;
     } catch (err) {
       console.error("Error adding reply:", err);
       setError(err);
