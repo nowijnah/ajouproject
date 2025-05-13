@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
@@ -54,7 +54,9 @@ const Comment = ({
     hasMoreReplies,
     error,
     loadInitialReplies,
-    loadMoreReplies
+    loadMoreReplies,
+    editReply,
+    deleteReply
   } = useReplies(id, postId, collectionName);
 
   // 권한 체크
@@ -101,9 +103,19 @@ const Comment = ({
 
   const handleSave = () => {
     if (editedContent.trim()) {
-      onEdit(editedContent);
+      if (isReply) {
+        // 답글 편집 처리
+        onEdit(editedContent);
+      } else {
+        // 댓글 편집 처리
+        onEdit(editedContent);
+      }
       setIsEditing(false);
     }
+  };
+
+  const handleDelete = () => {
+    onDelete(id);
   };
 
   const handleShowReplies = async () => {
@@ -183,7 +195,7 @@ const Comment = ({
               <IconButton size="small" onClick={handleEdit}>
                 <EditIcon fontSize="small" />
               </IconButton>
-              <IconButton size="small" onClick={onDelete}>
+              <IconButton size="small" onClick={handleDelete}>
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Box>
@@ -277,12 +289,14 @@ const Comment = ({
                     {...reply}
                     timestamp={reply.createdAt}
                     isReply={true}
+                    isEditable={reply.author?.id === currentUser?.uid}
                     currentUser={currentUser}
                     postAuthorId={postAuthorId}
                     postId={postId}
                     collectionName={collectionName}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
+                    onEdit={(newContent) => editReply(reply.id, newContent)}
+                    onDelete={() => deleteReply(reply.id)}
+                    onReply={onReply}
                   />
                 ))}
                 {hasMoreReplies && (

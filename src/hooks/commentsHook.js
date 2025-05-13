@@ -198,30 +198,6 @@ const commentsHook = (postId, collectionName) => {
     }
   };
 
-  // 댓글 수정
-  const editComment = async (commentId, newContent) => {
-    if (!currentUser) throw new Error("로그인이 필요합니다.");
-    
-    try {
-      const commentRef = doc(db, `${collectionName}_comments`, commentId);
-      await updateDoc(commentRef, {
-        content: newContent,
-        updatedAt: serverTimestamp()
-      });
-
-      setComments(prev => prev.map(comment => 
-        comment.id === commentId 
-          ? { ...comment, content: newContent, updatedAt: new Date() }
-          : comment
-      ));
-    } catch (err) {
-      console.error("Error editing comment:", err);
-      setError(err);
-      throw err;
-    }
-  };
-
-  // 댓글 삭제
   const deleteComment = async (commentId) => {
     if (!currentUser) throw new Error("로그인이 필요합니다.");
     
@@ -229,31 +205,95 @@ const commentsHook = (postId, collectionName) => {
       const commentsRef = collection(db, `${collectionName}_comments`);
       const batch = writeBatch(db);
       
-      const repliesQuery = query(
-        commentsRef,
-        where("parentId", "==", commentId)
-      );
-      const repliesSnapshot = await getDocs(repliesQuery);
+      // 댓글 정보 먼저 가져오기
+      const commentRef = doc(db, `${collectionName}_comments`, commentId);
+      const commentSnap = await getDoc(commentRef);
       
-      const replyCount = repliesSnapshot.docs.length;
-
-      repliesSnapshot.docs.forEach(replyDoc => {
-        batch.delete(doc(db, `${collectionName}_comments`, replyDoc.id));
-      });
+      if (!commentSnap.exists()) {
+        throw new Error("댓글을 찾을 수 없습니다.");
+      }
       
-      // 원본 댓글 삭제
-      batch.delete(doc(db, `${collectionName}_comments`, commentId));
-
-      const postRef = doc(db, collectionName, postId);
-      batch.update(postRef, {
-        commentCount: increment(-(1 + replyCount))
-      });
+      const commentData = commentSnap.data();
+      const isReply = commentData.parentId !== null;
       
-      await batch.commit();
-
-      setComments(prev => prev.filter(comment => comment.id !== commentId));
+      if (isReply) {
+        // 답글인 경우 해당 답글만 삭제
+        batch.delete(commentRef);
+        
+        // 게시물 댓글 카운트 감소
+        const postRef = doc(db, collectionName, postId);
+        batch.update(postRef, {
+          commentCount: increment(-1)
+        });
+        
+        await batch.commit();
+        
+        // 상태 업데이트는 useReplies에서 처리되므로 여기서는 생략
+      } else {
+        // 부모 댓글인 경우 기존 로직대로 처리
+        const repliesQuery = query(
+          commentsRef,
+          where("parentId", "==", commentId)
+        );
+        const repliesSnapshot = await getDocs(repliesQuery);
+        
+        const replyCount = repliesSnapshot.docs.length;
+  
+        repliesSnapshot.docs.forEach(replyDoc => {
+          batch.delete(doc(db, `${collectionName}_comments`, replyDoc.id));
+        });
+        
+        // 원본 댓글 삭제
+        batch.delete(commentRef);
+  
+        const postRef = doc(db, collectionName, postId);
+        batch.update(postRef, {
+          commentCount: increment(-(1 + replyCount))
+        });
+        
+        await batch.commit();
+  
+        setComments(prev => prev.filter(comment => comment.id !== commentId));
+      }
     } catch (err) {
       console.error("Error deleting comment:", err);
+      setError(err);
+      throw err;
+    }
+  };
+  
+  // 수정된 답글 편집 함수
+  const editComment = async (commentId, newContent) => {
+    if (!currentUser) throw new Error("로그인이 필요합니다.");
+    
+    try {
+      const commentRef = doc(db, `${collectionName}_comments`, commentId);
+      const commentSnap = await getDoc(commentRef);
+      
+      if (!commentSnap.exists()) {
+        throw new Error("댓글을 찾을 수 없습니다.");
+      }
+      
+      await updateDoc(commentRef, {
+        content: newContent,
+        updatedAt: serverTimestamp()
+      });
+  
+      // UI 상태 업데이트
+      const commentData = commentSnap.data();
+      const isReply = commentData.parentId !== null;
+      
+      if (!isReply) {
+        // 일반 댓글인 경우 기존 상태 업데이트 로직 사용
+        setComments(prev => prev.map(comment => 
+          comment.id === commentId 
+            ? { ...comment, content: newContent, updatedAt: new Date() }
+            : comment
+        ));
+      }
+      // 답글인 경우는 useReplies에서 상태를 관리하므로 여기서는 별도 처리가 필요하지 않음
+    } catch (err) {
+      console.error("Error editing comment:", err);
       setError(err);
       throw err;
     }

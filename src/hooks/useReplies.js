@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   collection, 
   query, 
@@ -9,7 +9,11 @@ import {
   getDocs,
   doc,
   getDoc,
-  getCountFromServer
+  updateDoc,
+  deleteDoc,
+  getCountFromServer,
+  serverTimestamp,
+  increment
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -65,6 +69,48 @@ const useReplies = (commentId, postId, collectionName) => {
       return null;
     }
   };
+
+  // 답글 편집 함수 추가
+  const editReply = useCallback(async (replyId, newContent) => {
+    try {
+      const replyRef = doc(db, `${collectionName}_comments`, replyId);
+      await updateDoc(replyRef, {
+        content: newContent,
+        updatedAt: serverTimestamp()
+      });
+
+      // UI 상태 업데이트
+      setReplyList(prev => prev.map(reply => 
+        reply.id === replyId 
+          ? { ...reply, content: newContent, updatedAt: new Date() }
+          : reply
+      ));
+    } catch (err) {
+      console.error("Error editing reply:", err);
+      setError(err);
+    }
+  }, [collectionName]);
+
+  // 답글 삭제 함수 추가
+  const deleteReply = useCallback(async (replyId) => {
+    try {
+      const replyRef = doc(db, `${collectionName}_comments`, replyId);
+      await deleteDoc(replyRef);
+
+      // 게시물의 댓글 수 감소
+      const postRef = doc(db, collectionName, postId);
+      await updateDoc(postRef, {
+        commentCount: increment(-1)
+      });
+
+      // UI 상태 업데이트
+      setReplyList(prev => prev.filter(reply => reply.id !== replyId));
+      setReplyCount(prev => prev - 1);
+    } catch (err) {
+      console.error("Error deleting reply:", err);
+      setError(err);
+    }
+  }, [collectionName, postId]);
 
   const loadInitialReplies = async () => {
     if (!commentId || !postId || !collectionName) return;
@@ -207,7 +253,9 @@ const useReplies = (commentId, postId, collectionName) => {
     hasMoreReplies,
     error,
     loadInitialReplies,
-    loadMoreReplies
+    loadMoreReplies,
+    editReply,      // 새로 추가된 함수
+    deleteReply     // 새로 추가된 함수
   };
 };
 
