@@ -18,7 +18,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
 import Popover from '@mui/material/Popover';
-
+import Chip from '@mui/material/Chip';
+import LockIcon from '@mui/icons-material/Lock';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
@@ -71,15 +72,9 @@ const PostHeader = ({
     setShowLikesDialog(false);
   };
 
-  // 좋아요한 유저 목록 가져오기
   const fetchLikedUsers = async () => {
-    // 이 함수는 컴포넌트를 사용하는 상위 컴포넌트에서 props로 받거나,
-    // 여기서 직접 구현할 수 있습니다. 우선 상위 컴포넌트에서 받아와서 처리하도록 수정
     try {
       setLoadingLikes(true);
-      // 여기서 좋아요한 유저 목록을 가져오는 로직 구현
-      // ...
-      
       setLoadingLikes(false);
     } catch (error) {
       console.error('Error fetching liked users:', error);
@@ -87,12 +82,10 @@ const PostHeader = ({
     }
   };
 
-  // 수정 페이지로 이동
   const handleEdit = () => {
     navigate(`/${collectionName}/${postId}/edit`);
   };
 
-  // 삭제 확인 다이얼로그 열기
   const handleDeleteClick = () => {
     setDeleteDialogOpen(true);
   };
@@ -124,6 +117,15 @@ const PostHeader = ({
 
   return (
     <>
+      {postData.isPublic === false && (
+        <Chip 
+          label="비공개" 
+          color="default" 
+          size="small" 
+          icon={<LockIcon />} 
+          sx={{ ml: 1 }}
+        />
+      )}
       {/* 작성자 정보 및 액션 버튼 */}
       <Box sx={{ 
         p: 3, 
@@ -160,7 +162,9 @@ const PostHeader = ({
                 authorData?.role === 'PROFESSOR' ? '교수' : '관리자'}
             </Typography>
           </Box>
+
         </Box>
+        
 
         {!isPreview && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

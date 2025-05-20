@@ -21,12 +21,11 @@ export default function PortfolioPage() {
         return {
           id: doc.id,
           ...docData,
-          // 썸네일 필드명 명시적 지정 - 이 부분이 중요!
           image: docData.thumbnail || docData.image || '',
           content: docData.content || '',
         };
       });
-      return data;
+      return data.filter(post => post.isPublic !== false);
     } catch (error) {
       console.error(`Firestore에서 ${collectionName} 데이터 가져오기 오류:`, error);
       return [];

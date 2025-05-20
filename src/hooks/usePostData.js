@@ -52,6 +52,12 @@ const usePostData = (postId, collectionName, previewData = null, previewAuthor =
         if (postDoc.exists()) {
           const data = postDoc.data();
           setPostData({ id: postDoc.id, ...data });
+
+          if (data.isPublic === false && currentUser?.uid !== data.authorId) {
+            setError('이 게시물은 작성자만 볼 수 있는 비공개 게시물입니다.');
+            setLoading(false);
+            return;
+          }
           
           // 작성자 정보 가져오기
           if (data.authorId) {
