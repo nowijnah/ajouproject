@@ -39,8 +39,8 @@ const smtpTransport = nodemailer.createTransport({
   port: 587,
   secure: false, // true는 465 포트, false는 다른 포트
   auth: {
-    user: process.env.SMTP_EMAIL || "tooltime@ajou.ac.kr", 
-    pass: process.env.SMTP_PASSWORD || "dkwneo1234!!"  
+    user: process.env.SMTP_EMAIL, 
+    pass: process.env.SMTP_PASSWORD
   },
   authentication: "login",
   enableStartTls: true,
@@ -469,7 +469,7 @@ if (!title || title.length < 2) {
       processed: projectsToProcess.length,
       logs: logs 
     };
-    
+
   } catch (error) {
     const errorMessage = error.message || "알 수 없는 오류";
     addLog(`크롤링 중 오류 발생: ${errorMessage}`);

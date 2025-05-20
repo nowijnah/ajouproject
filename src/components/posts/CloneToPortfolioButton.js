@@ -98,7 +98,7 @@ function CloneToPortfolioButton({ postData, postId }) {
     }
 
     if (!isTeamMember) {
-      setErrorMessage('이 프로젝트의 팀원만 복제할 수 있습니다.');
+      setErrorMessage('이 프로젝트의 팀원만 가져갈 수 있습니다.');
       return;
     }
 
@@ -115,8 +115,8 @@ function CloneToPortfolioButton({ postData, postId }) {
       const sourceData = sourceDocSnap.data();
 
       const portfolioData = {
-        title: `[복제] ${sourceData.title || '소프트콘 프로젝트'}`,
-        subtitle: sourceData.subtitle || '소프트콘 프로젝트 복제본',
+        title: `[softcon] ${sourceData.title || '소프트콘 프로젝트'}`,
+        subtitle: sourceData.subtitle || '소프트콘 프로젝트입니다.',
         content: sourceData.content || '',
         
         files: sourceData.files || [],
@@ -146,11 +146,11 @@ function CloneToPortfolioButton({ postData, postId }) {
       setCloning(false);
       setDialogOpen(false);
       
-      alert('소프트콘 프로젝트가 내 포트폴리오로 복제되었습니다.');
+      alert('소프트콘 프로젝트를 성공적으로 가져왔습니다.');
       navigate(`/portfolios/${newDocRef.id}`);
       
     } catch (error) {
-      console.error('프로젝트 복제 중 오류 발생:', error);
+      console.error('프로젝트 가져오는 중 오류 발생:', error);
       setErrorMessage(`복제 중 오류가 발생했습니다: ${error.message}`);
       setCloning(false);
     }
@@ -158,7 +158,7 @@ function CloneToPortfolioButton({ postData, postId }) {
 
   return (
     <>
-      <Tooltip title="내 포트폴리오로 복제하기">
+      <Tooltip title="내 포트폴리오로 가져오기">
         <Button
           variant="outlined"
           size="small"
@@ -173,7 +173,7 @@ function CloneToPortfolioButton({ postData, postId }) {
             }
           }}
         >
-          복제하기
+          가져오기
         </Button>
       </Tooltip>
 
@@ -184,7 +184,7 @@ function CloneToPortfolioButton({ postData, postId }) {
         maxWidth="sm"
       >
         <DialogTitle>
-          소프트콘 프로젝트 복제
+          소프트콘 프로젝트 가져오기
         </DialogTitle>
         
         <DialogContent>
@@ -197,16 +197,16 @@ function CloneToPortfolioButton({ postData, postId }) {
           {isTeamMember ? (
             <>
               <Typography variant="body1" gutterBottom>
-                이 소프트콘 프로젝트를 내 포트폴리오로 복제하시겠습니까?
+                이 소프트콘 프로젝트를 내 포트폴리오로 가져오시겠습니까?
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                복제하면 프로젝트의 모든 내용(텍스트, 이미지, 링크 등)이 내 포트폴리오로 복사됩니다.
-                복제 후에는 자유롭게 수정할 수 있습니다.
+                가져오면 프로젝트의 모든 내용(텍스트, 이미지, 링크 등)이 내 포트폴리오로 복사됩니다.
+                가져온 후에는 자유롭게 수정할 수 있습니다.
               </Typography>
             </>
           ) : (
             <Typography variant="body1">
-              이 프로젝트는 팀원만 복제할 수 있습니다. 프로젝트 팀원으로 등록되어 있지 않은 것 같습니다.
+              이 프로젝트는 팀원만 가져올 수 있습니다. 프로젝트 팀원으로 등록되어 있지 않은 것 같습니다.
               만약 팀원이라면 이메일 주소를 확인해 주세요.
             </Typography>
           )}
@@ -232,7 +232,7 @@ function CloneToPortfolioButton({ postData, postId }) {
               }
             }}
           >
-            {cloning ? '복제 중...' : '복제하기'}
+            {cloning ? '가져오는 중...' : '가져오기'}
           </Button>
         </DialogActions>
       </Dialog>
