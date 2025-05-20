@@ -41,7 +41,7 @@ function CloneToPortfolioButton({ postData, postId }) {
     setIsTeamMember(isTeamMember);
     
     if (!isTeamMember) {
-      setErrorMessage('이 프로젝트의 팀원만 복제할 수 있습니다.');
+      setErrorMessage('이 프로젝트의 팀원만 가져갈 수 있습니다.');
     } else {
       setErrorMessage('');
     }
@@ -151,7 +151,7 @@ function CloneToPortfolioButton({ postData, postId }) {
       
     } catch (error) {
       console.error('프로젝트 가져오는 중 오류 발생:', error);
-      setErrorMessage(`복제 중 오류가 발생했습니다: ${error.message}`);
+      setErrorMessage(`프로젝트를 가져오는 중 오류가 발생했습니다: ${error.message}`);
       setCloning(false);
     }
   };

@@ -39,7 +39,7 @@ const smtpTransport = nodemailer.createTransport({
   port: 587,
   secure: false, // true는 465 포트, false는 다른 포트
   auth: {
-    user: process.env.SMTP_EMAIL, 
+    user: process.env.SMTP_USER_NAME,
     pass: process.env.SMTP_PASSWORD
   },
   authentication: "login",
