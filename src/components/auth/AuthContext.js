@@ -1,16 +1,13 @@
-// src/components/auth/AuthContext.js - 수정된 부분
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   onAuthStateChanged,
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
-
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import AnimatedLoading from "../common/AnimatedLoading";
 
@@ -20,6 +17,18 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 사용자 활동시간 업데이트 함수
+  const updateLastActivity = async (userId) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, {
+        lastActivity: serverTimestamp()
+      });
+    } catch (error) {
+      console.error("Error updating last activity:", error);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -28,19 +37,32 @@ export const AuthProvider = ({ children }) => {
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
+            
+            // admin 필드와 currentRole을 기반으로 현재 역할 결정
+            const isAdmin = userData.admin === true;
+            const currentRole = userData.currentRole || userData.role || "STUDENT";
+            
             setCurrentUser({
               uid: user.uid,
               email: user.email,
               displayName: user.displayName,
               photoURL: user.photoURL,
-              role: userData.role || "DEFAULT",
-              // admin 필드 추가 - 기본값은 false
+              // 현재 역할 (관리자 모드 전환 시 변경됨)
+              role: currentRole,
+              // admin 필드 값 보존
               admin: userData.admin || false,
+              // 원래 역할 저장 (최초 가입 시의 역할)
+              originalRole: userData.originalRole || userData.role || "STUDENT",
+              // 현재 역할 저장
+              currentRole: currentRole,
               ...(userData.role === "STUDENT" || userData.role === "PROFESSOR" || userData.role === "STAFF"
                 ? { major: userData.major || "정보 없음" }
                 : {}),
               ...userData,
             });
+
+            // 로그인 시 활동시간 업데이트
+            await updateLastActivity(user.uid);
           } else {
             setCurrentUser(user);
           }
@@ -61,7 +83,7 @@ export const AuthProvider = ({ children }) => {
     const provider = new GoogleAuthProvider();
     provider.addScope("https://www.googleapis.com/auth/userinfo.profile");
     provider.addScope("https://www.googleapis.com/auth/userinfo.email");
-    provider.addScope("https://www.googleapis.com/auth/user.emails.read"); // ✅ 변경된 올바른 범위
+    provider.addScope("https://www.googleapis.com/auth/user.emails.read");
     provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
 
     const result = await signInWithPopup(auth, provider);
@@ -85,7 +107,7 @@ export const AuthProvider = ({ children }) => {
           }
         );
         const data = await response.json();
-        console.log("Google People API 응답 데이터:", data); // 응답 확인
+        console.log("Google People API 응답 데이터:", data);
     
         const organizations = data.organizations || [];
         const university = organizations.find((org) => org.metadata?.primary);
@@ -95,9 +117,9 @@ export const AuthProvider = ({ children }) => {
           console.log("학과 정보:", major);
     
           if (university.jobDescription && university.jobDescription.includes("교원")) {
-            role = "PROFESSOR"; // 교수이면 역할 변경
+            role = "PROFESSOR";
           } else if (university.jobDescription && university.jobDescription.includes("직원")) {
-            role = "STAFF"; // 직원이면 역할 변경
+            role = "STAFF";
           }
         } else {
           console.warn("Google People API에서 학과 정보를 찾을 수 없음.");
@@ -113,9 +135,12 @@ export const AuthProvider = ({ children }) => {
       displayName: user.displayName,
       photoURL: user.photoURL,
       role: role,
-      // admin 필드 추가 - 기본값은 false
+      // 기본적으로 admin은 false (Firebase Console에서 수동으로 true로 변경해야 함)
       admin: false,
+      originalRole: role,
+      currentRole: role, // 현재 역할도 초기에는 원래 역할과 동일
       createdAt: serverTimestamp(),
+      lastActivity: serverTimestamp(), // 가입 시 활동시간 설정
     };
 
     if (role === "STUDENT" || role === "PROFESSOR") {
@@ -125,7 +150,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     await setDoc(doc(db, "users", user.uid), userData);
-    setCurrentUser(userData);
+    setCurrentUser({
+      ...userData,
+      createdAt: new Date(),
+      lastActivity: new Date()
+    });
 
     return result;
   };
@@ -138,10 +167,13 @@ export const AuthProvider = ({ children }) => {
       uid: user.uid,
       email: user.email,
       displayName: companyName,
-      role: "DEFAULT",
-      // admin 필드 추가 - 기본값은 false
+      role: "COMPANY",
+      // 기업 계정도 기본적으로 admin은 false
       admin: false,
+      originalRole: "COMPANY",
+      currentRole: "COMPANY", // 현재 역할도 설정
       createdAt: new Date(),
+      lastActivity: new Date(), // 가입 시 활동시간 설정
     });
 
     return user;
@@ -149,6 +181,10 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithEmail = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // 이메일 로그인 시에도 활동시간 업데이트
+    await updateLastActivity(userCredential.user.uid);
+    
     return userCredential.user;
   };
 
@@ -164,7 +200,9 @@ export const AuthProvider = ({ children }) => {
     signUpWithEmail, 
     loginWithEmail, 
     logout,
-    isAdmin: currentUser?.role === 'ADMIN'
+    updateLastActivity, // 활동시간 업데이트 함수 노출
+    // admin 필드만 확인 (currentRole과 상관없이)
+    isAdmin: currentUser?.admin === true
   };
   
   if (loading) {
@@ -181,7 +219,8 @@ export const checkAdminRole = async (userId) => {
     const userDoc = await getDoc(doc(db, 'users', userId));
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      return userData.role === 'ADMIN';
+      // admin 필드가 true인지 확인
+      return userData.admin === true;
     }
     return false;
   } catch (error) {

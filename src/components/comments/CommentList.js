@@ -37,6 +37,7 @@ const CommentList = ({
             author={comment.author}
             content={comment.content}
             timestamp={comment.createdAt}
+            authorRole={comment.authorRole}
             isEditable={comment.author?.id === currentUser?.uid}
             onEdit={(newContent) => onEdit(comment.id, newContent)}
             onDelete={() => onDelete(comment.id)}

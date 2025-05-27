@@ -501,7 +501,7 @@ export default function Navbar() {
                   )}
                   
                   {/* 관리자가 아닐 때는 관리자 모드로 전환 버튼 표시 (ADMIN 역할로 설정된 계정은 항상 관리자) */}
-                  {!isAdmin && (
+                  {currentUser.admin === true && !isAdmin && (
                     <Button 
                       variant="contained"
                       onClick={handleSwitchToAdmin}

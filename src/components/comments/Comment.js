@@ -47,7 +47,8 @@ const Comment = ({
   currentUser,
   postAuthorId,
   postId,
-  collectionName
+  collectionName,
+  authorRole
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
@@ -60,6 +61,8 @@ const Comment = ({
   const isAdmin = currentUser?.role === 'ADMIN';
   // 댓글 작성자 또는 관리자인지 확인 (둘 중 하나라도 true면 삭제 가능)
   const canDelete = isEditable || isAdmin;
+  const displayRole = authorRole || author?.role;
+  //console.log('Comment authorRole:', authorRole, 'author?.role:', author?.role, 'displayRole:', displayRole);
 
   const {
     replyList,
@@ -191,8 +194,8 @@ const Comment = ({
               </Typography>
               {author?.role && (
                 <Chip
-                  label={roleConfig[author.role]?.label || author.role}
-                  color={roleConfig[author.role]?.color || 'default'}
+                  label={roleConfig[displayRole]?.label || displayRole}
+                  color={roleConfig[displayRole]?.color || 'default'}
                   size="small"
                   sx={{ height: 20 }}
                 />
