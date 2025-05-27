@@ -168,7 +168,9 @@ const useReplies = (commentId, postId, collectionName) => {
               ...data,
               author,
               createdAt,
-              updatedAt
+              updatedAt,
+              // 답글 작성 시의 역할 포함
+              authorRole: data.authorRole
             };
           })
         );
@@ -218,7 +220,9 @@ const useReplies = (commentId, postId, collectionName) => {
               ...data,
               author,
               createdAt: data.createdAt?.toDate?.() || new Date(),
-              updatedAt: data.updatedAt?.toDate?.() || new Date()
+              updatedAt: data.updatedAt?.toDate?.() || new Date(),
+              // 답글 작성 시의 역할 포함
+              authorRole: data.authorRole
             };
           })
         );
@@ -254,8 +258,8 @@ const useReplies = (commentId, postId, collectionName) => {
     error,
     loadInitialReplies,
     loadMoreReplies,
-    editReply,      // 새로 추가된 함수
-    deleteReply     // 새로 추가된 함수
+    editReply,      
+    deleteReply     
   };
 };
 

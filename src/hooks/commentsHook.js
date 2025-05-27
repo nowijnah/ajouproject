@@ -24,7 +24,7 @@ const commentsHook = (postId, collectionName) => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser } = useAuth();
+  const { currentUser, updateLastActivity } = useAuth();
   const [lastDoc, setLastDoc] = useState(null);  
   const [hasMore, setHasMore] = useState(true); 
 
@@ -109,6 +109,11 @@ const commentsHook = (postId, collectionName) => {
     if (!currentUser) throw new Error("로그인이 필요합니다.");
     
     try {
+      // 활동시간 업데이트
+      if (updateLastActivity) {
+        await updateLastActivity(currentUser.uid);
+      }
+
       const batch = writeBatch(db);
       const commentsRef = collection(db, `${collectionName}_comments`);
       const newCommentRef = doc(commentsRef);
@@ -119,6 +124,8 @@ const commentsHook = (postId, collectionName) => {
         isPrivate,
         authorId: currentUser.uid,
         parentId: null,
+        // 댓글 작성 시의 역할을 저장 (나중에 역할이 바뀌어도 유지됨)
+        authorRole: currentUser.currentRole || currentUser.role,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         collectionName // 알림을 위한 컬렉션 정보 저장
@@ -155,6 +162,11 @@ const commentsHook = (postId, collectionName) => {
     if (!currentUser) throw new Error("로그인이 필요합니다.");
     
     try {
+      // 활동시간 업데이트
+      if (updateLastActivity) {
+        await updateLastActivity(currentUser.uid);
+      }
+
       const batch = writeBatch(db);
 
       const commentsRef = collection(db, `${collectionName}_comments`);
@@ -165,6 +177,8 @@ const commentsHook = (postId, collectionName) => {
         isPrivate: parentIsPrivate,
         authorId: currentUser.uid,
         parentId,
+        // 답글 작성 시의 역할을 저장
+        authorRole: currentUser.currentRole || currentUser.role,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         collectionName // 알림을 위한 컬렉션 정보 저장
@@ -202,6 +216,11 @@ const commentsHook = (postId, collectionName) => {
     if (!currentUser) throw new Error("로그인이 필요합니다.");
     
     try {
+      // 활동시간 업데이트
+      if (updateLastActivity) {
+        await updateLastActivity(currentUser.uid);
+      }
+
       const commentsRef = collection(db, `${collectionName}_comments`);
       const batch = writeBatch(db);
       
@@ -267,6 +286,11 @@ const commentsHook = (postId, collectionName) => {
     if (!currentUser) throw new Error("로그인이 필요합니다.");
     
     try {
+      // 활동시간 업데이트
+      if (updateLastActivity) {
+        await updateLastActivity(currentUser.uid);
+      }
+
       const commentRef = doc(db, `${collectionName}_comments`, commentId);
       const commentSnap = await getDoc(commentRef);
       
