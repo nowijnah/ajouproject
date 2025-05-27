@@ -44,6 +44,7 @@ yarn-error.log*
 /build
 *.bundle.js
 *.LICENSE.txt
+public/app.bundle.js
 
 # MailerSend 
 /extensions/mailersend-email.env

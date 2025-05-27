@@ -1,4 +1,5 @@
-// src/pages/admin/AdminUsers.js
+// AdminUsers.js 수정
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Container from '@mui/material/Container';
@@ -26,12 +27,15 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
 
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ArticleIcon from '@mui/icons-material/Article';
 
 import { useAuth } from '../../components/auth/AuthContext';
 import { 
@@ -44,7 +48,8 @@ import {
   where,
   startAfter,
   limit,
-  getCountFromServer
+  getCountFromServer,
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -62,11 +67,15 @@ const AdminUsers = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userRole, setUserRole] = useState('');
+  // admin 필드 관련 상태 제거
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [userToBlock, setUserToBlock] = useState(null);
   const [roleData, setRoleData] = useState({});
+  
+  // 사용자별 게시글 수를 저장하는 상태 추가
+  const [userPostCounts, setUserPostCounts] = useState({});
 
   // 관리자 권한 확인
   useEffect(() => {
@@ -91,6 +100,37 @@ const AdminUsers = () => {
     };
     
     fetchUserCount();
+  }, [currentUser]);
+
+  // 사용자별 게시글 수 가져오기
+  useEffect(() => {
+    const fetchUserPostCounts = async () => {
+      if (!currentUser || currentUser.role !== 'ADMIN') return;
+      
+      try {
+        const collections = ['portfolios', 'labs', 'companies'];
+        const postCounts = {};
+        
+        // 각 컬렉션에서 사용자별 게시글 수 계산
+        for (const collectionName of collections) {
+          const postsRef = collection(db, collectionName);
+          const postsSnapshot = await getDocs(postsRef);
+          
+          postsSnapshot.docs.forEach(doc => {
+            const authorId = doc.data().authorId;
+            if (authorId) {
+              postCounts[authorId] = (postCounts[authorId] || 0) + 1;
+            }
+          });
+        }
+        
+        setUserPostCounts(postCounts);
+      } catch (error) {
+        console.error('Error fetching user post counts:', error);
+      }
+    };
+    
+    fetchUserPostCounts();
   }, [currentUser]);
 
   // 사용자 목록 가져오기 - 수정된 역할별 로직
@@ -120,7 +160,8 @@ const AdminUsers = () => {
           const usersWithRole = roleSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            createdAt: doc.data().createdAt?.toDate?.() || new Date()
+            createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+            lastActivity: doc.data().lastActivity?.toDate?.() || null
           }));
           
           roleStats[role] = usersWithRole.length;
@@ -241,13 +282,15 @@ const AdminUsers = () => {
       const emailResults = results[0].docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || new Date()
+        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+        lastActivity: doc.data().lastActivity?.toDate?.() || null
       }));
       
       const nameResults = results[1].docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || new Date()
+        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+        lastActivity: doc.data().lastActivity?.toDate?.() || null
       }));
       
       // 역할 검색 결과 (있는 경우)
@@ -256,7 +299,8 @@ const AdminUsers = () => {
         roleResults = results[2].docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.() || new Date()
+          createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+          lastActivity: doc.data().lastActivity?.toDate?.() || null
         }));
       }
       
@@ -295,6 +339,7 @@ const AdminUsers = () => {
   const handleEditUser = (user) => {
     setSelectedUser(user);
     setUserRole(user.role || 'DEFAULT');
+    // admin 필드 관련 코드 제거
     setEditDialogOpen(true);
   };
 
@@ -304,7 +349,10 @@ const AdminUsers = () => {
     
     try {
       await updateDoc(doc(db, 'users', selectedUser.id), {
-        role: userRole
+        role: userRole,
+        // admin 필드 제거
+        // 원래 역할 저장 - 관리자 모드에서 원래 역할로 돌아갈 때 사용
+        originalRole: userRole
       });
       
       // 목록 업데이트
@@ -338,17 +386,19 @@ const AdminUsers = () => {
     
     try {
       await updateDoc(doc(db, 'users', userToBlock.id), {
-        isBlocked: newBlockedState
+        isBlocked: newBlockedState,
+        // 마지막 업데이트 시간 기록
+        lastActivity: Timestamp.now()
       });
       
       // 목록 업데이트
       if (searchResults.length > 0) {
         setSearchResults(prev => prev.map(user => 
-          user.id === userToBlock.id ? { ...user, isBlocked: newBlockedState } : user
+          user.id === userToBlock.id ? { ...user, isBlocked: newBlockedState, lastActivity: new Date() } : user
         ));
       } else {
         setUsers(prev => prev.map(user => 
-          user.id === userToBlock.id ? { ...user, isBlocked: newBlockedState } : user
+          user.id === userToBlock.id ? { ...user, isBlocked: newBlockedState, lastActivity: new Date() } : user
         ));
       }
       
@@ -374,6 +424,32 @@ const AdminUsers = () => {
       default:
         return <Chip label="일반" size="small" variant="outlined" />;
     }
+  };
+
+  // 마지막 활동 시간 포맷팅
+  const formatLastActivity = (lastActivity) => {
+    if (!lastActivity) return '활동 없음';
+    
+    const now = new Date();
+    const diff = now - lastActivity;
+    
+    // 1일 이내
+    if (diff < 24 * 60 * 60 * 1000) {
+      return '오늘';
+    }
+    
+    // 7일 이내
+    if (diff < 7 * 24 * 60 * 60 * 1000) {
+      return `${Math.floor(diff / (24 * 60 * 60 * 1000))}일 전`;
+    }
+    
+    // 30일 이내
+    if (diff < 30 * 24 * 60 * 60 * 1000) {
+      return `${Math.floor(diff / (7 * 24 * 60 * 60 * 1000))}주 전`;
+    }
+    
+    // 그 이상
+    return lastActivity.toLocaleDateString('ko-KR');
   };
 
   // 현재 페이지의 사용자 가져오기
@@ -407,24 +483,7 @@ const AdminUsers = () => {
           사용자 관리
         </Typography>
       </Box>
-      
-      {/* 디버깅 정보 - 개발 중에만 표시 */}
-      {process.env.NODE_ENV === 'development' && (
-        <Paper sx={{ p: 2, mb: 2, bgcolor: '#f5f5f5' }}>
-          <Typography variant="subtitle2">디버깅 정보:</Typography>
-          <Typography variant="body2">총 사용자 수: {totalUsers}</Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-            {Object.entries(roleData).map(([role, count]) => (
-              <Chip 
-                key={role} 
-                label={`${role}: ${count}명`} 
-                size="small" 
-                variant="outlined" 
-              />
-            ))}
-          </Box>
-        </Paper>
-      )}
+    
       
       {/* 검색 폼 */}
       <Paper sx={{ p: 2, mb: 3, display: 'flex', alignItems: 'center' }}>
@@ -459,6 +518,8 @@ const AdminUsers = () => {
                   <TableCell>사용자</TableCell>
                   <TableCell>이메일</TableCell>
                   <TableCell>권한</TableCell>
+                  <TableCell>게시글</TableCell>
+                  <TableCell>마지막 활동</TableCell>
                   <TableCell>가입일</TableCell>
                   <TableCell>상태</TableCell>
                   <TableCell align="right">관리</TableCell>
@@ -467,7 +528,7 @@ const AdminUsers = () => {
               <TableBody>
                 {getCurrentPageUsers().length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
                       {searchTerm ? '검색 결과가 없습니다.' : '사용자가 없습니다.'}
                     </TableCell>
                   </TableRow>
@@ -488,6 +549,26 @@ const AdminUsers = () => {
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{renderRoleChip(user.role)}</TableCell>
+                      <TableCell>
+                        <Tooltip title="게시글 수">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <ArticleIcon fontSize="small" color="primary" />
+                            <Typography variant="body2">
+                              {userPostCounts[user.id] || 0}개
+                            </Typography>
+                          </Box>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title={user.lastActivity ? new Date(user.lastActivity).toLocaleString('ko-KR') : '활동 없음'}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <AccessTimeIcon fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              {formatLastActivity(user.lastActivity)}
+                            </Typography>
+                          </Box>
+                        </Tooltip>
+                      </TableCell>
                       <TableCell>
                         {user.createdAt?.toLocaleDateString('ko-KR')}
                       </TableCell>
@@ -555,7 +636,7 @@ const AdminUsers = () => {
         <DialogTitle>사용자 권한 변경</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel>권한</InputLabel>
               <Select
                 value={userRole}
@@ -569,6 +650,8 @@ const AdminUsers = () => {
                 <MenuItem value="ADMIN">관리자</MenuItem>
               </Select>
             </FormControl>
+            
+            {/* 관리자 권한 부여 체크박스 제거 */}
           </Box>
         </DialogContent>
         <DialogActions>

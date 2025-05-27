@@ -1,3 +1,5 @@
+// src/components/posts/view/PostHeader.js - 관리자 삭제 기능 추가 (완성 버전)
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
@@ -16,12 +18,14 @@ import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
 import Popover from '@mui/material/Popover';
-
+import Chip from '@mui/material/Chip';
+import LockIcon from '@mui/icons-material/Lock';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import PersonIcon from '@mui/icons-material/Person';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import CloneToPortfolioButton from '../CloneToPortfolioButton';
 
 /**
@@ -46,6 +50,12 @@ const PostHeader = ({
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
+  // 관리자 여부 확인 - 관리자는 모든 게시물 삭제 가능
+  const isAdmin = currentUser?.role === 'ADMIN';
+  // 작성자 또는 관리자인지 확인
+  const canEdit = currentUser?.uid === authorData?.id;
+  const canDelete = canEdit || isAdmin;
 
   // 소프트콘 프로젝트인지 확인
   const isSoftconProject = collectionName === 'softcon_projects';
@@ -62,15 +72,9 @@ const PostHeader = ({
     setShowLikesDialog(false);
   };
 
-  // 좋아요한 유저 목록 가져오기
   const fetchLikedUsers = async () => {
-    // 이 함수는 컴포넌트를 사용하는 상위 컴포넌트에서 props로 받거나,
-    // 여기서 직접 구현할 수 있습니다. 우선 상위 컴포넌트에서 받아와서 처리하도록 수정
     try {
       setLoadingLikes(true);
-      // 여기서 좋아요한 유저 목록을 가져오는 로직 구현
-      // ...
-      
       setLoadingLikes(false);
     } catch (error) {
       console.error('Error fetching liked users:', error);
@@ -78,12 +82,10 @@ const PostHeader = ({
     }
   };
 
-  // 수정 페이지로 이동
   const handleEdit = () => {
     navigate(`/${collectionName}/${postId}/edit`);
   };
 
-  // 삭제 확인 다이얼로그 열기
   const handleDeleteClick = () => {
     setDeleteDialogOpen(true);
   };
@@ -115,6 +117,15 @@ const PostHeader = ({
 
   return (
     <>
+      {postData.isPublic === false && (
+        <Chip 
+          label="비공개" 
+          color="default" 
+          size="small" 
+          icon={<LockIcon />} 
+          sx={{ ml: 1 }}
+        />
+      )}
       {/* 작성자 정보 및 액션 버튼 */}
       <Box sx={{ 
         p: 3, 
@@ -151,7 +162,9 @@ const PostHeader = ({
                 authorData?.role === 'PROFESSOR' ? '교수' : '관리자'}
             </Typography>
           </Box>
+
         </Box>
+        
 
         {!isPreview && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -159,23 +172,28 @@ const PostHeader = ({
               <CloneToPortfolioButton postData={postData} postId={postId} />
             )}
             
-            {/* 작성자일 경우 수정/삭제 버튼 */}
-            {currentUser?.uid === authorData?.id && (
+            {/* 작성자는 수정/삭제 버튼 표시, 관리자는 삭제 버튼만 표시 */}
+            {canDelete && (
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Tooltip title="수정">
-                  <IconButton
-                    onClick={handleEdit}
-                    sx={{ 
-                      color: 'rgb(0, 51, 161)',
-                      '&:hover': {
-                        backgroundColor: 'rgba(0, 51, 161, 0.04)'
-                      }
-                    }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="삭제">
+                {/* 수정 버튼은 작성자만 사용 가능 */}
+                {canEdit && (
+                  <Tooltip title="수정">
+                    <IconButton
+                      onClick={handleEdit}
+                      sx={{ 
+                        color: 'rgb(0, 51, 161)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 51, 161, 0.04)'
+                        }
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                
+                {/* 삭제 버튼은 작성자와 관리자 모두 사용 가능 */}
+                <Tooltip title={isAdmin && !canEdit ? "관리자 권한으로 삭제" : "삭제"}>
                   <IconButton
                     onClick={handleDeleteClick}
                     sx={{ 
@@ -185,7 +203,24 @@ const PostHeader = ({
                       }
                     }}
                   >
-                    <DeleteIcon />
+                    {isAdmin && !canEdit ? (
+                      <Box sx={{ position: 'relative' }}>
+                        <DeleteIcon />
+                        <AdminPanelSettingsIcon 
+                          sx={{ 
+                            position: 'absolute', 
+                            bottom: -8, 
+                            right: -8, 
+                            fontSize: 16, 
+                            color: '#d32f2f',
+                            backgroundColor: 'white',
+                            borderRadius: '50%'
+                          }} 
+                        />
+                      </Box>
+                    ) : (
+                      <DeleteIcon />
+                    )}
                   </IconButton>
                 </Tooltip>
               </Box>
@@ -321,12 +356,22 @@ const PostHeader = ({
         aria-describedby="delete-dialog-description"
       >
         <DialogTitle id="delete-dialog-title">
-          게시글 삭제
+          {isAdmin && !canEdit ? "관리자 권한으로 삭제" : "게시글 삭제"}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-dialog-description">
-            정말로 이 게시글을 삭제하시겠습니까?
-            삭제된 게시글은 복구할 수 없습니다.
+            {isAdmin && !canEdit ? (
+              <>
+                <Typography variant="body1" gutterBottom>
+                  관리자 권한으로 이 게시글을 삭제하시겠습니까?
+                </Typography>
+                <Typography color="error" variant="body2">
+                  관리자 권한으로 삭제된 게시글은 복구할 수 없습니다.
+                </Typography>
+              </>
+            ) : (
+              "정말로 이 게시글을 삭제하시겠습니까? 삭제된 게시글은 복구할 수 없습니다."
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>

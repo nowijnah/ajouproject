@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Typography from '@mui/material/Typography';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -6,9 +6,15 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
+import Popover from '@mui/material/Popover';
+import Divider from '@mui/material/Divider';
+import Paper from '@mui/material/Paper';
+import { Button } from '@mui/material';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import NotificationMenu from './notifications/NotificationMenu';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const AJOU_BLUE = 'rgb(0, 51, 161)';
 
@@ -21,6 +27,7 @@ const styles = {
     borderRadius: '4px',
     padding: '7px 13px 7px 13px',
     marginLeft: '10px',
+    cursor: 'pointer', // 클릭 가능함을 표시
   },
   userName: {
     fontFamily: 'Quicksand, sans-serif',
@@ -120,6 +127,56 @@ const styles = {
     backgroundColor: 'rgba(211, 47, 47, 0.08)',
     color: '#d32f2f',
     border: '1px solid rgba(211, 47, 47, 0.2)'
+  },
+  // 프로필 팝오버 스타일
+  profilePopover: {
+    p: 3,
+    width: 300,
+    maxWidth: '90vw',
+  },
+  profileSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    mb: 2,
+  },
+  largeAvatar: {
+    width: 80,
+    height: 80,
+    mb: 2,
+  },
+  profileName: {
+    fontWeight: 600,
+    mb: 0.5,
+  },
+  profileDetail: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+    mb: 2,
+  },
+  profileItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    py: 1,
+  },
+  adminButton: {
+    backgroundColor: '#d32f2f',
+    color: 'white',
+    '&:hover': {
+      backgroundColor: '#b71c1c',
+    },
+    mt: 2,
+    width: '100%',
+  },
+  normalButton: {
+    backgroundColor: '#757575',
+    color: 'white',
+    '&:hover': {
+      backgroundColor: '#616161',
+    },
+    mt: 2,
+    width: '100%',
   }
 };
 
@@ -154,6 +211,10 @@ export default function Navbar() {
   const location = useLocation();
   const isSmallScreen = useMediaQuery('(max-width:900px)');
   const isAdmin = currentUser && currentUser.role === 'ADMIN';
+  
+  // 프로필 팝오버 상태 관리
+  const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+  const isProfilePopoverOpen = Boolean(profileAnchorEl);
 
   const handleSignOut = async () => {
     try {
@@ -164,8 +225,59 @@ export default function Navbar() {
     }
   };
 
-  const handleProfileClick = () => {
+  const handleProfileClick = (event) => {
+    setProfileAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileClose = () => {
+    setProfileAnchorEl(null);
+  };
+
+  const handleMyPageClick = () => {
     navigate('/mypage');
+    handleProfileClose();
+  };
+
+  // 관리자 모드 전환 함수
+  const handleSwitchToAdmin = async () => {
+    if (!currentUser) return;
+    
+    try {
+      // 현재 역할을 originalRole에 저장하고 역할을 관리자로 변경
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        originalRole: currentUser.role, // 현재 역할 저장
+        role: 'ADMIN'
+      });
+      
+      // 페이지 새로고침 (AuthContext가 최신 사용자 정보를 가져오도록)
+      window.location.reload();
+    } catch (error) {
+      console.error('Error switching to admin:', error);
+      alert('관리자 모드 전환 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 일반 모드 전환 함수
+  const handleSwitchToNormal = async () => {
+    if (!currentUser) return;
+    
+    try {
+      // 사용자의 원래 역할로 되돌리기
+      const userRef = doc(db, 'users', currentUser.uid);
+      // 원래 역할이 저장되어 있지 않으면 기본값으로 STUDENT 설정
+      let originalRole = currentUser.originalRole || 'STUDENT';
+      
+      await updateDoc(userRef, {
+        role: originalRole
+      });
+      
+      // 페이지 새로고침 (AuthContext가 최신 사용자 정보를 가져오도록)
+      window.location.reload();
+    } catch (error) {
+      console.error('Error switching to normal role:', error);
+      alert('일반 모드 전환 중 오류가 발생했습니다.');
+    }
   };
 
   // 현재 페이지 확인 함수
@@ -283,11 +395,13 @@ export default function Navbar() {
                 </RouterLink>
                 
                 {!isSmallScreen && (
-                  <Box sx={styles.userProfile}>
+                  <Box 
+                    sx={styles.userProfile}
+                    onClick={handleProfileClick}
+                  >
                     <Avatar 
                       src={currentUser.photoURL}
                       alt={currentUser.displayName}
-                      onClick={handleProfileClick}
                       sx={styles.avatar}
                     >
                       {!currentUser.photoURL && currentUser.displayName?.[0]}
@@ -307,6 +421,97 @@ export default function Navbar() {
                   </Box>
                 )}
               </Box>
+
+              {/* 프로필 팝오버 추가 */}
+              <Popover
+                open={isProfilePopoverOpen}
+                anchorEl={profileAnchorEl}
+                onClose={handleProfileClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <Paper sx={styles.profilePopover}>
+                  {/* 프로필 헤더 섹션 */}
+                  <Box sx={styles.profileSection}>
+                    <Avatar 
+                      src={currentUser.photoURL}
+                      alt={currentUser.displayName}
+                      sx={styles.largeAvatar}
+                    >
+                      {!currentUser.photoURL && currentUser.displayName?.[0]}
+                    </Avatar>
+                    <Typography variant="h6" sx={styles.profileName}>
+                      {currentUser.displayName || '사용자'}
+                    </Typography>
+                    <Chip 
+                      label={getRoleText(currentUser.role)} 
+                      size="small"
+                      color={isAdmin ? "error" : "primary"}
+                    />
+                  </Box>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  {/* 사용자 정보 섹션 */}
+                  <Box sx={styles.profileDetail}>
+                    <Box sx={styles.profileItem}>
+                      <Typography variant="body2" color="text.secondary">이메일</Typography>
+                      <Typography variant="body2">{currentUser.email}</Typography>
+                    </Box>
+                    
+                    {(currentUser.role === 'STUDENT' || currentUser.role === 'PROFESSOR') && (
+                      <Box sx={styles.profileItem}>
+                        <Typography variant="body2" color="text.secondary">학과</Typography>
+                        <Typography variant="body2">{currentUser.major || '정보 없음'}</Typography>
+                      </Box>
+                    )}
+                    
+                    <Box sx={styles.profileItem}>
+                      <Typography variant="body2" color="text.secondary">계정 유형</Typography>
+                      <Typography variant="body2">
+                        {currentUser.email.endsWith('@ajou.ac.kr') ? '아주대학교 계정' : '일반 계정'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  
+                  <Button 
+                    variant="contained" 
+                    fullWidth
+                    onClick={handleMyPageClick}
+                    sx={{ mb: 1 }}
+                  >
+                    마이페이지
+                  </Button>
+                  
+                  {/* 관리자일 때는 일반 모드로 전환 버튼 표시 */}
+                  {isAdmin && (
+                    <Button 
+                      variant="contained"
+                      onClick={handleSwitchToNormal}
+                      sx={styles.normalButton}
+                    >
+                      일반 모드로 전환
+                    </Button>
+                  )}
+                  
+                  {/* 관리자가 아닐 때는 관리자 모드로 전환 버튼 표시 (ADMIN 역할로 설정된 계정은 항상 관리자) */}
+                  {!isAdmin && (
+                    <Button 
+                      variant="contained"
+                      onClick={handleSwitchToAdmin}
+                      sx={styles.adminButton}
+                    >
+                      관리자 모드로 전환
+                    </Button>
+                  )}
+                </Paper>
+              </Popover>
             </>
           ) : (
             <>

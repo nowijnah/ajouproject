@@ -31,5 +31,18 @@ module.exports = {
     plugins: [
         // new BundleAnalyzerPlugin(),
         new Dotenv(),
-    ]
+        // 환경 변수 정의
+        // new webpack.DefinePlugin({
+        //     'process.env.NODE_ENV': JSON.stringify('production'),
+        // }),
+    ],
+    resolve: {
+        extensions: ['.js', '.jsx'],
+        fallback: {
+            "process": require.resolve("process/browser")
+        }
+    },
+    cache: {
+        type: 'filesystem',
+    },
 };

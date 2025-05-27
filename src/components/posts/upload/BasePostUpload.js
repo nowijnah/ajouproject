@@ -17,13 +17,13 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
-
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import UploadIcon from '@mui/icons-material/CloudUpload';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import EyeIcon from '@mui/icons-material/Visibility';
 import ImageIcon from '@mui/icons-material/Image';
-
 import BasePostView from '../view/BasePostView';
 
 // 커스텀 ReactMarkdown 컴포넌트
@@ -61,6 +61,7 @@ function BasePostUpload({ collectionName }) {
     const [markdownContent, setMarkdownContent] = useState('');
     const [isPreview, setIsPreview] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isPublic, setIsPublic] = useState(true);
   
     // 파일 관련
     const [thumbnail, setThumbnail] = useState(null);
@@ -88,6 +89,7 @@ function BasePostUpload({ collectionName }) {
               setMarkdownContent(data.content);
               setThumbnail(data.thumbnail || null);
               setKeywords(data.keywords || []);
+              setIsPublic(data.isPublic !== false);
               
               // 기존 파일 데이터 설정
               if (data.files) {
@@ -372,6 +374,7 @@ function BasePostUpload({ collectionName }) {
               links,
               thumbnail: thumbnailUrl,
               keywords,
+              isPublic,
               updatedAt: serverTimestamp()
             };
 
@@ -532,6 +535,26 @@ function BasePostUpload({ collectionName }) {
                   미리보기
                 </Button>
               )}
+            </Box>
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                게시물 공개 설정
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isPublic}
+                    onChange={(e) => setIsPublic(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label={isPublic ? "공개" : "비공개"}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {isPublic 
+                  ? "모든 사용자가 이 포트폴리오를 볼 수 있습니다." 
+                  : "작성자만 이 포트폴리오를 볼 수 있습니다."}
+              </Typography>
             </Box>
       
             <form onSubmit={handleSubmit}>

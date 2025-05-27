@@ -41,7 +41,7 @@ function CloneToPortfolioButton({ postData, postId }) {
     setIsTeamMember(isTeamMember);
     
     if (!isTeamMember) {
-      setErrorMessage('이 프로젝트의 팀원만 복제할 수 있습니다.');
+      setErrorMessage('이 프로젝트의 팀원만 가져갈 수 있습니다.');
     } else {
       setErrorMessage('');
     }
@@ -146,12 +146,12 @@ function CloneToPortfolioButton({ postData, postId }) {
       setCloning(false);
       setDialogOpen(false);
       
-      alert('소프트콘 프로젝트가 내 포트폴리오로 복제되었습니다.');
+      alert('소프트콘 프로젝트를 성공적으로 가져왔습니다.');
       navigate(`/portfolios/${newDocRef.id}`);
       
     } catch (error) {
-      console.error('프로젝트 복제 중 오류 발생:', error);
-      setErrorMessage(`복제 중 오류가 발생했습니다: ${error.message}`);
+      console.error('프로젝트 가져오는 중 오류 발생:', error);
+      setErrorMessage(`프로젝트를 가져오는 중 오류가 발생했습니다: ${error.message}`);
       setCloning(false);
     }
   };
@@ -200,13 +200,13 @@ function CloneToPortfolioButton({ postData, postId }) {
                 이 소프트콘 프로젝트를 내 포트폴리오로 가져오시겠습니까?
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                복제하면 프로젝트의 모든 내용(텍스트, 이미지, 링크 등)이 내 포트폴리오로 복사됩니다.
-                복제 후에는 자유롭게 수정할 수 있습니다.
+                가져오면 프로젝트의 모든 내용(텍스트, 이미지, 링크 등)이 내 포트폴리오로 복사됩니다.
+                가져온 후에는 자유롭게 수정할 수 있습니다.
               </Typography>
             </>
           ) : (
             <Typography variant="body1">
-              이 프로젝트는 팀원만 복제할 수 있습니다. 프로젝트 팀원으로 등록되어 있지 않은 것 같습니다.
+              이 프로젝트는 팀원만 가져올 수 있습니다. 프로젝트 팀원으로 등록되어 있지 않은 것 같습니다.
               만약 팀원이라면 이메일 주소를 확인해 주세요.
             </Typography>
           )}

@@ -133,7 +133,10 @@ const BasePostView = ({
         />
         
         {/* 관련 링크 */}
-        <PostLinks links={postData.links} />
+        <PostLinks
+          links={postData.links}
+          sourceUrl={postData.sourceUrl}
+        />
 
         {/* 첨부 파일 */}
         <PostAttachments files={postData.files} />
