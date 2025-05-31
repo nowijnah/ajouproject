@@ -1,5 +1,3 @@
-// src/components/posts/view/PostHeader.js - 관리자 삭제 기능 추가 (완성 버전)
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
@@ -26,7 +24,9 @@ import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
 import CloneToPortfolioButton from '../CloneToPortfolioButton';
+import ReportDialog from '../../report/ReportDialog';
 
 /**
  * 게시물 헤더 컴포넌트 - 작성자 정보, 좋아요, 수정/삭제 버튼 등을 표시
@@ -50,6 +50,7 @@ const PostHeader = ({
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   
   // 관리자 여부 확인 - 관리자는 모든 게시물 삭제 가능
   const isAdmin = currentUser?.role === 'ADMIN';
@@ -115,6 +116,11 @@ const PostHeader = ({
     }
   };
 
+  // 신고 처리
+  const handleReport = () => {
+    setReportDialogOpen(true);
+  };
+
   return (
     <>
       {postData.isPublic === false && (
@@ -126,6 +132,7 @@ const PostHeader = ({
           sx={{ ml: 1 }}
         />
       )}
+      
       {/* 작성자 정보 및 액션 버튼 */}
       <Box sx={{ 
         p: 3, 
@@ -162,14 +169,29 @@ const PostHeader = ({
                 authorData?.role === 'PROFESSOR' ? '교수' : '관리자'}
             </Typography>
           </Box>
-
         </Box>
-        
 
         {!isPreview && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {isSoftconProject && currentUser?.role === 'STUDENT' && (
               <CloneToPortfolioButton postData={postData} postId={postId} />
+            )}
+            
+            {/* 신고 버튼 - 자신의 게시물이 아닌 경우에만 표시 */}
+            {currentUser && currentUser.uid !== authorData?.id && (
+              <Tooltip title="신고하기">
+                <IconButton
+                  onClick={handleReport}
+                  sx={{ 
+                    color: 'warning.main',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 152, 0, 0.04)'
+                    }
+                  }}
+                >
+                  <NotificationImportantIcon />
+                </IconButton>
+              </Tooltip>
             )}
             
             {/* 작성자는 수정/삭제 버튼 표시, 관리자는 삭제 버튼만 표시 */}
@@ -268,6 +290,16 @@ const PostHeader = ({
           </Box>
         )}
       </Box>
+
+      {/* 신고 다이얼로그 */}
+      <ReportDialog
+        open={reportDialogOpen}
+        onClose={() => setReportDialogOpen(false)}
+        reportType="POST"
+        targetId={postId}
+        targetUserId={authorData?.id}
+        targetTitle={postData?.title}
+      />
 
       {/* 좋아요 유저 목록 팝업 */}
       <Popover

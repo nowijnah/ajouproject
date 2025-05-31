@@ -34,7 +34,6 @@ const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminSoftcon = lazy(() => import('./pages/admin/AdminSoftcon'));
 const NoticeView = lazy(() => import('./pages/notices/NoticeView'));
 const NoticeList = lazy(() => import('./pages/notices/NoticeList'));
-
 // 활동 추적 래퍼 컴포넌트
 function AppWithActivityTracking() {
   useActivityTracker(); // 활동 추적 훅 사용
@@ -105,7 +104,7 @@ function AppWithActivityTracking() {
               </ProtectedRoute>
             } />
 
-            <Route path="/crawler" element={<SoftconCrawler />} />
+            <Route path="/crawler" element={<SoftconCrawler />} /> 
 
             {/* Public Routes */}
             <Route path="/portfolios" element={<PortfolioPage />} />

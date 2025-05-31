@@ -10,7 +10,7 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import SwipeableViews from 'react-swipeable-views';
+import SwipeableViews from 'react-swipeable-views-react-18-fix';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';

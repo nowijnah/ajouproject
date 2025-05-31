@@ -648,3 +648,262 @@ exports.updateNotificationSettings = functions.https.onCall(async (data, context
     throw new functions.https.HttpsError('internal', `알림 설정 업데이트 실패: ${error.message}`);
   }
 });
+
+// functions/index.js에 추가할 함수들
+
+// 사용자 차단 상태 확인 함수
+async function checkUserStatus(uid) {
+  if (!uid) {
+    throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError('not-found', '사용자 정보를 찾을 수 없습니다.');
+    }
+
+    const userData = userDoc.data();
+    
+    if (userData.isBlocked === true) {
+      throw new functions.https.HttpsError('permission-denied', '차단된 계정입니다.');
+    }
+
+    return userData;
+  } catch (error) {
+    console.error('사용자 상태 확인 중 오류:', error);
+    throw error;
+  }
+}
+
+// 댓글 작성 권한 확인 함수
+async function checkCommentPermission(uid) {
+  const userData = await checkUserStatus(uid);
+  
+  if (userData.isCommentBanned === true) {
+    throw new functions.https.HttpsError('permission-denied', '댓글 작성이 제한된 계정입니다.');
+  }
+  
+  return userData;
+}
+
+// 기존 댓글 알림 함수 수정 (권한 체크 추가)
+exports.sendCommentNotification = functions.https.onCall(async (data, context) => {
+  try {
+    // 인증 확인
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+    }
+
+    // 사용자 상태 및 댓글 권한 확인
+    await checkCommentPermission(context.auth.uid);
+
+    const { commentId, postId, collectionName } = data;
+    
+    if (!commentId || !postId || !collectionName) {
+      throw new functions.https.HttpsError('invalid-argument', '필수 정보가 누락되었습니다.');
+    }
+    
+    // 댓글 정보 가져오기
+    const commentRef = db.collection(`${collectionName}_comments`).doc(commentId);
+    const commentDoc = await commentRef.get();
+    
+    if (!commentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', '댓글을 찾을 수 없습니다.');
+    }
+    
+    const comment = commentDoc.data();
+    
+    // 댓글 작성자와 현재 사용자가 같은지 확인
+    if (comment.authorId !== context.auth.uid) {
+      throw new functions.https.HttpsError('permission-denied', '권한이 없습니다.');
+    }
+    
+    // 게시물 정보 가져오기
+    const postRef = db.collection(collectionName).doc(postId);
+    const postDoc = await postRef.get();
+    
+    if (!postDoc.exists) {
+      throw new functions.https.HttpsError('not-found', '게시물을 찾을 수 없습니다.');
+    }
+    
+    const post = postDoc.data();
+    
+    // 게시물 작성자와 댓글 작성자가 같은 경우 알림 X
+    if (post.authorId === comment.authorId) {
+      return { success: true, message: '자신의 게시물에 댓글을 작성하여 알림을 보내지 않습니다.' };
+    }
+    
+    // 게시물 작성자 정보 가져오기
+    const recipientUserRef = db.collection('users').doc(post.authorId);
+    const recipientUserDoc = await recipientUserRef.get();
+    
+    if (!recipientUserDoc.exists) {
+      throw new functions.https.HttpsError('not-found', '게시물 작성자 정보를 찾을 수 없습니다.');
+    }
+    
+    const recipientUser = recipientUserDoc.data();
+    
+    // 이메일 알림 설정이 꺼져있는 경우 알림 X
+    if (recipientUser.emailNotifications === false) {
+      return { success: true, message: '이메일 알림 설정이 꺼져있습니다.' };
+    }
+    
+    // 댓글 작성자 정보 가져오기
+    const authorUserRef = db.collection('users').doc(comment.authorId);
+    const authorUserDoc = await authorUserRef.get();
+    
+    if (!authorUserDoc.exists) {
+      throw new functions.https.HttpsError('not-found', '댓글 작성자 정보를 찾을 수 없습니다.');
+    }
+    
+    const authorUser = authorUserDoc.data();
+    
+    // 이메일 템플릿 로드
+    const isReply = comment.parentId !== null;
+    const templateName = isReply ? 'reply-notification' : 'comment-notification';
+    const template = loadEmailTemplate(templateName);
+    
+    // 템플릿 데이터 설정
+    const templateData = {
+      recipientName: recipientUser.displayName || '사용자',
+      authorName: authorUser.displayName || '사용자',
+      postTitle: post.title,
+      commentContent: comment.content,
+      postUrl: `https://aimajou.web.app/${collectionName}/${postId}`, // 실제 도메인으로 변경
+      unsubscribeUrl: 'https://aimajou.web.app/settings' // 실제 도메인으로 변경
+    };
+    
+    // 이메일 옵션 설정
+    const mailOptions = {
+      from: '"AIM AJOU" <noreply@aimajou.web.app>', // 실제 발신자 이메일로 변경
+      to: recipientUser.email,
+      subject: isReply ? '새 답글 알림' : '새 댓글 알림',
+      html: template(templateData)
+    };
+    
+    // 이메일 발송
+    await smtpTransport.sendMail(mailOptions);
+    
+    // Firestore에 알림 저장
+    const notificationRef = db.collection('notifications').doc();
+    await notificationRef.set({
+      userId: post.authorId,
+      authorId: comment.authorId,
+      postId,
+      commentId,
+      collectionName,
+      type: isReply ? 'REPLY' : 'COMMENT',
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('댓글 알림 전송 중 오류:', error);
+    throw error instanceof functions.https.HttpsError ? error : 
+      new functions.https.HttpsError('internal', `알림 전송 실패: ${error.message}`);
+  }
+});
+
+// 신고 제출 함수 (권한 체크 추가)
+exports.submitReport = functions.https.onCall(async (data, context) => {
+  try {
+    // 인증 확인
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+    }
+
+    // 사용자 상태 확인 (차단된 사용자는 신고 불가)
+    await checkUserStatus(context.auth.uid);
+
+    const { reportType, targetId, targetUserId, targetTitle, reason, description } = data;
+    
+    if (!reportType || !targetId || !targetUserId || !reason) {
+      throw new functions.https.HttpsError('invalid-argument', '필수 정보가 누락되었습니다.');
+    }
+
+    // 자신을 신고하는 것 방지
+    if (context.auth.uid === targetUserId) {
+      throw new functions.https.HttpsError('invalid-argument', '자신을 신고할 수 없습니다.');
+    }
+
+    // 중복 신고 확인
+    const existingReportQuery = await db.collection('reports')
+      .where('reporterId', '==', context.auth.uid)
+      .where('targetId', '==', targetId)
+      .where('targetUserId', '==', targetUserId)
+      .where('reportType', '==', reportType)
+      .get();
+
+    if (!existingReportQuery.empty) {
+      throw new functions.https.HttpsError('already-exists', '이미 신고한 내용입니다.');
+    }
+
+    // 신고자 정보 가져오기
+    const reporterDoc = await db.collection('users').doc(context.auth.uid).get();
+    const reporterData = reporterDoc.exists ? reporterDoc.data() : null;
+
+    // 신고 데이터 저장
+    await db.collection('reports').add({
+      reporterId: context.auth.uid,
+      reporterName: reporterData?.displayName || '알 수 없음',
+      reporterEmail: reporterData?.email || '',
+      reportType,
+      targetId,
+      targetUserId,
+      targetTitle: targetTitle || '',
+      reason,
+      description: description || '',
+      status: 'PENDING',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      reviewedAt: null,
+      reviewedBy: null,
+      action: null
+    });
+
+    return { success: true, message: '신고가 접수되었습니다.' };
+  } catch (error) {
+    console.error('신고 제출 중 오류:', error);
+    throw error instanceof functions.https.HttpsError ? error : 
+      new functions.https.HttpsError('internal', `신고 제출 실패: ${error.message}`);
+  }
+});
+
+// 사용자 차단 해제 함수 (관리자용)
+exports.unblockUser = functions.https.onCall(async (data, context) => {
+  try {
+    // 인증 및 관리자 권한 확인
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+    }
+
+    const adminDoc = await db.collection('users').doc(context.auth.uid).get();
+    if (!adminDoc.exists || adminDoc.data().role !== 'ADMIN') {
+      throw new functions.https.HttpsError('permission-denied', '관리자 권한이 필요합니다.');
+    }
+
+    const { userId } = data;
+    if (!userId) {
+      throw new functions.https.HttpsError('invalid-argument', '사용자 ID가 필요합니다.');
+    }
+
+    // 사용자 차단 해제
+    await db.collection('users').doc(userId).update({
+      isBlocked: false,
+      isCommentBanned: false,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return { success: true, message: '사용자 차단이 해제되었습니다.' };
+  } catch (error) {
+    console.error('사용자 차단 해제 중 오류:', error);
+    throw error instanceof functions.https.HttpsError ? error : 
+      new functions.https.HttpsError('internal', `차단 해제 실패: ${error.message}`);
+  }
+});
+
+// 내보낼 헬퍼 함수들
+exports.checkUserStatus = checkUserStatus;
+exports.checkCommentPermission = checkCommentPermission;

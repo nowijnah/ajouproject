@@ -3,6 +3,9 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Button from '@mui/material/Button';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { 
@@ -17,6 +20,8 @@ import {
 import { db } from '../firebase';
 import CompanyCard from '../pages/companies/CompanyCard';
 import PortfolioCard from '../pages/portfolios/PortfolioCard';
+import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
+import ReportDialog from '../components/report/ReportDialog';
 
 const ProfilePage = () => {
   const { userId } = useParams();
@@ -25,6 +30,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   // 사용자 정보 및 역할 가져오기
   useEffect(() => {
@@ -92,6 +98,14 @@ const ProfilePage = () => {
 
     fetchUserPosts();
   }, [userId, userRole]);
+
+  // 본인 프로필인지 확인
+  const isOwnProfile = currentUser?.uid === userId;
+
+  // 신고 처리
+  const handleReport = () => {
+    setReportDialogOpen(true);
+  };
 
   const getContentTitle = () => {
     switch(userRole) {
@@ -165,6 +179,16 @@ const ProfilePage = () => {
           }}>
             아주대학교
           </Typography>
+          {userData?.role && (
+            <Typography variant="body1" sx={{ 
+              color: 'text.secondary',
+              mb: 1
+            }}>
+              {userData.role === 'STUDENT' ? '학생' : 
+                userData.role === 'COMPANY' ? '기업' :
+                userData.role === 'PROFESSOR' ? '교수' : '관리자'}
+            </Typography>
+          )}
         </Box>
       </Box>
 
@@ -183,6 +207,25 @@ const ProfilePage = () => {
             <Typography variant="h6" sx={{ color: 'white' }}>
               {getContentTitle()}
             </Typography>
+            
+            {/* 신고 버튼 - 본인이 아닌 경우에만 표시 */}
+            {currentUser && !isOwnProfile && (
+              <Button
+                startIcon={<NotificationImportantIcon />}
+                onClick={handleReport}
+                sx={{
+                  color: 'white',
+                  borderColor: 'white',
+                  '&:hover': {
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                  }
+                }}
+                variant="outlined"
+              >
+                신고하기
+              </Button>
+            )}
           </Box>
 
           {loading ? (
@@ -205,6 +248,16 @@ const ProfilePage = () => {
           )}
         </Container>
       </Box>
+
+      {/* 사용자 신고 다이얼로그 */}
+      <ReportDialog
+        open={reportDialogOpen}
+        onClose={() => setReportDialogOpen(false)}
+        reportType="USER"
+        targetId={userId}
+        targetUserId={userId}
+        targetTitle={userData?.displayName || '사용자'}
+      />
     </Box>
   );
 };

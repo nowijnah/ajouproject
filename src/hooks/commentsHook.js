@@ -28,6 +28,51 @@ const commentsHook = (postId, collectionName) => {
   const [lastDoc, setLastDoc] = useState(null);  
   const [hasMore, setHasMore] = useState(true); 
 
+  // 사용자 댓글 권한 확인 (실시간)
+  const checkCommentPermission = async (userId) => {
+    if (!userId) return { allowed: false, message: "로그인이 필요합니다." };
+
+    try {
+      // 실시간으로 사용자 상태 확인
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (!userDoc.exists()) {
+        return { allowed: false, message: "사용자 정보를 찾을 수 없습니다." };
+      }
+
+      const userData = userDoc.data();
+
+      // 1. 로그인 차단 체크 (최우선)
+      if (userData.isBlocked === true) {
+        return { 
+          allowed: false, 
+          message: "계정이 관리자에 의해 차단되어 댓글을 작성할 수 없습니다.\n문의사항이 있으시면 관리자에게 연락해주세요." 
+        };
+      }
+
+      // 2. 댓글 금지 체크
+      if (userData.isCommentBanned === true) {
+        return { 
+          allowed: false, 
+          message: "댓글 작성이 관리자에 의해 제한된 계정입니다.\n문의사항이 있으시면 관리자에게 연락해주세요." 
+        };
+      }
+
+      // 3. 승인되지 않은 기업 계정 체크
+      if (userData.role === 'DEFAULT') {
+        return { 
+          allowed: false, 
+          message: "승인된 회사 계정만 댓글을 작성할 수 있습니다." 
+        };
+      }
+
+      return { allowed: true };
+    } catch (error) {
+      console.error("Error checking comment permission:", error);
+      return { allowed: false, message: "권한 확인 중 오류가 발생했습니다." };
+    }
+  };
+
+
   // 사용자 정보 가져오기
   const fetchUserData = async (authorId) => {
     try {
@@ -106,49 +151,54 @@ const commentsHook = (postId, collectionName) => {
   
   // 댓글 작성
   const addComment = async (content, isPrivate = false) => {
-    if (!currentUser) throw new Error("로그인이 필요합니다.");
+  if (!currentUser) throw new Error("로그인이 필요합니다.");
+  
+  // 댓글 권한 확인 강화
+  const permission = await checkCommentPermission(currentUser.uid);
+  if (!permission.allowed) {
+    throw new Error(permission.message);
+  }
+  
+  try {
+    // 활동시간 업데이트
+    if (updateLastActivity) {
+      await updateLastActivity(currentUser.uid);
+    }
+
+    const batch = writeBatch(db);
+    const commentsRef = collection(db, `${collectionName}_comments`);
+    const newCommentRef = doc(commentsRef);
+
+    const newComment = {
+      postId,
+      content,
+      isPrivate,
+      authorId: currentUser.uid,
+      parentId: null,
+      authorRole: currentUser.currentRole || currentUser.role,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      collectionName
+    };
     
-    try {
-      // 활동시간 업데이트
-      if (updateLastActivity) {
-        await updateLastActivity(currentUser.uid);
-      }
+    batch.set(newCommentRef, newComment);
 
-      const batch = writeBatch(db);
-      const commentsRef = collection(db, `${collectionName}_comments`);
-      const newCommentRef = doc(commentsRef);
+    const postRef = doc(db, collectionName, postId);
+    batch.update(postRef, {
+      commentCount: increment(1)
+    });
+  
+    await batch.commit();
+    const author = await fetchUserData(currentUser.uid);
 
-      const newComment = {
-        postId,
-        content,
-        isPrivate,
-        authorId: currentUser.uid,
-        parentId: null,
-        // 댓글 작성 시의 역할을 저장 (나중에 역할이 바뀌어도 유지됨)
-        authorRole: currentUser.currentRole || currentUser.role,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        collectionName // 알림을 위한 컬렉션 정보 저장
-      };
-      
-      batch.set(newCommentRef, newComment);
-
-      const postRef = doc(db, collectionName, postId);
-      batch.update(postRef, {
-        commentCount: increment(1)
-      });
-    
-      await batch.commit();
-      const author = await fetchUserData(currentUser.uid);
-
-      // 댓글 추가 후 바로 목록 업데이트
-      setComments(prev => [{
-        id: newCommentRef.id,
-        ...newComment,
-        author,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }, ...prev]);
+    // 댓글 추가 후 바로 목록 업데이트
+    setComments(prev => [{
+      id: newCommentRef.id,
+      ...newComment,
+      author,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }, ...prev]);
 
     } catch (err) {
       console.error("Error adding comment:", err);
@@ -157,9 +207,14 @@ const commentsHook = (postId, collectionName) => {
     }
   };
 
-  // 답글 작성
   const addReply = async (parentId, content, parentIsPrivate) => {
     if (!currentUser) throw new Error("로그인이 필요합니다.");
+    
+    // 댓글 권한 확인 강화
+    const permission = await checkCommentPermission(currentUser.uid);
+    if (!permission.allowed) {
+      throw new Error(permission.message);
+    }
     
     try {
       // 활동시간 업데이트
@@ -177,11 +232,10 @@ const commentsHook = (postId, collectionName) => {
         isPrivate: parentIsPrivate,
         authorId: currentUser.uid,
         parentId,
-        // 답글 작성 시의 역할을 저장
         authorRole: currentUser.currentRole || currentUser.role,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        collectionName // 알림을 위한 컬렉션 정보 저장
+        collectionName
       };
 
       batch.set(newReplyRef, newReply);
@@ -194,14 +248,12 @@ const commentsHook = (postId, collectionName) => {
       await batch.commit();
 
       try {
-        console.log("Attempting to send notification for comment:", newReplyRef.id);
         const sendCommentNotification = httpsCallable(functions, 'sendCommentNotification');
         const result = await sendCommentNotification({
           commentId: newReplyRef.id,
           postId,
           collectionName
         });
-        console.log("Notification function result:", result.data);
       } catch (error) {
         console.error('Error triggering notification:', error);
       }
