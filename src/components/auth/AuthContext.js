@@ -38,6 +38,15 @@ export const AuthProvider = ({ children }) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             
+            // 로그인 차단 확인
+            if (userData.isBlocked === true) {
+              alert('이 계정은 차단되어 로그인할 수 없습니다. 관리자에게 문의하세요.');
+              await signOut(auth);
+              setCurrentUser(null);
+              setLoading(false);
+              return;
+            }
+            
             // admin 필드와 currentRole을 기반으로 현재 역할 결정
             const isAdmin = userData.admin === true;
             const currentRole = userData.currentRole || userData.role || "STUDENT";
@@ -47,14 +56,13 @@ export const AuthProvider = ({ children }) => {
               email: user.email,
               displayName: user.displayName,
               photoURL: user.photoURL,
-              // 현재 역할 (관리자 모드 전환 시 변경됨)
               role: currentRole,
-              // admin 필드 값 보존
               admin: userData.admin || false,
-              // 원래 역할 저장 (최초 가입 시의 역할)
               originalRole: userData.originalRole || userData.role || "STUDENT",
-              // 현재 역할 저장
               currentRole: currentRole,
+              // 차단 관련 상태 명확히 설정
+              isBlocked: userData.isBlocked || false,
+              isCommentBanned: userData.isCommentBanned || false,
               ...(userData.role === "STUDENT" || userData.role === "PROFESSOR" || userData.role === "STAFF"
                 ? { major: userData.major || "정보 없음" }
                 : {}),
@@ -79,21 +87,37 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.addScope("https://www.googleapis.com/auth/userinfo.profile");
-    provider.addScope("https://www.googleapis.com/auth/userinfo.email");
-    provider.addScope("https://www.googleapis.com/auth/user.emails.read");
-    provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
 
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    const token = credential.accessToken;
-    const user = result.user;
+  // 2. Google 로그인 함수 수정 (차단 체크 강화)
+const loginWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  provider.addScope("https://www.googleapis.com/auth/userinfo.profile");
+  provider.addScope("https://www.googleapis.com/auth/userinfo.email");
+  provider.addScope("https://www.googleapis.com/auth/user.emails.read");
+  provider.addScope("https://www.googleapis.com/auth/contacts.readonly");
 
-    if (!user.email.endsWith("@ajou.ac.kr")) {
-      throw new Error("아주대학교 계정만 사용 가능합니다.");
+  const result = await signInWithPopup(auth, provider);
+  const credential = GoogleAuthProvider.credentialFromResult(result);
+  const token = credential.accessToken;
+  const user = result.user;
+
+  if (!user.email.endsWith("@ajou.ac.kr")) {
+    throw new Error("아주대학교 계정만 사용 가능합니다.");
+  }
+
+  // 기존 사용자 정보 확인 및 차단 상태 체크
+  const userDoc = await getDoc(doc(db, "users", user.uid));
+  let existingUserData = null;
+  
+  if (userDoc.exists()) {
+    existingUserData = userDoc.data();
+    
+    // 차단 상태 확인 강화
+    if (existingUserData.isBlocked === true) {
+      await signOut(auth);
+      throw new Error("이 계정은 관리자에 의해 차단되어 로그인할 수 없습니다.\n문의사항이 있으시면 관리자에게 연락해주세요.");
     }
+  }
 
     let role = "STUDENT";
     let major = null;
@@ -130,18 +154,20 @@ export const AuthProvider = ({ children }) => {
     }
     
     const userData = {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      role: role,
-      // 기본적으로 admin은 false (Firebase Console에서 수동으로 true로 변경해야 함)
-      admin: false,
-      originalRole: role,
-      currentRole: role, // 현재 역할도 초기에는 원래 역할과 동일
-      createdAt: serverTimestamp(),
-      lastActivity: serverTimestamp(), // 가입 시 활동시간 설정
-    };
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    role: role,
+    admin: existingUserData?.admin || false,
+    originalRole: existingUserData?.originalRole || role,
+    currentRole: existingUserData?.currentRole || role,
+    // 차단 관련 상태 보존 및 초기화
+    isBlocked: existingUserData?.isBlocked || false,
+    isCommentBanned: existingUserData?.isCommentBanned || false,
+    createdAt: existingUserData?.createdAt || serverTimestamp(),
+    lastActivity: serverTimestamp(),
+  };
 
     if (role === "STUDENT" || role === "PROFESSOR") {
       userData.major = major || "정보 없음";
@@ -149,10 +175,27 @@ export const AuthProvider = ({ children }) => {
       userData.department = major || "정보 없음"; 
     }
 
-    await setDoc(doc(db, "users", user.uid), userData);
+    // **핵심 수정: 기존 사용자인 경우에도 안전하게 데이터 업데이트**
+    if (existingUserData) {
+      // 기존 사용자: 필요한 필드만 업데이트 (merge: true 옵션 사용)
+      await setDoc(doc(db, "users", user.uid), {
+        ...userData,
+        // 추가적으로 보존해야 할 기존 필드들이 있다면 여기에 추가
+        ...existingUserData,
+        // 업데이트가 필요한 필드들은 새 값으로 덮어쓰기
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        lastActivity: serverTimestamp(),
+      }, { merge: true });
+    } else {
+      // 새 사용자: 전체 데이터 생성
+      await setDoc(doc(db, "users", user.uid), userData);
+    }
+
     setCurrentUser({
       ...userData,
-      createdAt: new Date(),
+      createdAt: existingUserData?.createdAt?.toDate() || new Date(),
       lastActivity: new Date()
     });
 
@@ -172,6 +215,9 @@ export const AuthProvider = ({ children }) => {
       admin: false,
       originalRole: "COMPANY",
       currentRole: "COMPANY", // 현재 역할도 설정
+      // 차단 관련 상태 초기화
+      isBlocked: false,
+      isCommentBanned: false,
       createdAt: new Date(),
       lastActivity: new Date(), // 가입 시 활동시간 설정
     });
@@ -181,6 +227,16 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithEmail = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // 로그인 전 차단 상태 확인
+    const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      if (userData.isBlocked === true) {
+        await signOut(auth);
+        throw new Error("이 계정은 차단되어 로그인할 수 없습니다. 관리자에게 문의하세요.");
+      }
+    }
     
     // 이메일 로그인 시에도 활동시간 업데이트
     await updateLastActivity(userCredential.user.uid);

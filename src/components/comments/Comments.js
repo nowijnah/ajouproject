@@ -43,7 +43,6 @@ const Comments = ({ postId, collectionName, postAuthorId }) => {
     );
   }
 
-
   if (error) {
     return (
       <Alert severity="error" sx={{ mt: 2 }}>
@@ -52,20 +51,50 @@ const Comments = ({ postId, collectionName, postAuthorId }) => {
     );
   }
 
+  // 댓글 작성 권한 확인
+  const getCommentPermissionMessage = () => {
+    if (!currentUser) {
+      return { type: 'info', message: '댓글을 작성하려면 로그인이 필요합니다.' };
+    }
+
+    // 로그인 차단 체크 (가장 우선순위)
+    if (currentUser.isBlocked === true) {
+      return { 
+        type: 'error', 
+        message: '계정이 관리자에 의해 차단되어 서비스 이용이 제한됩니다.\n문의사항이 있으시면 관리자에게 연락해주세요.' 
+      };
+    }
+
+    // 댓글 금지 체크
+    if (currentUser.isCommentBanned === true) {
+      return { 
+        type: 'warning', 
+        message: '댓글 작성이 제한된 계정입니다.\n문의사항이 있으시면 관리자에게 연락해주세요.' 
+      };
+    }
+
+    // 승인되지 않은 기업 계정 체크
+    if (currentUser.role === 'DEFAULT') {
+      return { 
+        type: 'info', 
+        message: '승인된 회사 계정만 댓글을 작성할 수 있습니다.' 
+      };
+    }
+
+    // 모든 조건을 통과하면 댓글 작성 허용
+    return null;
+  };
+
+  const permissionMessage = getCommentPermissionMessage();
+
   return (
     <div>
-      {currentUser ? (
-        currentUser.role === 'default' ? (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            승인된 회사 계정만 댓글을 작성할 수 있습니다.
-          </Alert>
-        ) : (
-          <CommentInput onSubmit={addComment} />
-        )
-      ) : (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          댓글을 작성하려면 로그인이 필요합니다.
+      {permissionMessage ? (
+        <Alert severity={permissionMessage.type} sx={{ mb: 2 }}>
+          {permissionMessage.message}
         </Alert>
+      ) : (
+        <CommentInput onSubmit={addComment} />
       )}
       
       <CommentList

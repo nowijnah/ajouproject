@@ -1,4 +1,4 @@
-// src/components/comments/Comment.js 수정
+// src/components/comments/Comment.js 완전 수정 버전
 
 import React, { useState } from 'react';
 import Card from '@mui/material/Card';
@@ -24,7 +24,9 @@ import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import LockIcon from '@mui/icons-material/Lock';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
 import useReplies from '../../hooks/useReplies';
+import ReportDialog from '../report/ReportDialog';
 
 const roleConfig = {
   STUDENT: { label: '학생', color: 'primary' },
@@ -56,13 +58,13 @@ const Comment = ({
   const [editedContent, setEditedContent] = useState(content);
   const [replyContent, setReplyContent] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   // 관리자 여부 확인
   const isAdmin = currentUser?.role === 'ADMIN';
   // 댓글 작성자 또는 관리자인지 확인 (둘 중 하나라도 true면 삭제 가능)
   const canDelete = isEditable || isAdmin;
   const displayRole = authorRole || author?.role;
-  //console.log('Comment authorRole:', authorRole, 'author?.role:', author?.role, 'displayRole:', displayRole);
 
   const {
     replyList,
@@ -81,7 +83,7 @@ const Comment = ({
     (currentUser && currentUser.uid === author?.id) || 
     (currentUser && currentUser.uid === postAuthorId);
 
-  const canReply = currentUser && (
+  const canReply = currentUser && !currentUser.isCommentBanned && (
     (!isPrivate && !isReply) ||
     (isPrivate && (
       currentUser.uid === postAuthorId || 
@@ -121,10 +123,8 @@ const Comment = ({
   const handleSave = () => {
     if (editedContent.trim()) {
       if (isReply) {
-        // 답글 편집 처리
         onEdit(editedContent);
       } else {
-        // 댓글 편집 처리
         onEdit(editedContent);
       }
       setIsEditing(false);
@@ -148,12 +148,16 @@ const Comment = ({
       return;
     }
     
+    if (currentUser.isCommentBanned === true) {
+      alert('댓글 작성이 제한된 계정입니다.');
+      return;
+    }
+    
     if (replyContent.trim()) {
       await onReply(id, replyContent, isPrivate);
       setReplyContent('');
       setIsReplying(false);
       
-      // 답글 작성하고 새로고침
       if (!showReplies) {
         setShowReplies(true);
       }
@@ -170,6 +174,11 @@ const Comment = ({
   const handleConfirmDelete = () => {
     onDelete();
     setDeleteDialogOpen(false);
+  };
+
+  // 신고 처리
+  const handleReport = () => {
+    setReportDialogOpen(true);
   };
 
   return (
@@ -218,37 +227,53 @@ const Comment = ({
                 '날짜 없음'}
             </Typography>
           </Box>
-          {!isEditing && canDelete && (
+          
+          {/* 버튼들 */}
+          {!isEditing && (
             <Box>
-              {isEditable && (
-                <IconButton size="small" onClick={handleEdit}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
+              {/* 신고 버튼 - 자신의 댓글이 아닌 경우에만 표시 */}
+              {currentUser && currentUser.uid !== author?.id && (
+                <Tooltip title="신고하기">
+                  <IconButton size="small" onClick={handleReport}>
+                    <NotificationImportantIcon fontSize="small" sx={{ color: 'warning.main' }} />
+                  </IconButton>
+                </Tooltip>
               )}
-              <Tooltip title={isAdmin && !isEditable ? "관리자 권한으로 삭제" : "삭제"}>
-                <IconButton size="small" onClick={handleOpenDeleteDialog}>
-                  {isAdmin && !isEditable ? (
-                    <Box sx={{ position: 'relative' }}>
-                      <DeleteIcon fontSize="small" />
-                      <AdminPanelSettingsIcon 
-                        sx={{ 
-                          position: 'absolute', 
-                          bottom: -8, 
-                          right: -8, 
-                          fontSize: 12, 
-                          color: '#d32f2f',
-                          backgroundColor: 'white',
-                          borderRadius: '50%'
-                        }} 
-                      />
-                    </Box>
-                  ) : (
-                    <DeleteIcon fontSize="small" />
+              
+              {canDelete && (
+                <>
+                  {isEditable && (
+                    <IconButton size="small" onClick={handleEdit}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
                   )}
-                </IconButton>
-              </Tooltip>
+                  <Tooltip title={isAdmin && !isEditable ? "관리자 권한으로 삭제" : "삭제"}>
+                    <IconButton size="small" onClick={handleOpenDeleteDialog}>
+                      {isAdmin && !isEditable ? (
+                        <Box sx={{ position: 'relative' }}>
+                          <DeleteIcon fontSize="small" />
+                          <AdminPanelSettingsIcon 
+                            sx={{ 
+                              position: 'absolute', 
+                              bottom: -8, 
+                              right: -8, 
+                              fontSize: 12, 
+                              color: '#d32f2f',
+                              backgroundColor: 'white',
+                              borderRadius: '50%'
+                            }} 
+                          />
+                        </Box>
+                      ) : (
+                        <DeleteIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
             </Box>
           )}
+          
           {isEditing && (
             <Box>
               <IconButton size="small" color="primary" onClick={handleSave}>
@@ -287,7 +312,7 @@ const Comment = ({
 
         {/* 댓글에 답글 아이콘 */}
         {!isReply && (
-          <Box sx={{ ml: 5, mt: 1, display: 'flex', gap: 1 }}>
+          <Box sx={{ ml: 5, mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
             {canReply && (
               <Button 
                 size="small" 
@@ -400,6 +425,16 @@ const Comment = ({
           </Box>
         )}
       </CardContent>
+
+      {/* 신고 다이얼로그 */}
+      <ReportDialog
+        open={reportDialogOpen}
+        onClose={() => setReportDialogOpen(false)}
+        reportType="COMMENT"
+        targetId={id}
+        targetUserId={author?.id}
+        targetTitle={content?.substring(0, 50) + (content?.length > 50 ? '...' : '')}
+      />
 
       {/* 삭제 확인 다이얼로그 */}
       <Dialog
