@@ -1,6 +1,6 @@
 // PortfolioPage.js
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ContentList from '../../components/card/ContentList';
 import AnimatedLoading from '../../components/common/AnimatedLoading';
@@ -11,7 +11,10 @@ export default function PortfolioPage() {
 
   const fetchFirestoreData = async (collectionName) => {
     try {
-      const q = query(collection(db, collectionName), orderBy('createdAt', 'desc'));
+      const q = query(
+        collection(db, collectionName), 
+        where('isPublic', '==', true),
+      );
       const querySnapshot = await getDocs(q);
 
       const data = querySnapshot.docs.map(doc => {
@@ -25,7 +28,7 @@ export default function PortfolioPage() {
           content: docData.content || '',
         };
       });
-      return data.filter(post => post.isPublic !== false);
+      return data;
     } catch (error) {
       console.error(`Firestore에서 ${collectionName} 데이터 가져오기 오류:`, error);
       return [];
