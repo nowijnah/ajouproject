@@ -11,12 +11,11 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
-// 아주대학교 테마 색상
-const ajouBlue = '#003876'; // 아주대학교 공식 파란색
+const ajouBlue = '#003876'; 
 
-// 커스텀 테마 생성
 const ajouTheme = createTheme({
   palette: {
     primary: {
@@ -42,7 +41,8 @@ const TERMS = [
   "2021-1", "2021-2",
   "2022-1", "2022-2",
   "2023-1", "2023-2",
-  "2024-1", "2024-2"
+  "2024-1", "2024-2",
+  "2025-1"
 ];
 
 const CATEGORIES = ["ALL","S", "D", "I", "R", "M", "P"];
@@ -50,16 +50,11 @@ const CATEGORIES = ["ALL","S", "D", "I", "R", "M", "P"];
 const SoftconCrawler = () => {
   const [selectedTerm, setSelectedTerm] = useState(TERMS[TERMS.length - 1]);
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
-  const [logMessages, setLogMessages] = useState([]);
+  const [status, setStatus] = useState('ready'); 
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   
   const functions = getFunctions();
-  
-  useEffect(() => {
-    const initMessage = "크롤링 도구가 준비되었습니다. 학기와 카테고리를 선택하고 크롤링을 시작하세요.";
-    setLogMessages([initMessage]);
-    console.log("초기화 완료", { TERMS, CATEGORIES });
-  }, []);
 
   const getCategoryName = (code) => {
     const categoryMap = {
@@ -74,6 +69,11 @@ const SoftconCrawler = () => {
     return categoryMap[code] || code;
   };
 
+  const addLog = (message) => {
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`[${timestamp}] ${message}`);
+  };
+
   const handleCrawl = async () => {
     if (!selectedTerm) {
       alert('학기를 선택해주세요.');
@@ -81,95 +81,97 @@ const SoftconCrawler = () => {
     }
 
     const isAllCategories = selectedCategory === "ALL";
-    
     const categoriesToCrawl = isAllCategories 
       ? CATEGORIES.filter(cat => cat !== "ALL")
       : [selectedCategory]; 
     
-    setLogMessages(prev => [
-      ...prev, 
-      `크롤링 시작: ${selectedTerm} / ${
-        isAllCategories 
-          ? '전체 카테고리' 
-          : getCategoryName(selectedCategory)
-      }`
-    ]);
-    
     setLoading(true);
+    setStatus('loading');
+    setResult(null);
+    
+    addLog(`크롤링 시작: ${selectedTerm} / ${getCategoryName(selectedCategory)}`);
     
     try {
       let totalProcessed = 0;
       let totalSkipped = 0;
       let totalErrors = 0;
-      let allLogs = [];
 
       for (const category of categoriesToCrawl) {
-        setLogMessages(prev => [
-          ...prev, 
-          isAllCategories 
-            ? `카테고리 ${getCategoryName(category)} 크롤링 중...` 
-            : `직접 HTTP 요청 테스트 중...`
-        ]);
+        addLog(`${getCategoryName(category)} 크롤링 중...`);
         
         const crawlSoftconData = httpsCallable(functions, 'crawlSoftconData');
         
         const requestData = {
-          term: String(selectedTerm), 
+          term: String(selectedTerm),
           category: String(category)
         };
         
-        setLogMessages(prev => [
-          ...prev, 
-          `파라미터: ${JSON.stringify(requestData)}`
-        ]);
-        
         const result = await crawlSoftconData(requestData);
         
-        if (result.data && result.data.logs && Array.isArray(result.data.logs)) {
-          if (isAllCategories) {
-            const categoryLogs = result.data.logs.map(log => 
-              `[${getCategoryName(category)}] ${log}`
-            );
-            allLogs = [...allLogs, ...categoryLogs];
-          } else {
-            allLogs = [...allLogs, ...result.data.logs];
-          }
-        }
-        
-        // 결과 집계
         if (result.data && result.data.success) {
           totalProcessed += result.data.count || 0;
           totalSkipped += result.data.skipped || 0;
           totalErrors += result.data.errors || 0;
+          addLog(`${getCategoryName(category)} 완료: ${result.data.count || 0}개`);
         }
       }
       
-      // 로그 업데이트
-      setLogMessages(prev => [...prev, ...allLogs]);
+      const finalResult = {
+        processed: totalProcessed,
+        skipped: totalSkipped,
+        errors: totalErrors,
+        categories: categoriesToCrawl.map(cat => getCategoryName(cat)).join(', ')
+      };
       
-      // 최종 결과 추가
-      setLogMessages(prev => [
-        ...prev, 
-        `크롤링 완료: ${totalProcessed}개 데이터 처리됨${
-          totalSkipped ? `, ${totalSkipped}개 스킵됨` : ''
-        }${
-          totalErrors ? `, ${totalErrors}개 오류` : ''
-        }`
-      ]);
+      setResult(finalResult);
+      setStatus('success');
+      addLog(`크롤링 완료: 총 ${totalProcessed}개 처리됨`);
+      
     } catch (error) {
       console.error('크롤링 중 오류:', error);
-      
-      const errorMessage = error.message || '알 수 없는 오류';
-      const errorDetails = error.details ? 
-        (typeof error.details === 'string' ? error.details : JSON.stringify(error.details)) : '';
-      
-      setLogMessages(prev => [
-        ...prev, 
-        `오류 발생: ${errorMessage}`,
-        errorDetails ? `상세 오류: ${errorDetails}` : ''
-      ]);
+      setStatus('error');
+      setResult({ error: error.message || '알 수 없는 오류가 발생했습니다.' });
+      addLog(`오류 발생: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getStatusAlert = () => {
+    switch (status) {
+      case 'ready':
+        return (
+          <Alert severity="info">
+            크롤링 도구가 준비되었습니다. 학기와 카테고리를 선택하고 크롤링을 시작하세요.
+          </Alert>
+        );
+      case 'loading':
+        return (
+          <Alert severity="warning" icon={<CircularProgress size={20} />}>
+            크롤링 진행 중입니다. 잠시만 기다려주세요...
+          </Alert>
+        );
+      case 'success':
+        return (
+          <Alert severity="success">
+            크롤링이 완료되었습니다!
+            <br />
+            • 처리된 데이터: {result?.processed || 0}개
+            {result?.skipped > 0 && <><br />• 스킵된 데이터: {result.skipped}개</>}
+            {result?.errors > 0 && <><br />• 오류: {result.errors}개</>}
+            <br />• 대상 카테고리: {result?.categories}
+          </Alert>
+        );
+      case 'error':
+        return (
+          <Alert severity="error">
+            크롤링 중 오류가 발생했습니다.
+            <br />
+            오류 메시지: {result?.error}
+          </Alert>
+        );
+      default:
+        return null;
     }
   };
 
@@ -191,6 +193,7 @@ const SoftconCrawler = () => {
                   value={selectedTerm}
                   onChange={(e) => setSelectedTerm(e.target.value)}
                   label="학기"
+                  disabled={loading}
                 >
                   {TERMS.map((term) => (
                     <MenuItem key={term} value={term}>{term}</MenuItem>
@@ -208,6 +211,7 @@ const SoftconCrawler = () => {
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   label="카테고리"
+                  disabled={loading}
                 >
                   {CATEGORIES.map((category) => (
                     <MenuItem key={category} value={category}>
@@ -234,32 +238,8 @@ const SoftconCrawler = () => {
           </Grid>
         </Paper>
 
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-            크롤링 로그
-          </Typography>
-          
-          <Box 
-            sx={{ 
-              height: '300px', 
-              overflowY: 'auto',
-              bgcolor: '#f5f5f5',
-              p: 2,
-              borderRadius: 1
-            }}
-          >
-            <Box 
-              component="pre"
-              sx={{ 
-                fontFamily: 'monospace', 
-                fontSize: '0.8rem',
-                margin: 0,
-                color: '#333'
-              }}
-            >
-              {logMessages.length > 0 ? logMessages.join('\n') : '아직 로그가 없습니다.'}
-            </Box>
-          </Box>
+        <Paper sx={{ p: 3 }}>
+          {getStatusAlert()}
         </Paper>
       </Container>
     </ThemeProvider>

@@ -132,6 +132,7 @@ function CloneToPortfolioButton({ postData, postId }) {
         commentCount: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        isPublic: true,
         
         clonedFrom: {
           id: postId,

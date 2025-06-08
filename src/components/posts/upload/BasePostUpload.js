@@ -26,7 +26,6 @@ import EyeIcon from '@mui/icons-material/Visibility';
 import ImageIcon from '@mui/icons-material/Image';
 import BasePostView from '../view/BasePostView';
 
-// 커스텀 ReactMarkdown 컴포넌트
 const CustomReactMarkdown = ({ children }) => {
   return (
     <ReactMarkdown
@@ -37,7 +36,6 @@ const CustomReactMarkdown = ({ children }) => {
             target="_blank" 
             rel="noopener noreferrer"
             onClick={(e) => {
-              // 이벤트 버블링 방지 (링크 클릭 시 다른 이벤트 방지)
               e.stopPropagation();
             }}
           />
@@ -91,7 +89,6 @@ function BasePostUpload({ collectionName }) {
               setKeywords(data.keywords || []);
               setIsPublic(data.isPublic !== false);
               
-              // 기존 파일 데이터 설정
               if (data.files) {
                 setFiles(data.files.map(file => ({
                   ...file,

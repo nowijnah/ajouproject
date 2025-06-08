@@ -17,7 +17,8 @@ const TERMS = [
   "2021-1", "2021-2",
   "2022-1", "2022-2",
   "2023-1", "2023-2",
-  "2024-1", "2024-2"
+  "2024-1", "2024-2",
+  "2025-1"
 ];
 
 const CATEGORIES = ["ALL","S", "D", "I", "R", "M", "P"];
@@ -123,7 +124,8 @@ function transformForFirestore(project, term, category) {
     commentCount: 0,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    sourceUrl: project.sourceUrl || ""
+    sourceUrl: project.sourceUrl || "",
+    isPublic: true
   };
 }
 
@@ -170,7 +172,7 @@ exports.crawlSoftconData = functions.https.onCall(async (data, context) => {
     const baseListUrl = "https://softcon.ajou.ac.kr/works/works_list_prev.asp";
     const baseDetailUrl = "https://softcon.ajou.ac.kr/works/works_prev.asp";
     
-    const isCurrentTerm = term === "2024-2";
+    const isCurrentTerm = term === "2025-1";
     const currentTermListUrl = "https://softcon.ajou.ac.kr/works/works_list.asp";
     const currentTermDetailUrl = "https://softcon.ajou.ac.kr/works/works.asp";
     
