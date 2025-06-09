@@ -121,7 +121,7 @@ function CloneToPortfolioButton({ postData, postId }) {
         
         files: sourceData.files || [],
         links: sourceData.links || [],
-        thumbnailUrl: sourceData.thumbnailUrl || null,
+        thumbnail: sourceData.thumbnail || null,
         
         keywords: [...(sourceData.keywords || []), '소프트콘프로젝트'],
         

@@ -164,10 +164,8 @@ const usePostUpload = (collectionName, postId, currentUser) => {
     try {
       setIsSubmitting(true);
       
-      // 1. 썸네일 처리
       let thumbnailUrl = thumbnail;
 
-      // 썸네일이 없는 경우 첫 번째 이미지를 썸네일로 사용
       if (!thumbnail) {
         const imageFile = files.find(fileItem => fileItem.type === 'IMAGE' && fileItem.file);
         if (imageFile) {
@@ -206,7 +204,6 @@ const usePostUpload = (collectionName, postId, currentUser) => {
         })
       );
 
-      // 3. 게시물 데이터 준비
       const updatedData = {
         title,
         subtitle,
@@ -218,9 +215,7 @@ const usePostUpload = (collectionName, postId, currentUser) => {
         updatedAt: serverTimestamp()
       };
 
-      // 4. 게시물 저장 또는 수정
       if (postId && postId !== 'preview-id') {
-        // 수정 모드
         await updateDoc(doc(db, collectionName, postId), updatedData);
         alert('게시글이 수정되었습니다.');
         navigate(`/${collectionName}/${postId}`);

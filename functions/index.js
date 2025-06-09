@@ -437,7 +437,7 @@ if (!title || title.length < 2) {
         if (doc.exists) {
           addLog(`프로젝트 ID ${projectInfo.uid} 이미 존재함 (스킵)`);
           skipCount++;
-          continue; // 중복 업로드 방지
+          continue; 
         }
 
         const detail = await getDetailData(projectInfo);

@@ -303,11 +303,9 @@ function BasePostUpload({ collectionName }) {
         try {
             setIsSubmitting(true);
             
-            // 1. 파일 업로드 처리
             const tempFiles = [...files];
             const uploadedFiles = await Promise.all(
               tempFiles.map(async (fileItem) => {
-                // 이미 업로드된 파일은 그대로 사용
                 if (fileItem.url && !fileItem.file) {
                   return {
                     ...fileItem,
@@ -315,7 +313,6 @@ function BasePostUpload({ collectionName }) {
                   };
                 }
                 
-                // 새로운 파일 업로드
                 const fileRef = ref(storage, `files/${currentUser.uid}/${Date.now()}-${fileItem.file.name}`);
                 const fileSnapshot = await uploadBytes(fileRef, fileItem.file);
                 const url = await getDownloadURL(fileSnapshot.ref);
@@ -323,7 +320,7 @@ function BasePostUpload({ collectionName }) {
                 return {
                   fileId: fileItem.fileId,
                   url: url,
-                  tempUrl: fileItem.tempUrl, // 임시 URL 저장 (마크다운 내용 업데이트용)
+                  tempUrl: fileItem.tempUrl, 
                   filename: fileItem.file.name,
                   type: fileItem.type,
                   description: fileItem.description || ''
@@ -331,29 +328,22 @@ function BasePostUpload({ collectionName }) {
               })
             );
             
-            // 2. 마크다운 내용 업데이트 (임시 URL -> 실제 URL)
             const updatedMarkdownContent = updateMarkdownWithRealUrls(markdownContent, uploadedFiles);
             
-            // 3. 썸네일 처리
             let thumbnailUrl = thumbnail;
             
-            // 3-1. 사용자가 직접 썸네일을 업로드한 경우
             if (thumbnail instanceof File) {
               const thumbnailRef = ref(storage, `thumbnails/${currentUser.uid}/${Date.now()}-${thumbnail.name}`);
               const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnail);
               thumbnailUrl = await getDownloadURL(thumbnailSnapshot.ref);
             } 
-            // 3-2. 썸네일이 없을 경우 마크다운 내 첫번째 이미지 사용
             else if (!thumbnailUrl) {
-              // 마크다운에서 이미지 추출
               const markdownImages = extractImagesFromMarkdown(updatedMarkdownContent);
               
               if (markdownImages && markdownImages.length > 0) {
-                // 마크다운 내 첫번째 이미지를 썸네일로 사용
                 thumbnailUrl = markdownImages[0];
                 console.log("썸네일로 사용될 마크다운 이미지:", thumbnailUrl);
               } else {
-                // 업로드된 이미지 파일 중 첫번째 이미지 사용
                 const imageFile = uploadedFiles.find(file => file.type === 'IMAGE');
                 if (imageFile && imageFile.url) {
                   thumbnailUrl = imageFile.url;
@@ -362,7 +352,6 @@ function BasePostUpload({ collectionName }) {
               }
             }
 
-            // 4. 최종 데이터 준비
             const updatedData = {
               title,
               subtitle,

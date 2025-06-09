@@ -4,9 +4,6 @@ import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
 
-/**
- * 게시물 내용 컴포넌트 - 제목, 부제목, 썸네일 이미지, 마크다운 내용 표시
- */
 const PostContent = ({ 
   title, 
   subtitle, 
