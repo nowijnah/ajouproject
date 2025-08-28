@@ -339,7 +339,7 @@ const MyPage = () => {
                 }}
                 variant="outlined"
               >
-                Upload
+                게시글 작성
               </Button>
             )}
           </Box>

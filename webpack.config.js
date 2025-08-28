@@ -28,8 +28,9 @@ module.exports = {
         allowedHosts: 'all',
     },
     mode: 'production',
+    devtool: 'source-map', 
     plugins: [
-        // new BundleAnalyzerPlugin(),
+        //new BundleAnalyzerPlugin(),
         new Dotenv(),
         // 환경 변수 정의
         // new webpack.DefinePlugin({
@@ -38,9 +39,9 @@ module.exports = {
     ],
     resolve: {
         extensions: ['.js', '.jsx'],
-        fallback: {
-            "process": require.resolve("process/browser")
-        }
+        // fallback: {
+        //     "process": require.resolve("process/browser")
+        // }
     },
     cache: {
         type: 'filesystem',

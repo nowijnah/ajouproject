@@ -14,6 +14,7 @@ import CardActions from '@mui/material/CardActions';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
+import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
 
 import { useAuth } from '../../components/auth/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -56,7 +57,7 @@ const AdminPage = () => {
       description: '소프트콘 프로젝트를 업로드하고 관리합니다.',
       icon: <SchoolIcon sx={{ fontSize: 40, color: '#0066CC' }} />,
       action: () => navigate('/admin/softcon')
-    }
+    },
   ];
 
   return (
@@ -72,7 +73,7 @@ const AdminPage = () => {
 
       <Grid container spacing={3}>
         {adminMenus.map((menu, index) => (
-          <Grid item xs={12} md={4} key={index}>
+          <Grid item xs={12} md={6} lg={4} key={index}>
             <Card 
               sx={{ 
                 height: '100%', 
@@ -89,7 +90,7 @@ const AdminPage = () => {
                 <Box sx={{ mb: 2 }}>
                   {menu.icon}
                 </Box>
-                <Typography variant="h5" component="h2" sx={{ mb: 2, fontWeight: 600 }}>
+                <Typography variant="h6" component="h2" sx={{ mb: 2, fontWeight: 600 }}>
                   {menu.title}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
